@@ -1,0 +1,229 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 100%;
+
+    --card: 0 0% 100% / 0.05;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 211 100% 52%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 100% / 0.08;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 0 0% 100% / 0.06;
+    --muted-foreground: 0 0% 56%;
+
+    --accent: 142 69% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 1 100% 61%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 100% / 0.08;
+    --input: 0 0% 100% / 0.08;
+    --ring: 211 100% 52%;
+
+    --radius: 1rem;
+
+    --sidebar-background: 0 0% 100% / 0.03;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 211 100% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 0% 100% / 0.08;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 100% / 0.06;
+    --sidebar-ring: 211 100% 52%;
+
+    --warning: 48 100% 51%;
+    --warning-foreground: 0 0% 0%;
+    --success: 142 69% 50%;
+    --success-foreground: 0 0% 100%;
+
+    --ios-blue: #0A84FF;
+    --ios-green: #30D158;
+    --ios-red: #FF453A;
+    --ios-yellow: #FFD60A;
+    --ios-gray: #8E8E93;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+  }
+}
+
+/* Light theme overrides for glass components */
+[data-theme="light"] .glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .glass-nav {
+  background: rgba(245, 245, 247, 0.9);
+  border-top-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .ios-input {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: #1a1a1a;
+}
+
+[data-theme="light"] .ios-input::placeholder {
+  color: #8E8E93;
+}
+
+[data-theme="light"] .ios-input option {
+  background-color: #f5f5f7;
+  color: #1a1a1a;
+}
+
+[data-theme="light"] .ios-list-group {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .ios-list-item {
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .segmented-control {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .segmented-btn {
+  color: #636366;
+}
+
+[data-theme="light"] .segmented-btn.active {
+  background: rgba(255, 255, 255, 0.9);
+  color: #1a1a1a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+@layer components {
+  .glass-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1rem;
+  }
+
+  .glass-nav {
+    background: rgba(10, 10, 10, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .ios-input {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: white;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+  }
+
+  .ios-input:focus {
+    border-color: #0A84FF;
+    outline: none;
+  }
+
+  .ios-input::placeholder {
+    color: #8E8E93;
+  }
+
+  .ios-input option {
+    background-color: #1c1c1e;
+    color: white;
+  }
+
+  .ios-section-title {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #8E8E93;
+    padding-left: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .ios-list-group {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.75rem;
+    overflow: hidden;
+  }
+
+  .ios-list-item {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .ios-list-item:last-child {
+    border-bottom: none;
+  }
+
+  .segmented-control {
+    display: inline-flex;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 0.5rem;
+    padding: 2px;
+    gap: 2px;
+  }
+
+  .segmented-btn {
+    padding: 0.375rem 0.875rem;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #8E8E93;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+  }
+
+  .segmented-btn.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+  }
+}
+
+/* Hide native number input spinners */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}

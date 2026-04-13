@@ -1,0 +1,1 @@
+ALTER TABLE public.vendedores ADD COLUMN ativo boolean NOT NULL DEFAULT true;

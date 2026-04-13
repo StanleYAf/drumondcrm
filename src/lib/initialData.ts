@@ -1,0 +1,60 @@
+import { AppData } from "./types";
+
+export const INITIAL_DATA: AppData = {
+  metas: { produto: 23000, servico: 8000, contrato: 6000, acessorio: 2000 },
+  meta_semanal: { captacoes: 50, orcamentos: 20, visitas: 14 },
+  lancamentos: {
+    produtos: [
+      { id: "p1", cliente: "Guilherme Porto", produto: "Autoclave Volaremed 21L", valor: 4300, data: "2026-01-14", vendedor: "Mateus" },
+      { id: "p2", cliente: "Karol Vitrorino", produto: "Bomba de infusão", valor: 1900, data: "2026-01-28", vendedor: "Alice" },
+      { id: "p3", cliente: "Gabriella", produto: "Monitor de Oximetria", valor: 800, data: "2026-01-31", vendedor: "Alice" },
+      { id: "p4", cliente: "Alexandre", produto: "DEA", valor: 1350, data: "2026-01-30", vendedor: "Mateus" },
+      { id: "p5", cliente: "Emanoel Peornio", produto: "Bomba seringa santronic", valor: 1000, data: "2026-02-05", vendedor: "Mateus" },
+      { id: "p6", cliente: "Danilo MarlisVet", produto: "Bomba de Infusão Kellymed", valor: 2000, data: "2026-02-05", vendedor: "Alice" },
+      { id: "p7", cliente: "Dr Rodrigo", produto: "Vaporizador", valor: 3700, data: "2026-02-27", vendedor: "Mateus" },
+      { id: "p8", cliente: "Madson", produto: "Bombas de infusão", valor: 6000, data: "2026-03-01", vendedor: "Mateus" },
+      { id: "p9", cliente: "Madson", produto: "Bomba seringa", valor: 3200, data: "2026-03-10", vendedor: "Mateus" },
+      { id: "p10", cliente: "Rayssa", produto: "Concentrador", valor: 3050, data: "2026-03-11", vendedor: "Alice" },
+      { id: "p11", cliente: "Isa", produto: "Lavadora", valor: 13300, data: "2026-03-16", vendedor: "Mateus" },
+      { id: "p12", cliente: "Paulo", produto: "Concentrador", valor: 3100, data: "2026-03-20", vendedor: "Alice" },
+    ],
+    servicos: [
+      { id: "s1", cliente: "Guilherme Porto", servico: "Manutenção Autoclave", valor: 750, data: "2026-01-20", vendedor: "Mateus" },
+      { id: "s2", cliente: "Tulio", servico: "Bomba de infusão", valor: 820, data: "2026-01-30", vendedor: "Alice" },
+      { id: "s3", cliente: "Dr Ramiro Cesar", servico: "Troca guarnição autoclave", valor: 310, data: "2026-02-24", vendedor: "Mateus" },
+      { id: "s4", cliente: "Sonia Resende veterinaria", servico: "Ultrassom vet", valor: 924, data: "2026-03-01", vendedor: "Alice" },
+      { id: "s5", cliente: "Happy dog", servico: "Manutenção 3 bombas de infusão", valor: 280, data: "2026-02-26", vendedor: "Alice" },
+      { id: "s6", cliente: "Dra. Emilia", servico: "Manutenção preventiva", valor: 650, data: "2026-03-10", vendedor: "Mateus" },
+      { id: "s7", cliente: "Clinica Uro", servico: "Manutenção preventiva", valor: 880, data: "2026-03-11", vendedor: "Mateus" },
+      { id: "s8", cliente: "Rui Marinho", servico: "Caneta FACO", valor: 11000, data: "2026-03-27", vendedor: "Mateus" },
+    ],
+    contratos: [
+      { id: "c1", cliente: "Fepe", servico: "Ar Condicionado", valor: 2764, data: "2026-01-15", vendedor: "Mateus" },
+      { id: "c2", cliente: "Fepe", servico: "Aparelho de Anestesia", valor: 2800, data: "2026-01-15", vendedor: "Mateus" },
+      { id: "c3", cliente: "Thymos", servico: "Ar Cond + equipamentos", valor: 6500, data: "2026-03-18", vendedor: "Mateus" },
+      { id: "c4", cliente: "Vet Céu Azul", servico: "Manutenção preventiva", valor: 910, data: "2026-03-25", vendedor: "Alice" },
+      { id: "c5", cliente: "Gabriel Contijo", servico: "Manutenção preventiva", valor: 2070, data: "2026-03-26", vendedor: "Alice" },
+    ],
+    acessorios: [
+      { id: "a1", cliente: "Geisebele", item: "Cabo de Temp Dixtal", valor: 210, data: "2026-01-07", vendedor: "Mateus" },
+      { id: "a2", cliente: "Thamirys 7 Lagoas", item: "SPO²/ECG", valor: 745, data: "2026-02-02", vendedor: "Alice" },
+      { id: "a3", cliente: "Barbara Anestesista", item: "Circuito Respiratório", valor: 330, data: "2026-02-09", vendedor: "Mateus" },
+    ],
+  },
+  indicadores_semanais: [
+    { id: "w1", data: "2026-01-08", semana: 2, mes: "Janeiro", vendedor: "Mateus", captacoes: 5, orcamentos: 4, visitas: 1, ano: 2026 },
+    { id: "w2", data: "2026-01-18", semana: 3, mes: "Janeiro", vendedor: "Mateus", captacoes: 6, orcamentos: 5, visitas: 2, ano: 2026 },
+    { id: "w3", data: "2026-01-27", semana: 5, mes: "Janeiro", vendedor: "Mateus", captacoes: 7, orcamentos: 6, visitas: 3, ano: 2026 },
+    { id: "w4", data: "2026-02-05", semana: 6, mes: "Fevereiro", vendedor: "Mateus", captacoes: 8, orcamentos: 9, visitas: 4, ano: 2026 },
+    { id: "w5", data: "2026-02-11", semana: 7, mes: "Fevereiro", vendedor: "Mateus", captacoes: 50, orcamentos: 20, visitas: 7, ano: 2026 },
+    { id: "w6", data: "2026-01-09", semana: 2, mes: "Janeiro", vendedor: "Alice", captacoes: 40, orcamentos: 10, visitas: 5, ano: 2026 },
+  ],
+  pos_venda: [
+    { id: "pv1", data: "2026-01-01", cliente: "Karol Vitrorino", vendedor: "Alice", status: "Aguardando retorno" },
+    { id: "pv2", data: "2026-01-02", cliente: "Gabriella", vendedor: "Alice", status: "Aguardando retorno" },
+    { id: "pv3", data: "2026-01-03", cliente: "Vet Medic", vendedor: "Alice", status: "Aguardando retorno" },
+    { id: "pv4", data: "2026-01-04", cliente: "Tulio", vendedor: "Alice", status: "Aguardando retorno" },
+  ],
+  vendedores: ["Mateus", "Alice"],
+  historico_metas: [],
+};
