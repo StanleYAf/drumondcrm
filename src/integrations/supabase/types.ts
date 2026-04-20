@@ -50,6 +50,162 @@ export type Database = {
         }
         Relationships: []
       }
+      indicadores_manutencao: {
+        Row: {
+          ano: number
+          created_at: string | null
+          eng_corretivas_abertas: number | null
+          eng_corretivas_atendidas_prazo: number | null
+          eng_corretivas_fechadas: number | null
+          eng_os_emergentes: number | null
+          eng_os_pouco_urgentes: number | null
+          eng_os_urgentes: number | null
+          eng_pct_corretivas_atendidas_prazo: number | null
+          eng_pct_corretivas_fechadas: number | null
+          eng_pct_emergentes: number | null
+          eng_pct_poucourgentes: number | null
+          eng_pct_preventivas_fechadas: number | null
+          eng_pct_sla_fechamento_emergente: number | null
+          eng_pct_sla_fechamento_poucourgente: number | null
+          eng_pct_sla_fechamento_urgente: number | null
+          eng_pct_sla_triagem_emergente: number | null
+          eng_pct_sla_triagem_poucourgente: number | null
+          eng_pct_sla_triagem_urgente: number | null
+          eng_pct_urgentes: number | null
+          eng_preventivas_abertas: number | null
+          eng_preventivas_fechadas: number | null
+          id: string
+          mes: string
+          pred_ar_cg_gz_abertas: number | null
+          pred_ar_cg_gz_fechadas: number | null
+          pred_ar_sc_gd_abertas: number | null
+          pred_ar_sc_gd_fechadas: number | null
+          pred_corretivas_abertas: number | null
+          pred_corretivas_fechadas: number | null
+          pred_demais_abertas: number | null
+          pred_demais_fechadas: number | null
+          pred_os_emergentes: number | null
+          pred_os_pouco_urgentes: number | null
+          pred_os_urgentes: number | null
+          pred_pct_corretivas_fechadas: number | null
+          pred_pct_preventivas_fechadas: number | null
+          pred_pct_sla_fechamento_emergente: number | null
+          pred_pct_sla_fechamento_poucourgente: number | null
+          pred_pct_sla_fechamento_urgente: number | null
+          pred_pct_sla_triagem_emergente: number | null
+          pred_pct_sla_triagem_poucourgente: number | null
+          pred_pct_sla_triagem_urgente: number | null
+          pred_preventivas_abertas: number | null
+          pred_preventivas_fechadas: number | null
+          total_corretivas_abertas: number | null
+          total_corretivas_fechadas: number | null
+          total_preventivas_abertas: number | null
+          total_preventivas_fechadas: number | null
+        }
+        Insert: {
+          ano: number
+          created_at?: string | null
+          eng_corretivas_abertas?: number | null
+          eng_corretivas_atendidas_prazo?: number | null
+          eng_corretivas_fechadas?: number | null
+          eng_os_emergentes?: number | null
+          eng_os_pouco_urgentes?: number | null
+          eng_os_urgentes?: number | null
+          eng_pct_corretivas_atendidas_prazo?: number | null
+          eng_pct_corretivas_fechadas?: number | null
+          eng_pct_emergentes?: number | null
+          eng_pct_poucourgentes?: number | null
+          eng_pct_preventivas_fechadas?: number | null
+          eng_pct_sla_fechamento_emergente?: number | null
+          eng_pct_sla_fechamento_poucourgente?: number | null
+          eng_pct_sla_fechamento_urgente?: number | null
+          eng_pct_sla_triagem_emergente?: number | null
+          eng_pct_sla_triagem_poucourgente?: number | null
+          eng_pct_sla_triagem_urgente?: number | null
+          eng_pct_urgentes?: number | null
+          eng_preventivas_abertas?: number | null
+          eng_preventivas_fechadas?: number | null
+          id?: string
+          mes: string
+          pred_ar_cg_gz_abertas?: number | null
+          pred_ar_cg_gz_fechadas?: number | null
+          pred_ar_sc_gd_abertas?: number | null
+          pred_ar_sc_gd_fechadas?: number | null
+          pred_corretivas_abertas?: number | null
+          pred_corretivas_fechadas?: number | null
+          pred_demais_abertas?: number | null
+          pred_demais_fechadas?: number | null
+          pred_os_emergentes?: number | null
+          pred_os_pouco_urgentes?: number | null
+          pred_os_urgentes?: number | null
+          pred_pct_corretivas_fechadas?: number | null
+          pred_pct_preventivas_fechadas?: number | null
+          pred_pct_sla_fechamento_emergente?: number | null
+          pred_pct_sla_fechamento_poucourgente?: number | null
+          pred_pct_sla_fechamento_urgente?: number | null
+          pred_pct_sla_triagem_emergente?: number | null
+          pred_pct_sla_triagem_poucourgente?: number | null
+          pred_pct_sla_triagem_urgente?: number | null
+          pred_preventivas_abertas?: number | null
+          pred_preventivas_fechadas?: number | null
+          total_corretivas_abertas?: number | null
+          total_corretivas_fechadas?: number | null
+          total_preventivas_abertas?: number | null
+          total_preventivas_fechadas?: number | null
+        }
+        Update: {
+          ano?: number
+          created_at?: string | null
+          eng_corretivas_abertas?: number | null
+          eng_corretivas_atendidas_prazo?: number | null
+          eng_corretivas_fechadas?: number | null
+          eng_os_emergentes?: number | null
+          eng_os_pouco_urgentes?: number | null
+          eng_os_urgentes?: number | null
+          eng_pct_corretivas_atendidas_prazo?: number | null
+          eng_pct_corretivas_fechadas?: number | null
+          eng_pct_emergentes?: number | null
+          eng_pct_poucourgentes?: number | null
+          eng_pct_preventivas_fechadas?: number | null
+          eng_pct_sla_fechamento_emergente?: number | null
+          eng_pct_sla_fechamento_poucourgente?: number | null
+          eng_pct_sla_fechamento_urgente?: number | null
+          eng_pct_sla_triagem_emergente?: number | null
+          eng_pct_sla_triagem_poucourgente?: number | null
+          eng_pct_sla_triagem_urgente?: number | null
+          eng_pct_urgentes?: number | null
+          eng_preventivas_abertas?: number | null
+          eng_preventivas_fechadas?: number | null
+          id?: string
+          mes?: string
+          pred_ar_cg_gz_abertas?: number | null
+          pred_ar_cg_gz_fechadas?: number | null
+          pred_ar_sc_gd_abertas?: number | null
+          pred_ar_sc_gd_fechadas?: number | null
+          pred_corretivas_abertas?: number | null
+          pred_corretivas_fechadas?: number | null
+          pred_demais_abertas?: number | null
+          pred_demais_fechadas?: number | null
+          pred_os_emergentes?: number | null
+          pred_os_pouco_urgentes?: number | null
+          pred_os_urgentes?: number | null
+          pred_pct_corretivas_fechadas?: number | null
+          pred_pct_preventivas_fechadas?: number | null
+          pred_pct_sla_fechamento_emergente?: number | null
+          pred_pct_sla_fechamento_poucourgente?: number | null
+          pred_pct_sla_fechamento_urgente?: number | null
+          pred_pct_sla_triagem_emergente?: number | null
+          pred_pct_sla_triagem_poucourgente?: number | null
+          pred_pct_sla_triagem_urgente?: number | null
+          pred_preventivas_abertas?: number | null
+          pred_preventivas_fechadas?: number | null
+          total_corretivas_abertas?: number | null
+          total_corretivas_fechadas?: number | null
+          total_preventivas_abertas?: number | null
+          total_preventivas_fechadas?: number | null
+        }
+        Relationships: []
+      }
       indicadores_semanais: {
         Row: {
           ano: number
@@ -720,6 +876,54 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      tecnicos_manutencao: {
+        Row: {
+          ano: number
+          atendidas_no_prazo: number | null
+          corretivas: number | null
+          created_at: string | null
+          fechadas_no_prazo: number | null
+          id: string
+          mes: string
+          nome: string
+          percentual_atendimento: number | null
+          percentual_fechamento: number | null
+          preventivas: number | null
+          setor: string
+          total_os: number | null
+        }
+        Insert: {
+          ano: number
+          atendidas_no_prazo?: number | null
+          corretivas?: number | null
+          created_at?: string | null
+          fechadas_no_prazo?: number | null
+          id?: string
+          mes: string
+          nome: string
+          percentual_atendimento?: number | null
+          percentual_fechamento?: number | null
+          preventivas?: number | null
+          setor: string
+          total_os?: number | null
+        }
+        Update: {
+          ano?: number
+          atendidas_no_prazo?: number | null
+          corretivas?: number | null
+          created_at?: string | null
+          fechadas_no_prazo?: number | null
+          id?: string
+          mes?: string
+          nome?: string
+          percentual_atendimento?: number | null
+          percentual_fechamento?: number | null
+          preventivas?: number | null
+          setor?: string
+          total_os?: number | null
         }
         Relationships: []
       }
