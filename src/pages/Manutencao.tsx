@@ -230,3 +230,230 @@ export default function Manutencao() {
     </div>
   );
 }
+
+function corPct(v: number) {
+  if (v >= 90) return "hsl(142 71% 45%)"; // verde
+  if (v >= 70) return "hsl(48 96% 53%)"; // amarelo
+  return "hsl(0 84% 60%)"; // vermelho
+}
+
+function SlaBar({ label, value }: { label: string; value: number }) {
+  const cor = corPct(value);
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-semibold" style={{ color: cor }}>{value.toFixed(1)}%</span>
+      </div>
+      <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
+        <div
+          className="h-full transition-all"
+          style={{ width: `${Math.min(100, Math.max(0, value))}%`, background: cor }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function GaugeFechamento({ value }: { value: number }) {
+  const v = Math.min(100, Math.max(0, value));
+  const cor = corPct(v);
+  const data = [
+    { name: "filled", value: v },
+    { name: "rest", value: 100 - v },
+  ];
+  return (
+    <div className="relative w-full" style={{ height: 220 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={data}
+            startAngle={180}
+            endAngle={0}
+            cy="80%"
+            innerRadius="70%"
+            outerRadius="100%"
+            dataKey="value"
+            stroke="none"
+            isAnimationActive={false}
+          >
+            <Cell fill={cor} />
+            <Cell fill="hsl(var(--muted))" />
+          </Pie>
+        </PieChart>
+      </ResponsiveContainer>
+      <div className="absolute inset-x-0 bottom-4 flex flex-col items-center pointer-events-none">
+        <span className="text-3xl font-bold" style={{ color: cor }}>{v.toFixed(1)}%</span>
+        <span className="text-xs text-muted-foreground">Taxa de fechamento</span>
+      </div>
+    </div>
+  );
+}
+
+interface SetorPanelProps {
+  atual: any;
+  prefix: "eng" | "pred";
+  num: (v: any) => number;
+  prioridadesMode: "pct" | "abs";
+  extraArCondicionado?: boolean;
+}
+
+function SetorPanel({ atual, prefix, num, prioridadesMode, extraArCondicionado }: SetorPanelProps) {
+  const f = (k: string) => num(atual?.[`${prefix}_${k}`]);
+
+  const kpis = [
+    { label: "Corretivas Abertas", icon: Wrench, value: f("corretivas_abertas") },
+    { label: "Corretivas Fechadas", icon: CheckCircle, value: f("corretivas_fechadas") },
+    { label: "Preventivas Abertas", icon: ClipboardList, value: f("preventivas_abertas") },
+    { label: "Preventivas Fechadas", icon: CheckSquare, value: f("preventivas_fechadas") },
+  ];
+
+  const pctFechamento = f("pct_corretivas_fechadas");
+
+  let prioridades: { name: string; value: number }[];
+  if (prioridadesMode === "pct") {
+    prioridades = [
+      { name: "Emergente", value: f("pct_emergentes") },
+      { name: "Urgente", value: f("pct_urgentes") },
+      { name: "Pouco Urgente", value: f("pct_poucourgentes") },
+    ];
+  } else {
+    const e = f("os_emergentes");
+    const u = f("os_urgentes");
+    const p = f("os_pouco_urgentes");
+    const total = e + u + p;
+    prioridades = total > 0
+      ? [
+          { name: "Emergente", value: (e / total) * 100 },
+          { name: "Urgente", value: (u / total) * 100 },
+          { name: "Pouco Urgente", value: (p / total) * 100 },
+        ]
+      : [
+          { name: "Emergente", value: 0 },
+          { name: "Urgente", value: 0 },
+          { name: "Pouco Urgente", value: 0 },
+        ];
+  }
+  const CORES_PRIO = ["hsl(0 84% 60%)", "hsl(48 96% 53%)", "hsl(217 91% 60%)"];
+
+  const slaBars = [
+    { label: "Triagem Emergente", value: f("pct_sla_triagem_emergente") },
+    { label: "Triagem Urgente", value: f("pct_sla_triagem_urgente") },
+    { label: "Triagem Pouco Urgente", value: f("pct_sla_triagem_poucourgente") },
+    { label: "Fechamento Emergente", value: f("pct_sla_fechamento_emergente") },
+    { label: "Fechamento Urgente", value: f("pct_sla_fechamento_urgente") },
+  ];
+
+  const arItems = extraArCondicionado
+    ? [
+        { label: "AR SC GD", fech: f("ar_sc_gd_fechadas"), abert: f("ar_sc_gd_abertas") },
+        { label: "AR CG GZ", fech: f("ar_cg_gz_fechadas"), abert: f("ar_cg_gz_abertas") },
+        { label: "Demais Preventivas", fech: f("demais_fechadas"), abert: f("demais_abertas") },
+      ]
+    : [];
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {kpis.map(kpi => {
+          const Icon = kpi.icon;
+          return (
+            <Card key={kpi.label}>
+              <CardContent className="p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-muted-foreground">{kpi.label}</span>
+                  <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Icon className="h-4 w-4 text-primary" />
+                  </div>
+                </div>
+                <div className="text-3xl font-bold text-foreground">{kpi.value}</div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Taxa de Fechamento de Corretivas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <GaugeFechamento value={pctFechamento} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Distribuição de Prioridades</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie
+                  data={prioridades}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  label={(e: any) => `${Number(e.value).toFixed(0)}%`}
+                >
+                  {prioridades.map((_, i) => (
+                    <Cell key={i} fill={CORES_PRIO[i]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }}
+                  formatter={(v: any) => `${Number(v).toFixed(1)}%`}
+                />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">SLA</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {slaBars.map(b => (
+            <SlaBar key={b.label} label={b.label} value={b.value} />
+          ))}
+        </CardContent>
+      </Card>
+
+      {extraArCondicionado && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Ar Condicionado e Demais Preventivas</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {arItems.map(item => {
+              const pct = item.abert > 0 ? (item.fech / item.abert) * 100 : 0;
+              const cor = corPct(pct);
+              return (
+                <div key={item.label} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">{item.label}</span>
+                    <span className="font-semibold" style={{ color: cor }}>
+                      {item.fech} / {item.abert} ({pct.toFixed(1)}%)
+                    </span>
+                  </div>
+                  <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
+                    <div
+                      className="h-full transition-all"
+                      style={{ width: `${Math.min(100, Math.max(0, pct))}%`, background: cor }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
