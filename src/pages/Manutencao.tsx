@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { DashboardSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { useManutencaoData } from "@/hooks/useManutencaoData";
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Progress } from "@/components/ui/progress";
 
 const MES_ORDEM: Record<string, number> = {
   janeiro: 1, fevereiro: 2, março: 3, marco: 3, abril: 4, maio: 5, junho: 6,
@@ -118,8 +119,6 @@ export default function Manutencao() {
         </TabsList>
 
         {[
-          { v: "eng", label: "Engenharia Clínica" },
-          { v: "pred", label: "Manutenção Predial" },
           { v: "sla", label: "Análise de SLA" },
           { v: "tec", label: "Desempenho Técnico" },
         ].map(t => (
@@ -134,6 +133,25 @@ export default function Manutencao() {
             </Card>
           </TabsContent>
         ))}
+
+        <TabsContent value="eng" className="mt-4">
+          <SetorPanel
+            atual={atual}
+            prefix="eng"
+            num={num}
+            prioridadesMode="pct"
+          />
+        </TabsContent>
+
+        <TabsContent value="pred" className="mt-4">
+          <SetorPanel
+            atual={atual}
+            prefix="pred"
+            num={num}
+            prioridadesMode="abs"
+            extraArCondicionado
+          />
+        </TabsContent>
 
         <TabsContent value="visao" className="mt-4 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
