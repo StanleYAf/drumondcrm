@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, FilePlus, BarChart3, PhoneCall, Settings, FileBarChart, Sun, Moon, Package, LogOut, Kanban, PanelLeftClose, PanelLeft } from "lucide-react";
+import { LayoutDashboard, FilePlus, BarChart3, PhoneCall, Settings, FileBarChart, Sun, Moon, Package, LogOut, Kanban, PanelLeftClose, PanelLeft, Wrench } from "lucide-react";
 import { useTheme } from "@/lib/themeContext";
 import { useAuth } from "@/lib/authContext";
 
@@ -13,6 +13,7 @@ const allNavItems = [
   { title: "Pós-venda", url: "/pos-venda", icon: PhoneCall, group: "dash" },
   { title: "Estoque", url: "/estoque", icon: Package, group: "estoque" },
   { title: "Relatórios", url: "/relatorios", icon: FileBarChart, group: "dash" },
+  { title: "Manutenção", url: "/manutencao", icon: Wrench, group: "manutencao" },
   { title: "Config", url: "/configuracoes", icon: Settings, group: "always" },
 ];
 
@@ -28,6 +29,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     if (hasCargo("admin")) return true;
     if (hasCargo("dash") && item.group === "dash") return true;
     if ((hasCargo("estoque") || hasCargo("Controlador")) && item.group === "estoque") return true;
+    if (hasCargo("manutencao") && item.group === "manutencao") return true;
     return false;
   });
 
