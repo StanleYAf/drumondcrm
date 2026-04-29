@@ -4,8 +4,9 @@ import { Loader2, Upload, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { API_URL } from "@/lib/config";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { parseManutencaoXlsx } from "@/lib/manutencaoParser";
 
 const ACCEPTED = [".xls", ".xlsx"];
 
@@ -41,27 +42,32 @@ export default function ManutencaoUpload() {
     if (!file) return;
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch(`${API_URL}/upload`, {
-        method: "POST",
-        body: formData,
-      });
-      if (res.ok) {
-        toast.success("Dados importados com sucesso!");
-        navigate("/manutencao");
-      } else {
-        let msg = "Erro ao processar o arquivo";
-        try {
-          const data = await res.json();
-          msg = data?.message || data?.error || data?.detail || msg;
-        } catch {
-          // ignore
-        }
-        toast.error(msg);
+      const { indicadores, tecnicos, totalLinhas } = await parseManutencaoXlsx(file);
+      if (indicadores.length === 0) {
+        toast.error("Nenhuma linha válida encontrada no arquivo");
+        return;
       }
-    } catch {
-      toast.error("Erro ao processar o arquivo");
+
+      // Apagar e regravar os meses presentes no arquivo
+      const pares = indicadores.map((i) => ({ mes: i.mes, ano: i.ano }));
+      for (const { mes, ano } of pares) {
+        await supabase.from("indicadores_manutencao").delete().eq("mes", mes).eq("ano", ano);
+        await supabase.from("tecnicos_manutencao").delete().eq("mes", mes).eq("ano", ano);
+      }
+
+      const { error: indErr } = await supabase.from("indicadores_manutencao").insert(indicadores);
+      if (indErr) throw indErr;
+
+      if (tecnicos.length > 0) {
+        const { error: tecErr } = await supabase.from("tecnicos_manutencao").insert(tecnicos);
+        if (tecErr) throw tecErr;
+      }
+
+      toast.success(`Importado: ${totalLinhas} linhas, ${indicadores.length} mês(es), ${tecnicos.length} técnico(s).`);
+      navigate("/manutencao");
+    } catch (e: any) {
+      console.error("Erro upload manutenção:", e);
+      toast.error(e?.message || "Erro ao processar o arquivo");
     } finally {
       setLoading(false);
     }
