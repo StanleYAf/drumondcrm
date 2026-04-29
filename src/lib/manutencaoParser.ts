@@ -121,6 +121,22 @@ function pct(num: number, den: number): number {
   return Math.round((num / den) * 10000) / 100;
 }
 
+function normalizeKey(s: any): string {
+  return String(s ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+// Considera "Regular" / "No prazo" / "Dentro do prazo" como dentro do SLA
+function isNoPrazo(v: any): boolean {
+  const n = normalizeKey(v);
+  if (!n) return false;
+  return n === "regular" || n === "no prazo" || n === "dentro do prazo" || n.startsWith("regular");
+}
+
 function emptyIndicador(mes: string, ano: number): IndicadorRow {
   return {
     mes, ano,
@@ -156,7 +172,11 @@ export async function parseManutencaoXlsx(file: File): Promise<ParseResult> {
   const data = rows.slice(1).filter((r) => Array.isArray(r) && r.length);
 
   // mapear índices por header (tolerante)
-  const idxOf = (label: string) => headers.findIndex((h) => h && String(h).trim().toLowerCase() === label.toLowerCase());
+  const normHeaders = headers.map((h) => normalizeKey(h));
+  const idxOf = (label: string) => {
+    const n = normalizeKey(label);
+    return normHeaders.findIndex((h) => h === n);
+  };
   const I = {
     tipo: idxOf("TIPO SERVIÇO"),
     estado: idxOf("ESTADO"),
@@ -168,6 +188,14 @@ export async function parseManutencaoXlsx(file: File): Promise<ParseResult> {
     estTriagem: idxOf("Estado tempo atendimento"),
     estFech: idxOf("Estado tempo fechamento"),
   };
+  if (I.estTriagem < 0) {
+    const alt = normHeaders.findIndex((h) => h.includes("estado") && h.includes("atendimento"));
+    if (alt >= 0) I.estTriagem = alt;
+  }
+  if (I.estFech < 0) {
+    const alt = normHeaders.findIndex((h) => h.includes("estado") && h.includes("fechamento"));
+    if (alt >= 0) I.estFech = alt;
+  }
 
   // bucket por mes/ano
   const bucket = new Map<string, IndicadorRow>();
@@ -218,7 +246,7 @@ export async function parseManutencaoXlsx(file: File): Promise<ParseResult> {
       if (isEng) {
         if (fechada) ind.eng_corretivas_fechadas++;
         if (aberta) ind.eng_corretivas_abertas++;
-        if (fechada && estFech === "No prazo") ind.eng_corretivas_atendidas_prazo++;
+        if (fechada && isNoPrazo(estFech)) ind.eng_corretivas_atendidas_prazo++;
       }
       if (isPred) {
         if (fechada) ind.pred_corretivas_fechadas++;
@@ -257,8 +285,8 @@ export async function parseManutencaoXlsx(file: File): Promise<ParseResult> {
       const c = target[prioridade];
       if (c) {
         c.total++;
-        if (estTriagem === "No prazo") c.triagemPrazo++;
-        if (fechada && estFech === "No prazo") c.fechPrazo++;
+        if (isNoPrazo(estTriagem)) c.triagemPrazo++;
+        if (fechada && isNoPrazo(estFech)) c.fechPrazo++;
       }
       if (isEng) {
         const t = totalEngPrioridade.get(k)!;
@@ -285,8 +313,8 @@ export async function parseManutencaoXlsx(file: File): Promise<ParseResult> {
       if (isCorretiva) t.corretivas++;
       if (isPreventiva) t.preventivas++;
       t.total_os++;
-      if (estTriagem === "No prazo") t.atendidas_no_prazo++;
-      if (fechada && estFech === "No prazo") t.fechadas_no_prazo++;
+      if (isNoPrazo(estTriagem)) t.atendidas_no_prazo++;
+      if (fechada && isNoPrazo(estFech)) t.fechadas_no_prazo++;
     }
   }
 

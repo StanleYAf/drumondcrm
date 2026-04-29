@@ -651,14 +651,15 @@ function SetorPanel({ atual, prefix, num, prioridadesMode, extraArCondicionado }
           </CardHeader>
           <CardContent className="space-y-4">
             {arItems.map(item => {
-              const pct = item.abert > 0 ? (item.fech / item.abert) * 100 : 0;
+              const total = item.fech + item.abert;
+              const pct = total > 0 ? (item.fech / total) * 100 : 0;
               const cor = corPct(pct);
               return (
                 <div key={item.label} className="space-y-1.5">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">{item.label}</span>
                     <span className="font-semibold" style={{ color: cor }}>
-                      {item.fech} / {item.abert} ({pct.toFixed(1)}%)
+                      {item.fech} / {total} ({pct.toFixed(1)}%)
                     </span>
                   </div>
                   <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
