@@ -154,7 +154,7 @@ export default function Manutencao() {
                         <Radar name="Engenharia Clínica" dataKey="Engenharia" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.4} />
                         <Radar name="Manutenção Predial" dataKey="Predial" stroke="#f97316" fill="#f97316" fillOpacity={0.4} />
                         <Legend />
-                        <Tooltip />
+                        <Tooltip content={<SlaTooltip />} />
                       </RadarChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -170,7 +170,7 @@ export default function Manutencao() {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="mes" />
                         <YAxis domain={[0, 100]} />
-                        <Tooltip />
+                        <Tooltip content={<SlaTooltip />} />
                         <Legend />
                         <ReferenceLine y={90} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" label={{ value: "Meta 90%", position: "right", fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
                         <Line type="monotone" dataKey="Engenharia" name="SLA Médio Engenharia" stroke="#3b82f6" strokeWidth={2} dot />
