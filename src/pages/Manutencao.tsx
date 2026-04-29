@@ -154,7 +154,7 @@ export default function Manutencao() {
                         <Radar name="Engenharia Clínica" dataKey="Engenharia" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.4} />
                         <Radar name="Manutenção Predial" dataKey="Predial" stroke="#f97316" fill="#f97316" fillOpacity={0.4} />
                         <Legend />
-                        <Tooltip />
+                        <Tooltip content={<SlaTooltip />} />
                       </RadarChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -170,7 +170,7 @@ export default function Manutencao() {
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="mes" />
                         <YAxis domain={[0, 100]} />
-                        <Tooltip />
+                        <Tooltip content={<SlaTooltip />} />
                         <Legend />
                         <ReferenceLine y={90} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" label={{ value: "Meta 90%", position: "right", fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
                         <Line type="monotone" dataKey="Engenharia" name="SLA Médio Engenharia" stroke="#3b82f6" strokeWidth={2} dot />
@@ -285,6 +285,30 @@ function corPct(v: number) {
   if (v >= 90) return "hsl(142 71% 45%)"; // verde
   if (v >= 70) return "hsl(48 96% 53%)"; // amarelo
   return "hsl(0 84% 60%)"; // vermelho
+}
+
+function SlaTooltip({ active, payload, label }: any) {
+  if (!active || !payload || payload.length === 0) return null;
+  const colorFor = (name: string) => (name === "Engenharia" || name === "SLA Médio Engenharia" ? "#3b82f6" : "#f97316");
+  const labelFor = (name: string) => {
+    if (name === "Engenharia") return "Engenharia Clínica";
+    if (name === "Predial") return "Manutenção Predial";
+    return name;
+  };
+  return (
+    <div className="rounded-lg border bg-popover px-3 py-2 text-popover-foreground shadow-md text-sm">
+      {label && <div className="mb-1 font-medium">{label}</div>}
+      <div className="space-y-1">
+        {payload.map((p: any, i: number) => (
+          <div key={i} className="flex items-center gap-2">
+            <span className="inline-block h-2 w-2 rounded-full" style={{ background: colorFor(p.dataKey) }} />
+            <span className="text-muted-foreground">{labelFor(p.dataKey)}:</span>
+            <span className="font-semibold tabular-nums">{Number(p.value ?? 0).toFixed(2)}%</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function corPctTec(v: number) {
