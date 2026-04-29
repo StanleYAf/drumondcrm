@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { DashboardSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { useManutencaoData } from "@/hooks/useManutencaoData";
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const MES_ORDEM: Record<string, number> = {
   janeiro: 1, fevereiro: 2, março: 3, marco: 3, abril: 4, maio: 5, junho: 6,
@@ -118,7 +118,6 @@ export default function Manutencao() {
         </TabsList>
 
         {[
-          { v: "sla", label: "Análise de SLA" },
           { v: "tec", label: "Desempenho Técnico" },
         ].map(t => (
           <TabsContent key={t.v} value={t.v} className="mt-4">
@@ -132,6 +131,66 @@ export default function Manutencao() {
             </Card>
           </TabsContent>
         ))}
+
+        <TabsContent value="sla" className="mt-4 space-y-6">
+          {(() => {
+            const radarData = [
+              { indicador: "Triagem Emergente", Engenharia: num(atual?.eng_pct_sla_triagem_emergente), Predial: num(atual?.pred_pct_sla_triagem_emergente) },
+              { indicador: "Triagem Urgente", Engenharia: num(atual?.eng_pct_sla_triagem_urgente), Predial: num(atual?.pred_pct_sla_triagem_urgente) },
+              { indicador: "Triagem Pouco Urgente", Engenharia: num(atual?.eng_pct_sla_triagem_poucourgente), Predial: num(atual?.pred_pct_sla_triagem_poucourgente) },
+              { indicador: "Fechamento Emergente", Engenharia: num(atual?.eng_pct_sla_fechamento_emergente), Predial: num(atual?.pred_pct_sla_fechamento_emergente) },
+              { indicador: "Fechamento Urgente", Engenharia: num(atual?.eng_pct_sla_fechamento_urgente), Predial: num(atual?.pred_pct_sla_fechamento_urgente) },
+            ];
+            const linhaData = periodosOrdenados.map(p => {
+              const row = indicadores.find(i => i.ano === p.ano && i.mes === p.mes);
+              const eng = (num(row?.eng_pct_sla_triagem_urgente) + num(row?.eng_pct_sla_fechamento_urgente)) / 2;
+              const pred = (num(row?.pred_pct_sla_triagem_urgente) + num(row?.pred_pct_sla_fechamento_urgente)) / 2;
+              return { mes: capitalize(p.mes), Engenharia: Number(eng.toFixed(2)), Predial: Number(pred.toFixed(2)) };
+            });
+            return (
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Comparativo de SLA — Engenharia vs Predial</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={360}>
+                      <RadarChart data={radarData}>
+                        <PolarGrid />
+                        <PolarAngleAxis dataKey="indicador" tick={{ fontSize: 11 }} />
+                        <PolarRadiusAxis angle={90} domain={[0, 100]} />
+                        <Radar name="Engenharia Clínica" dataKey="Engenharia" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.4} />
+                        <Radar name="Manutenção Predial" dataKey="Predial" stroke="#f97316" fill="#f97316" fillOpacity={0.4} />
+                        <Legend />
+                        <Tooltip />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Evolução Mensal do SLA</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={320}>
+                      <LineChart data={linhaData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="mes" />
+                        <YAxis domain={[0, 100]} />
+                        <Tooltip />
+                        <Legend />
+                        <ReferenceLine y={90} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" label={{ value: "Meta 90%", position: "right", fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
+                        <Line type="monotone" dataKey="Engenharia" name="SLA Médio Engenharia" stroke="#3b82f6" strokeWidth={2} dot />
+                        <Line type="monotone" dataKey="Predial" name="SLA Médio Predial" stroke="#f97316" strokeWidth={2} dot />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </>
+            );
+          })()}
+        </TabsContent>
 
         <TabsContent value="eng" className="mt-4">
           <SetorPanel
