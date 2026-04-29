@@ -154,15 +154,56 @@ export default function Manutencao() {
                     <CardTitle className="text-lg">Comparativo de SLA — Engenharia vs Predial</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={360}>
-                      <RadarChart data={radarData}>
-                        <PolarGrid />
-                        <PolarAngleAxis dataKey="indicador" tick={{ fontSize: 11 }} />
-                        <PolarRadiusAxis angle={90} domain={[0, 100]} />
-                        <Radar name="Engenharia Clínica" dataKey="Engenharia" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.4} />
-                        <Radar name="Manutenção Predial" dataKey="Predial" stroke="#f97316" fill="#f97316" fillOpacity={0.4} />
-                        <Legend />
+                    <ResponsiveContainer width="100%" height={450}>
+                      <RadarChart data={radarData} margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
+                        <PolarGrid gridType="polygon" stroke="#374151" strokeDasharray="4 4" radialLines />
+                        <PolarAngleAxis
+                          dataKey="indicador"
+                          tick={{ fontSize: 13, fill: "#ffffff" }}
+                        />
+                        <PolarRadiusAxis
+                          angle={90}
+                          domain={[0, 100]}
+                          tickCount={6}
+                          tick={{ fontSize: 11, fill: "#9ca3af" }}
+                          stroke="#374151"
+                        />
+                        <Radar
+                          name="Engenharia Clínica"
+                          dataKey="Engenharia"
+                          stroke="#3b82f6"
+                          strokeWidth={2}
+                          fill="#3b82f6"
+                          fillOpacity={0.3}
+                          label={{
+                            fill: "#3b82f6",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            formatter: (v: number) => `${Math.round(v)}%`,
+                          }}
+                        />
+                        <Radar
+                          name="Manutenção Predial"
+                          dataKey="Predial"
+                          stroke="#f97316"
+                          strokeWidth={2}
+                          fill="#f97316"
+                          fillOpacity={0.3}
+                          label={{
+                            fill: "#f97316",
+                            fontSize: 12,
+                            fontWeight: 600,
+                            formatter: (v: number) => `${Math.round(v)}%`,
+                          }}
+                        />
                         <Tooltip content={<SlaTooltip />} />
+                        <Legend
+                          verticalAlign="bottom"
+                          align="center"
+                          iconType="circle"
+                          iconSize={14}
+                          wrapperStyle={{ paddingTop: 16, fontSize: 14 }}
+                        />
                       </RadarChart>
                     </ResponsiveContainer>
                   </CardContent>
