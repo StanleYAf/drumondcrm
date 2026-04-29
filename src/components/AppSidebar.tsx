@@ -1,4 +1,4 @@
-import { LayoutDashboard, FilePlus, BarChart3, PhoneCall, Settings, LogOut, Package, Kanban } from "lucide-react";
+import { LayoutDashboard, FilePlus, BarChart3, PhoneCall, Settings, LogOut, Package, Kanban, Wrench } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/authContext";
@@ -21,6 +21,7 @@ const allItems = [
   { title: "Vendas", url: "/vendas", icon: Kanban, group: "dash" },
   { title: "Pós-venda", url: "/pos-venda", icon: PhoneCall, group: "dash" },
   { title: "Estoque", url: "/estoque", icon: Package, group: "estoque" },
+  { title: "Manutenção", url: "/manutencao", icon: Wrench, group: "manutencao" },
   { title: "Configurações", url: "/configuracoes", icon: Settings, group: "always" },
 ];
 
@@ -35,6 +36,7 @@ export function AppSidebar() {
     if (hasCargo("admin")) return true;
     if (hasCargo("dash") && item.group === "dash") return true;
     if ((hasCargo("estoque") || hasCargo("Controlador")) && item.group === "estoque") return true;
+    if (hasCargo("manutencao") && item.group === "manutencao") return true;
     return false;
   });
 
