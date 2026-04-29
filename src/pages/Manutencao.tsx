@@ -9,6 +9,10 @@ import { DashboardSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { useManutencaoData } from "@/hooks/useManutencaoData";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 
 const MES_ORDEM: Record<string, number> = {
   janeiro: 1, fevereiro: 2, março: 3, marco: 3, abril: 4, maio: 5, junho: 6,
@@ -52,7 +56,6 @@ export default function Manutencao() {
 
   // Subscribe to filtered tecnicos via hook (separate instance)
   const { tecnicosMes } = useManutencaoData(mesSel, anoSel);
-  void tecnicosMes;
 
   if (loading) return <DashboardSkeleton />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
@@ -117,20 +120,9 @@ export default function Manutencao() {
           <TabsTrigger value="tec">Desempenho Técnico</TabsTrigger>
         </TabsList>
 
-        {[
-          { v: "tec", label: "Desempenho Técnico" },
-        ].map(t => (
-          <TabsContent key={t.v} value={t.v} className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">{t.label}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Em construção — {t.label}</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ))}
+        <TabsContent value="tec" className="mt-4">
+          <DesempenhoTecnico tecnicos={tecnicosMes} num={num} />
+        </TabsContent>
 
         <TabsContent value="sla" className="mt-4 space-y-6">
           {(() => {
