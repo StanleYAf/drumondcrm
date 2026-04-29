@@ -112,13 +112,21 @@ export default function Manutencao() {
       </div>
 
       <Tabs defaultValue="visao" className="w-full">
-        <TabsList className="grid grid-cols-2 sm:grid-cols-5 w-full">
-          <TabsTrigger value="visao">Visão Geral</TabsTrigger>
-          <TabsTrigger value="eng">Engenharia Clínica</TabsTrigger>
-          <TabsTrigger value="pred">Manutenção Predial</TabsTrigger>
-          <TabsTrigger value="sla">Análise de SLA</TabsTrigger>
-          <TabsTrigger value="tec">Desempenho Técnico</TabsTrigger>
-        </TabsList>
+        <div className="w-full overflow-x-auto">
+          <TabsList className="inline-flex sm:grid sm:grid-cols-5 w-full min-w-max sm:min-w-0">
+            <TabsTrigger value="visao" className="whitespace-nowrap">Visão Geral</TabsTrigger>
+            <TabsTrigger value="eng" className="whitespace-nowrap">Engenharia Clínica</TabsTrigger>
+            <TabsTrigger value="pred" className="whitespace-nowrap">Manutenção Predial</TabsTrigger>
+            <TabsTrigger value="sla" className="whitespace-nowrap">Análise de SLA</TabsTrigger>
+            <TabsTrigger value="tec" className="whitespace-nowrap">Desempenho Técnico</TabsTrigger>
+          </TabsList>
+        </div>
+
+        {indicadores.length === 0 && (
+          <div className="mt-4 rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+            Nenhum dado disponível ainda. Use <span className="font-medium text-foreground">Importar Excel</span> para carregar o primeiro mês.
+          </div>
+        )}
 
         <TabsContent value="tec" className="mt-4">
           <DesempenhoTecnico tecnicos={tecnicosMes} num={num} />
