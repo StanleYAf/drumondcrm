@@ -9,6 +9,10 @@ import { DashboardSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { useManutencaoData } from "@/hooks/useManutencaoData";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 
 const MES_ORDEM: Record<string, number> = {
   janeiro: 1, fevereiro: 2, março: 3, marco: 3, abril: 4, maio: 5, junho: 6,
@@ -52,7 +56,6 @@ export default function Manutencao() {
 
   // Subscribe to filtered tecnicos via hook (separate instance)
   const { tecnicosMes } = useManutencaoData(mesSel, anoSel);
-  void tecnicosMes;
 
   if (loading) return <DashboardSkeleton />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
@@ -117,20 +120,9 @@ export default function Manutencao() {
           <TabsTrigger value="tec">Desempenho Técnico</TabsTrigger>
         </TabsList>
 
-        {[
-          { v: "tec", label: "Desempenho Técnico" },
-        ].map(t => (
-          <TabsContent key={t.v} value={t.v} className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">{t.label}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Em construção — {t.label}</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        ))}
+        <TabsContent value="tec" className="mt-4">
+          <DesempenhoTecnico tecnicos={tecnicosMes} num={num} />
+        </TabsContent>
 
         <TabsContent value="sla" className="mt-4 space-y-6">
           {(() => {
@@ -293,6 +285,143 @@ function corPct(v: number) {
   if (v >= 90) return "hsl(142 71% 45%)"; // verde
   if (v >= 70) return "hsl(48 96% 53%)"; // amarelo
   return "hsl(0 84% 60%)"; // vermelho
+}
+
+function corPctTec(v: number) {
+  if (v >= 80) return "hsl(142 71% 45%)";
+  if (v >= 60) return "hsl(48 96% 53%)";
+  return "hsl(0 84% 60%)";
+}
+
+function DesempenhoTecnico({ tecnicos, num }: { tecnicos: any[]; num: (v: any) => number }) {
+  const [setor, setSetor] = useState<"todos" | "Engenharia Clínica" | "Predial">("todos");
+
+  const filtrados = useMemo(() => {
+    const norm = (s: string) => (s || "").trim().toLowerCase();
+    const list = tecnicos.filter(t => {
+      if (setor === "todos") return true;
+      const s = norm(t.setor);
+      if (setor === "Engenharia Clínica") return s.includes("eng");
+      return s.includes("pred");
+    });
+    return [...list].sort((a, b) => num(b.total_os) - num(a.total_os));
+  }, [tecnicos, setor, num]);
+
+  const top5 = filtrados.slice(0, 5);
+  const maxOs = num(top5[0]?.total_os) || 1;
+
+  const setorBadge = (s: string) => {
+    const norm = (s || "").trim().toLowerCase();
+    if (norm.includes("eng")) return { label: "Engenharia Clínica", cls: "bg-blue-500/15 text-blue-500 border-blue-500/30" };
+    return { label: "Predial", cls: "bg-green-500/15 text-green-500 border-green-500/30" };
+  };
+
+  const filtros: { v: typeof setor; label: string }[] = [
+    { v: "todos", label: "Todos" },
+    { v: "Engenharia Clínica", label: "Engenharia Clínica" },
+    { v: "Predial", label: "Predial" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap gap-2">
+        {filtros.map(f => (
+          <Button
+            key={f.v}
+            variant={setor === f.v ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSetor(f.v)}
+          >
+            {f.label}
+          </Button>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Top 5 Técnicos</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {top5.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Nenhum dado disponível para o período selecionado</p>
+          ) : top5.map((t, i) => {
+            const total = num(t.total_os);
+            const pct = (total / maxOs) * 100;
+            const badge = setorBadge(t.setor);
+            return (
+              <div key={t.id || `${t.nome}-${i}`} className="flex items-center gap-4 rounded-lg border bg-card p-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-bold text-primary shrink-0">
+                  {i + 1}º
+                </div>
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium truncate">{t.nome}</span>
+                    <Badge variant="outline" className={cn("border", badge.cls)}>{badge.label}</Badge>
+                  </div>
+                  <Progress value={pct} className="h-2" />
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-2xl font-bold">{total}</div>
+                  <div className="text-xs text-muted-foreground">OS realizadas</div>
+                </div>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Tabela Completa</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {filtrados.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Nenhum dado disponível para o período selecionado</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Setor</TableHead>
+                    <TableHead className="text-right">Total OS</TableHead>
+                    <TableHead className="text-right">Corretivas</TableHead>
+                    <TableHead className="text-right">Preventivas</TableHead>
+                    <TableHead className="text-right">% Atendimento</TableHead>
+                    <TableHead className="text-right">% Fechamento</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtrados.map((t, i) => {
+                    const badge = setorBadge(t.setor);
+                    const pa = num(t.percentual_atendimento);
+                    const pf = num(t.percentual_fechamento);
+                    return (
+                      <TableRow key={t.id || `${t.nome}-${i}`}>
+                        <TableCell className="font-medium">{t.nome}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={cn("border", badge.cls)}>{badge.label}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">{num(t.total_os)}</TableCell>
+                        <TableCell className="text-right">{num(t.corretivas)}</TableCell>
+                        <TableCell className="text-right">{num(t.preventivas)}</TableCell>
+                        <TableCell className="text-right font-semibold" style={{ color: corPctTec(pa) }}>
+                          {pa.toFixed(1)}%
+                        </TableCell>
+                        <TableCell className="text-right font-semibold" style={{ color: corPctTec(pf) }}>
+                          {pf.toFixed(1)}%
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 }
 
 function SlaBar({ label, value }: { label: string; value: number }) {
