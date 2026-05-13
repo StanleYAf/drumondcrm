@@ -51,6 +51,8 @@ export function AppSidebar() {
   const inManutencao = location.pathname.startsWith("/manutencao");
   const visibleSubItems = manutencaoSubItems.filter(s => !s.adminOnly || hasCargo("admin"));
 
+  console.log("[Sidebar]", { pathname: location.pathname, inManutencao, collapsed, visibleSubItems: visibleSubItems.length, isAdmin: hasCargo("admin") });
+
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
