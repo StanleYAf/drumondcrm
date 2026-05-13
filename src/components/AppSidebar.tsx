@@ -1,4 +1,4 @@
-import { LayoutDashboard, FilePlus, BarChart3, PhoneCall, Settings, LogOut, Package, Kanban, Wrench, Users } from "lucide-react";
+import { LayoutDashboard, FilePlus, BarChart3, PhoneCall, Settings, LogOut, Package, Kanban, Wrench, Building2 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/authContext";
@@ -22,8 +22,12 @@ const allItems = [
   { title: "Pós-venda", url: "/pos-venda", icon: PhoneCall, group: "dash" },
   { title: "Estoque", url: "/estoque", icon: Package, group: "estoque" },
   { title: "Manutenção", url: "/manutencao", icon: Wrench, group: "manutencao" },
-  { title: "Clientes Manutenção", url: "/manutencao/clientes", icon: Users, group: "admin-only" },
   { title: "Configurações", url: "/configuracoes", icon: Settings, group: "always" },
+];
+
+const manutencaoSubItems = [
+  { title: "Dashboard", url: "/manutencao", icon: LayoutDashboard, adminOnly: false },
+  { title: "Clientes", url: "/manutencao/clientes", icon: Building2, adminOnly: true },
 ];
 
 export function AppSidebar() {
@@ -34,13 +38,15 @@ export function AppSidebar() {
 
   const items = allItems.filter(item => {
     if (item.group === "always") return true;
-    if (item.group === "admin-only") return hasCargo("admin");
     if (hasCargo("admin")) return true;
     if (hasCargo("dash") && item.group === "dash") return true;
     if ((hasCargo("estoque") || hasCargo("Controlador")) && item.group === "estoque") return true;
     if (hasCargo("manutencao") && item.group === "manutencao") return true;
     return false;
   });
+
+  const inManutencao = location.pathname.startsWith("/manutencao");
+  const visibleSubItems = manutencaoSubItems.filter(s => !s.adminOnly || hasCargo("admin"));
 
   return (
     <Sidebar collapsible="icon">
@@ -52,19 +58,40 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/"}
-                      className="hover:bg-sidebar-accent/50"
-                      activeClassName="bg-sidebar-accent text-primary font-medium"
-                    >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <div key={item.title}>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === "/"}
+                        className="hover:bg-sidebar-accent/50"
+                        activeClassName="bg-sidebar-accent text-primary font-medium"
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  {item.url === "/manutencao" && inManutencao && !collapsed && (
+                    <div className="ml-4 mt-1 border-l border-sidebar-border/60 pl-2 space-y-1">
+                      {visibleSubItems.map((sub) => (
+                        <SidebarMenuItem key={sub.url}>
+                          <SidebarMenuButton asChild size="sm">
+                            <NavLink
+                              to={sub.url}
+                              end
+                              className="hover:bg-sidebar-accent/50 text-sm"
+                              activeClassName="bg-sidebar-accent text-primary font-medium"
+                            >
+                              <sub.icon className="mr-2 h-3.5 w-3.5" />
+                              <span>{sub.title}</span>
+                            </NavLink>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </div>
+                  )}
+                </div>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
