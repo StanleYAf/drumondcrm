@@ -133,6 +133,16 @@ export default function ManutencaoClientes() {
     load();
   };
 
+  const handleDelete = async (c: Cliente) => {
+    const { error } = await supabase.from("clientes").delete().eq("id", c.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Cliente excluído com sucesso");
+    load();
+  };
+
   const formatDate = (iso: string) => {
     const [y, m, d] = iso.slice(0, 10).split("-");
     return `${d}/${m}/${y}`;
@@ -265,6 +275,37 @@ export default function ManutencaoClientes() {
                           <Power className="h-3.5 w-3.5" />
                           {c.ativo ? "Desativar" : "Ativar"}
                         </Button>
+                        {isAdmin && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Excluir
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir cliente?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  O cliente <strong>{c.nome}</strong> e todos os seus dados de indicadores e técnicos serão apagados permanentemente. Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDelete(c)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Sim, excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

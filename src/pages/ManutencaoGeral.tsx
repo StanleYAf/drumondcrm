@@ -178,16 +178,24 @@ export default function ManutencaoGeral() {
         </div>
       </div>
 
-      {periodos.length === 0 && (
+      {periodos.length === 0 && clientes.length === 0 && (
         <Card>
           <CardContent className="py-16 text-center text-sm text-muted-foreground">
-            Nenhum dado de manutenção importado ainda.
+            Nenhum cliente cadastrado ainda. Acesse <strong>Gerenciar Clientes</strong> para começar.
           </CardContent>
         </Card>
       )}
 
-      {periodos.length > 0 && (
+      {(periodos.length > 0 || clientes.length > 0) && (
         <>
+          {periodos.length === 0 && (
+            <Card>
+              <CardContent className="py-6 text-center text-sm text-muted-foreground">
+                Nenhum dado de manutenção importado ainda. Os clientes ativos aparecem abaixo — abra um deles e use <strong>Importar Excel</strong> para carregar o primeiro mês.
+              </CardContent>
+            </Card>
+          )}
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {kpis.map(k => {
               const Icon = k.icon;
@@ -207,6 +215,7 @@ export default function ManutencaoGeral() {
             })}
           </div>
 
+          {periodos.length > 0 && (
           <Card>
             <CardHeader>
               <CardTitle className="text-lg flex items-center gap-2">
@@ -246,6 +255,7 @@ export default function ManutencaoGeral() {
               })}
             </CardContent>
           </Card>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {porCliente.map(p => {
