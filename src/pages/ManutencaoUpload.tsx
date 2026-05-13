@@ -1,21 +1,68 @@
-import { useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Loader2, Upload, ArrowLeft } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Loader2, Upload, ArrowLeft, Building2 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { parseManutencaoXlsx } from "@/lib/manutencaoParser";
 
 const ACCEPTED = [".xls", ".xlsx"];
 
+interface ClienteOption {
+  id: string;
+  nome: string;
+}
+
 export default function ManutencaoUpload() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const urlClienteId = searchParams.get("cliente");
+
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [clientes, setClientes] = useState<ClienteOption[]>([]);
+  const [clienteId, setClienteId] = useState<string>(urlClienteId || "");
+  const [clienteNome, setClienteNome] = useState<string | null>(null);
+
+  // Carrega lista de clientes ativos
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("clientes")
+        .select("id, nome")
+        .eq("ativo", true)
+        .order("nome", { ascending: true });
+      setClientes((data || []) as ClienteOption[]);
+    })();
+  }, []);
+
+  // Resolve nome do cliente vindo da URL
+  useEffect(() => {
+    if (!urlClienteId) {
+      setClienteNome(null);
+      return;
+    }
+    const local = clientes.find((c) => c.id === urlClienteId);
+    if (local) {
+      setClienteNome(local.nome);
+      return;
+    }
+    (async () => {
+      const { data } = await supabase
+        .from("clientes")
+        .select("nome")
+        .eq("id", urlClienteId)
+        .maybeSingle();
+      if (data?.nome) setClienteNome(data.nome);
+    })();
+  }, [urlClienteId, clientes]);
 
   const isValid = (f: File) => {
     const name = f.name.toLowerCase();
@@ -40,19 +87,34 @@ export default function ManutencaoUpload() {
 
   const handleProcess = async () => {
     if (!file) return;
+    const finalClienteId = urlClienteId || clienteId;
+    if (!finalClienteId) {
+      toast.error("Selecione um cliente antes de processar");
+      return;
+    }
     setLoading(true);
     try {
-      const { indicadores, tecnicos, totalLinhas } = await parseManutencaoXlsx(file);
+      const { indicadores, tecnicos, totalLinhas } = await parseManutencaoXlsx(file, finalClienteId);
       if (indicadores.length === 0) {
         toast.error("Nenhuma linha válida encontrada no arquivo");
         return;
       }
 
-      // Apagar e regravar os meses presentes no arquivo
+      // Apagar e regravar os meses presentes no arquivo (apenas deste cliente)
       const pares = indicadores.map((i) => ({ mes: i.mes, ano: i.ano }));
       for (const { mes, ano } of pares) {
-        await supabase.from("indicadores_manutencao").delete().eq("mes", mes).eq("ano", ano);
-        await supabase.from("tecnicos_manutencao").delete().eq("mes", mes).eq("ano", ano);
+        await supabase
+          .from("indicadores_manutencao")
+          .delete()
+          .eq("cliente_id", finalClienteId)
+          .eq("mes", mes)
+          .eq("ano", ano);
+        await supabase
+          .from("tecnicos_manutencao")
+          .delete()
+          .eq("cliente_id", finalClienteId)
+          .eq("mes", mes)
+          .eq("ano", ano);
       }
 
       const { error: indErr } = await supabase.from("indicadores_manutencao").insert(indicadores);
@@ -64,7 +126,7 @@ export default function ManutencaoUpload() {
       }
 
       toast.success(`Importado: ${totalLinhas} linhas, ${indicadores.length} mês(es), ${tecnicos.length} técnico(s).`);
-      navigate("/manutencao");
+      navigate(`/manutencao?cliente=${finalClienteId}`);
     } catch (e: any) {
       console.error("Erro upload manutenção:", e);
       toast.error(e?.message || "Erro ao processar o arquivo");
@@ -77,7 +139,7 @@ export default function ManutencaoUpload() {
     <div className="container mx-auto max-w-3xl py-8 px-4">
       <Button
         variant="ghost"
-        onClick={() => navigate("/manutencao")}
+        onClick={() => navigate(urlClienteId ? `/manutencao?cliente=${urlClienteId}` : "/manutencao")}
         className="mb-4"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -92,6 +154,32 @@ export default function ManutencaoUpload() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {urlClienteId && clienteNome ? (
+            <div className="flex items-center gap-3 rounded-lg border bg-primary/5 p-3">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Building2 className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Importando dados para</p>
+                <p className="text-sm font-medium">{clienteNome}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Label>Cliente *</Label>
+              <Select value={clienteId} onValueChange={setClienteId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clientes.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           <div
             onDragOver={(e) => {
               e.preventDefault();
@@ -142,7 +230,7 @@ export default function ManutencaoUpload() {
               </div>
               <Button
                 onClick={handleProcess}
-                disabled={loading}
+                disabled={loading || (!urlClienteId && !clienteId)}
                 className="w-full"
               >
                 {loading ? (
