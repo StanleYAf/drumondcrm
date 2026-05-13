@@ -8,7 +8,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recha
 import {
   Package, Search, Camera, Plus, Pencil, ArrowDownToLine, ArrowUpFromLine,
   X, AlertTriangle, Barcode, Download, RotateCcw, Archive, TrendingUp,
-  Clock, Eye, Trash2, CalendarClock, Printer, ImagePlus,
+  Clock, Eye, Trash2, CalendarClock, Printer, ImagePlus, FileText, Sheet as SheetIcon,
 } from "lucide-react";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
 import ProductLabel, { type ProductLabelData } from "@/components/ProductLabel";
@@ -62,7 +62,7 @@ interface QuickMoveState {
   documento_ref: string;
 }
 
-type TabKey = "produtos" | "movimentacoes" | "alertas" | "aguardando";
+type TabKey = "produtos" | "movimentacoes" | "alertas" | "aguardando" | "relatorios";
 type EstoqueSource = "dsh" | "dmedical";
 
 const ESTOQUE_TABLES: Record<EstoqueSource, { produtos: string; movimentacoes: string; pendentes: string }> = {
@@ -116,6 +116,18 @@ export default function Estoque() {
   const [movFilterMes, setMovFilterMes] = useState(now.getMonth());
   const [movFilterAno, setMovFilterAno] = useState(now.getFullYear());
   const [movFilterVendedor, setMovFilterVendedor] = useState("");
+
+  // Relatórios filters
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const firstOfMonthISO = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  const [relStart, setRelStart] = useState(firstOfMonthISO);
+  const [relEnd, setRelEnd] = useState(todayISO);
+  const [relCategoria, setRelCategoria] = useState("");
+  const [relFornecedor, setRelFornecedor] = useState("");
+  const [relAppliedStart, setRelAppliedStart] = useState(firstOfMonthISO);
+  const [relAppliedEnd, setRelAppliedEnd] = useState(todayISO);
+  const [relAppliedCategoria, setRelAppliedCategoria] = useState("");
+  const [relAppliedFornecedor, setRelAppliedFornecedor] = useState("");
 
   // Product form
   const [formNome, setFormNome] = useState("");
@@ -622,6 +634,7 @@ export default function Estoque() {
     { key: "movimentacoes", label: "Movimentações" },
     { key: "alertas", label: "Saúde", badge: (belowMin + outOfStock.length + expiringProducts.length) > 0 ? belowMin + outOfStock.length + expiringProducts.length : undefined },
     { key: "aguardando", label: "Aguardando", badge: pendentes.length > 0 ? pendentes.length : undefined },
+    { key: "relatorios", label: "Relatórios" },
   ];
 
   return (
@@ -1100,6 +1113,275 @@ export default function Estoque() {
       )}
 
       {/* ===== MODALS ===== */}
+      {activeTab === "relatorios" && (() => {
+        const inRange = (iso: string) => {
+          const d = iso.slice(0, 10);
+          return d >= relAppliedStart && d <= relAppliedEnd;
+        };
+        const matchesProd = (p: Produto) => {
+          if (relAppliedCategoria && (p.categoria || "") !== relAppliedCategoria) return false;
+          if (relAppliedFornecedor && (p.fornecedor_id || "") !== relAppliedFornecedor) return false;
+          return p.ativo;
+        };
+        const inv = produtos.filter(matchesProd);
+        const lastMoveByProd = new Map<string, string>();
+        movimentacoes.forEach(m => {
+          const cur = lastMoveByProd.get(m.produto_id);
+          if (!cur || m.created_at > cur) lastMoveByProd.set(m.produto_id, m.created_at);
+        });
+        const movsRel = movimentacoes.filter(m => {
+          if (!inRange(m.created_at)) return false;
+          const p = produtoMap.get(m.produto_id);
+          if (!p) return false;
+          return matchesProd(p);
+        });
+        const totEntradas = movsRel.filter(m => m.tipo === "entrada" || m.tipo === "devolucao").reduce((s, m) => s + m.quantidade, 0);
+        const totSaidas = movsRel.filter(m => m.tipo === "saida").reduce((s, m) => s + m.quantidade, 0);
+        const criticos = inv.filter(p => p.estoque_atual < p.estoque_minimo);
+        const totalAbaixo = criticos.length;
+        const fornNome = (id: string | null) => fornecedores.find(f => f.id === id)?.nome || "—";
+        const fmt = (iso: string | undefined) => iso ? new Date(iso).toLocaleDateString("pt-BR") : "—";
+        const categoriasUnicas = Array.from(new Set(produtos.map(p => p.categoria).filter(Boolean) as string[])).sort();
+        const fornecedoresUnicos = fornecedores;
+
+        const aplicar = () => {
+          setRelAppliedStart(relStart); setRelAppliedEnd(relEnd);
+          setRelAppliedCategoria(relCategoria); setRelAppliedFornecedor(relFornecedor);
+        };
+        const limpar = () => {
+          setRelStart(firstOfMonthISO); setRelEnd(todayISO);
+          setRelCategoria(""); setRelFornecedor("");
+          setRelAppliedStart(firstOfMonthISO); setRelAppliedEnd(todayISO);
+          setRelAppliedCategoria(""); setRelAppliedFornecedor("");
+        };
+        const exportExcel = async () => {
+          const XLSX = await import("xlsx");
+          const wb = XLSX.utils.book_new();
+          const invSheet = XLSX.utils.json_to_sheet(inv.map(p => ({
+            Nome: p.nome, Categoria: p.categoria || "", Fornecedor: fornNome(p.fornecedor_id),
+            "Quantidade atual": p.estoque_atual, "Estoque mínimo": p.estoque_minimo,
+            Status: p.estoque_atual >= p.estoque_minimo ? "OK" : "Abaixo do mínimo",
+            "Último movimento": fmt(lastMoveByProd.get(p.id)),
+          })));
+          const movSheet = XLSX.utils.json_to_sheet(movsRel.map(m => ({
+            Data: new Date(m.created_at).toLocaleString("pt-BR"),
+            Item: produtoMap.get(m.produto_id)?.nome || "—",
+            Tipo: TIPO_LABELS[m.tipo] || m.tipo,
+            Quantidade: m.quantidade,
+            Responsável: vendedorMap.get(m.vendedor_id || "") || "—",
+            Observação: m.observacao || "",
+          })));
+          const critSheet = XLSX.utils.json_to_sheet(criticos.map(p => ({
+            Nome: p.nome, Categoria: p.categoria || "", Fornecedor: fornNome(p.fornecedor_id),
+            "Quantidade atual": p.estoque_atual, "Estoque mínimo": p.estoque_minimo,
+            Falta: p.estoque_minimo - p.estoque_atual,
+          })));
+          XLSX.utils.book_append_sheet(wb, invSheet, "Inventário");
+          XLSX.utils.book_append_sheet(wb, movSheet, "Movimentações");
+          XLSX.utils.book_append_sheet(wb, critSheet, "Itens Críticos");
+          XLSX.writeFile(wb, `relatorio-estoque-${todayISO}.xlsx`);
+        };
+
+        return (
+          <>
+            <style>{`
+              @media print {
+                body * { visibility: hidden; }
+                #relatorios-print, #relatorios-print * { visibility: visible; }
+                #relatorios-print { position: absolute; left: 0; top: 0; width: 100%; padding: 16px; }
+                .no-print { display: none !important; }
+                aside, nav, header, .segmented-control { display: none !important; }
+                table { page-break-inside: avoid; width: 100%; border-collapse: collapse; }
+                th, td { border: 1px solid #ccc; padding: 6px 8px; font-size: 12px; color: #000; }
+              }
+            `}</style>
+
+            {/* Filtros */}
+            <div className="glass-card p-4 space-y-3 no-print">
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="flex flex-col">
+                  <label className="text-xs text-muted-foreground mb-1">Data início</label>
+                  <input type="date" value={relStart} onChange={e => setRelStart(e.target.value)} className="ios-input" />
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-xs text-muted-foreground mb-1">Data fim</label>
+                  <input type="date" value={relEnd} onChange={e => setRelEnd(e.target.value)} className="ios-input" />
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-xs text-muted-foreground mb-1">Categoria</label>
+                  <select value={relCategoria} onChange={e => setRelCategoria(e.target.value)} className="ios-input">
+                    <option value="">Todas</option>
+                    {categoriasUnicas.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div className="flex flex-col">
+                  <label className="text-xs text-muted-foreground mb-1">Fornecedor</label>
+                  <select value={relFornecedor} onChange={e => setRelFornecedor(e.target.value)} className="ios-input">
+                    <option value="">Todos</option>
+                    {fornecedoresUnicos.map(f => <option key={f.id} value={f.id}>{f.nome}</option>)}
+                  </select>
+                </div>
+                <button onClick={aplicar} className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-medium">Aplicar filtros</button>
+                <button onClick={limpar} className="px-4 py-2 rounded-xl bg-muted text-foreground text-sm font-medium">Limpar</button>
+                <div className="ml-auto flex gap-2">
+                  <button onClick={() => window.print()} className="px-4 py-2 rounded-xl bg-card border border-border text-sm font-medium flex items-center gap-2">
+                    <FileText className="h-4 w-4" /> Exportar PDF
+                  </button>
+                  <button onClick={exportExcel} className="px-4 py-2 rounded-xl bg-card border border-border text-sm font-medium flex items-center gap-2">
+                    <SheetIcon className="h-4 w-4" /> Exportar Excel
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div id="relatorios-print" className="space-y-5">
+              {/* Inventário Atual */}
+              <div className="glass-card p-4">
+                <h3 className="text-base font-semibold text-foreground mb-3">Inventário Atual</h3>
+                {inv.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-6 text-center">Nenhum dado encontrado para os filtros selecionados</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs text-muted-foreground border-b border-border">
+                          <th className="py-2 pr-3">Nome</th>
+                          <th className="py-2 pr-3">Categoria</th>
+                          <th className="py-2 pr-3">Fornecedor</th>
+                          <th className="py-2 pr-3 text-right">Qtd. atual</th>
+                          <th className="py-2 pr-3 text-right">Mínimo</th>
+                          <th className="py-2 pr-3">Status</th>
+                          <th className="py-2 pr-3">Último mov.</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {inv.map(p => {
+                          const ok = p.estoque_atual >= p.estoque_minimo;
+                          return (
+                            <tr key={p.id} className="border-b border-border/50">
+                              <td className="py-2 pr-3 text-foreground">{p.nome}</td>
+                              <td className="py-2 pr-3 text-muted-foreground">{p.categoria || "—"}</td>
+                              <td className="py-2 pr-3 text-muted-foreground">{fornNome(p.fornecedor_id)}</td>
+                              <td className="py-2 pr-3 text-right text-foreground">{p.estoque_atual}</td>
+                              <td className="py-2 pr-3 text-right text-muted-foreground">{p.estoque_minimo}</td>
+                              <td className="py-2 pr-3">
+                                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold" style={{
+                                  background: ok ? 'rgba(48,209,88,0.15)' : 'rgba(255,69,58,0.15)',
+                                  color: ok ? '#30D158' : '#FF453A',
+                                }}>{ok ? "OK" : "Abaixo do mínimo"}</span>
+                              </td>
+                              <td className="py-2 pr-3 text-muted-foreground">{fmt(lastMoveByProd.get(p.id))}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr className="text-xs font-semibold text-foreground">
+                          <td colSpan={7} className="pt-3">
+                            Total de itens: {inv.length} • Abaixo do mínimo: {totalAbaixo}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Movimentações no Período */}
+              <div className="glass-card p-4">
+                <h3 className="text-base font-semibold text-foreground mb-3">Movimentações no Período</h3>
+                {movsRel.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-6 text-center">Nenhum dado encontrado para os filtros selecionados</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs text-muted-foreground border-b border-border">
+                          <th className="py-2 pr-3">Data</th>
+                          <th className="py-2 pr-3">Item</th>
+                          <th className="py-2 pr-3">Tipo</th>
+                          <th className="py-2 pr-3 text-right">Quantidade</th>
+                          <th className="py-2 pr-3">Responsável</th>
+                          <th className="py-2 pr-3">Observação</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {movsRel.map(m => {
+                          const isEntrada = m.tipo === "entrada" || m.tipo === "devolucao";
+                          return (
+                            <tr key={m.id} className="border-b border-border/50">
+                              <td className="py-2 pr-3 text-muted-foreground">{new Date(m.created_at).toLocaleString("pt-BR")}</td>
+                              <td className="py-2 pr-3 text-foreground">{produtoMap.get(m.produto_id)?.nome || "—"}</td>
+                              <td className="py-2 pr-3">
+                                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold" style={{
+                                  background: isEntrada ? 'rgba(10,132,255,0.15)' : 'rgba(255,159,10,0.15)',
+                                  color: isEntrada ? '#0A84FF' : '#FF9F0A',
+                                }}>{isEntrada ? "Entrada" : "Saída"}</span>
+                              </td>
+                              <td className="py-2 pr-3 text-right text-foreground">{m.quantidade}</td>
+                              <td className="py-2 pr-3 text-muted-foreground">{vendedorMap.get(m.vendedor_id || "") || "—"}</td>
+                              <td className="py-2 pr-3 text-muted-foreground">{m.observacao || "—"}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr className="text-xs font-semibold text-foreground">
+                          <td colSpan={6} className="pt-3">
+                            Total entradas: {totEntradas} • Total saídas: {totSaidas}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Itens Críticos */}
+              <div className="glass-card p-4" style={{ border: '1px solid rgba(255,69,58,0.4)' }}>
+                <div className="rounded-xl p-3 mb-3 flex items-center gap-2" style={{ background: 'rgba(255,69,58,0.1)', border: '1px solid rgba(255,69,58,0.2)' }}>
+                  <AlertTriangle className="h-4 w-4" style={{ color: '#FF453A' }} />
+                  <span className="text-sm font-semibold" style={{ color: '#FF453A' }}>
+                    {totalAbaixo} {totalAbaixo === 1 ? "item crítico" : "itens críticos"} abaixo do estoque mínimo
+                  </span>
+                </div>
+                <h3 className="text-base font-semibold text-foreground mb-3">Itens Abaixo do Mínimo</h3>
+                {criticos.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-6 text-center">Nenhum item crítico</p>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs text-muted-foreground border-b border-border">
+                          <th className="py-2 pr-3">Nome</th>
+                          <th className="py-2 pr-3">Categoria</th>
+                          <th className="py-2 pr-3">Fornecedor</th>
+                          <th className="py-2 pr-3 text-right">Qtd. atual</th>
+                          <th className="py-2 pr-3 text-right">Mínimo</th>
+                          <th className="py-2 pr-3 text-right">Falta</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {criticos.map(p => (
+                          <tr key={p.id} className="border-b border-border/50">
+                            <td className="py-2 pr-3 text-foreground">{p.nome}</td>
+                            <td className="py-2 pr-3 text-muted-foreground">{p.categoria || "—"}</td>
+                            <td className="py-2 pr-3 text-muted-foreground">{fornNome(p.fornecedor_id)}</td>
+                            <td className="py-2 pr-3 text-right text-foreground">{p.estoque_atual}</td>
+                            <td className="py-2 pr-3 text-right text-muted-foreground">{p.estoque_minimo}</td>
+                            <td className="py-2 pr-3 text-right font-semibold" style={{ color: '#FF453A' }}>{p.estoque_minimo - p.estoque_atual}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        );
+      })()}
+
       {/* Camera */}
       {showCamera && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.8)' }}>
