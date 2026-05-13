@@ -117,6 +117,18 @@ export default function Estoque() {
   const [movFilterAno, setMovFilterAno] = useState(now.getFullYear());
   const [movFilterVendedor, setMovFilterVendedor] = useState("");
 
+  // Relatórios filters
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const firstOfMonthISO = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  const [relStart, setRelStart] = useState(firstOfMonthISO);
+  const [relEnd, setRelEnd] = useState(todayISO);
+  const [relCategoria, setRelCategoria] = useState("");
+  const [relFornecedor, setRelFornecedor] = useState("");
+  const [relAppliedStart, setRelAppliedStart] = useState(firstOfMonthISO);
+  const [relAppliedEnd, setRelAppliedEnd] = useState(todayISO);
+  const [relAppliedCategoria, setRelAppliedCategoria] = useState("");
+  const [relAppliedFornecedor, setRelAppliedFornecedor] = useState("");
+
   // Product form
   const [formNome, setFormNome] = useState("");
   const [formCodigo, setFormCodigo] = useState("");
