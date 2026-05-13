@@ -11,6 +11,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
   useSidebar,
 } from "@/components/ui/sidebar";
 
@@ -58,8 +61,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (
-                <div key={item.title}>
-                  <SidebarMenuItem>
+                <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.url}
@@ -71,27 +73,26 @@ export function AppSidebar() {
                         {!collapsed && <span>{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
-                  </SidebarMenuItem>
                   {item.url === "/manutencao" && inManutencao && !collapsed && (
-                    <div className="ml-4 mt-1 border-l border-sidebar-border/60 pl-2 space-y-1">
+                    <SidebarMenuSub>
                       {visibleSubItems.map((sub) => (
-                        <SidebarMenuItem key={sub.url}>
-                          <SidebarMenuButton asChild size="sm">
+                        <SidebarMenuSubItem key={sub.url}>
+                          <SidebarMenuSubButton asChild>
                             <NavLink
                               to={sub.url}
                               end
-                              className="hover:bg-sidebar-accent/50 text-sm"
+                              className="flex items-center gap-2"
                               activeClassName="bg-sidebar-accent text-primary font-medium"
                             >
-                              <sub.icon className="mr-2 h-3.5 w-3.5" />
+                              <sub.icon className="h-3.5 w-3.5" />
                               <span>{sub.title}</span>
                             </NavLink>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
                       ))}
-                    </div>
+                    </SidebarMenuSub>
                   )}
-                </div>
+                </SidebarMenuItem>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
