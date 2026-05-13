@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, FilePlus, BarChart3, PhoneCall, Settings, FileBarChart, Sun, Moon, Package, LogOut, Kanban, PanelLeftClose, PanelLeft, Wrench } from "lucide-react";
+import { LayoutDashboard, FilePlus, BarChart3, PhoneCall, Settings, FileBarChart, Sun, Moon, Package, LogOut, Kanban, PanelLeftClose, PanelLeft, Wrench, Building2 } from "lucide-react";
 import { useTheme } from "@/lib/themeContext";
 import { useAuth } from "@/lib/authContext";
 
@@ -17,16 +17,25 @@ const allNavItems = [
   { title: "Config", url: "/configuracoes", icon: Settings, group: "always" },
 ];
 
+const manutencaoSubItems = [
+  { title: "Dashboard", url: "/manutencao", icon: LayoutDashboard, adminOnly: false },
+  { title: "Clientes", url: "/manutencao/clientes", icon: Building2, adminOnly: true },
+];
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { mode, toggleMode } = useTheme();
   const { signOut, user, hasCargo } = useAuth();
   const isDark = mode === "dark";
   const [collapsed, setCollapsed] = useState(false);
+  const isAdmin = hasCargo("admin");
+  const inManutencao = location.pathname.startsWith("/manutencao");
+  const visibleManutencaoSubItems = manutencaoSubItems.filter((item) => !item.adminOnly || isAdmin);
+  const showManutencaoSubmenu = isAdmin && inManutencao && !collapsed && visibleManutencaoSubItems.length > 0;
 
   const navItems = allNavItems.filter(item => {
     if (item.group === "always") return true;
-    if (hasCargo("admin")) return true;
+    if (isAdmin) return true;
     if (hasCargo("dash") && item.group === "dash") return true;
     if ((hasCargo("estoque") || hasCargo("Controlador")) && item.group === "estoque") return true;
     if (hasCargo("manutencao") && item.group === "manutencao") return true;
@@ -72,19 +81,41 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {navItems.map((item) => {
             const isActive = item.url === '/' ? location.pathname === '/' : location.pathname.startsWith(item.url);
             return (
-              <NavLink
-                key={item.url}
-                to={item.url}
-                end={item.url === "/"}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${collapsed ? 'justify-center' : ''} ${
-                  isActive ? 'text-foreground font-medium bg-secondary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
-                }`}
-                activeClassName="bg-secondary text-foreground font-medium"
-                title={collapsed ? item.title : undefined}
-              >
-                <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-primary' : ''}`} />
-                {!collapsed && <span>{item.title}</span>}
-              </NavLink>
+              <Fragment key={item.url}>
+                <NavLink
+                  to={item.url}
+                  end={item.url === "/"}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${collapsed ? 'justify-center' : ''} ${
+                    isActive ? 'text-foreground font-medium bg-secondary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                  }`}
+                  activeClassName="bg-secondary text-foreground font-medium"
+                  title={collapsed ? item.title : undefined}
+                >
+                  <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-primary' : ''}`} />
+                  {!collapsed && <span>{item.title}</span>}
+                </NavLink>
+                {item.url === "/manutencao" && showManutencaoSubmenu && (
+                  <div className="ml-5 mt-1 space-y-0.5 border-l border-border/70 pl-3">
+                    {visibleManutencaoSubItems.map((subItem) => {
+                      const isSubActive = location.pathname === subItem.url;
+                      return (
+                        <NavLink
+                          key={subItem.url}
+                          to={subItem.url}
+                          end
+                          className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs transition-all ${
+                            isSubActive ? 'bg-secondary text-foreground font-medium' : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+                          }`}
+                          activeClassName="bg-secondary text-foreground font-medium"
+                        >
+                          <subItem.icon className={`h-4 w-4 flex-shrink-0 ${isSubActive ? 'text-primary' : ''}`} />
+                          <span>{subItem.title}</span>
+                        </NavLink>
+                      );
+                    })}
+                  </div>
+                )}
+              </Fragment>
             );
           })}
         </nav>
