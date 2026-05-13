@@ -126,7 +126,7 @@ export default function ManutencaoUpload() {
       }
 
       toast.success(`Importado: ${totalLinhas} linhas, ${indicadores.length} mês(es), ${tecnicos.length} técnico(s).`);
-      navigate(`/manutencao?cliente=${finalClienteId}`);
+      navigate(`/manutencao/cliente/${finalClienteId}`);
     } catch (e: any) {
       console.error("Erro upload manutenção:", e);
       toast.error(e?.message || "Erro ao processar o arquivo");
@@ -139,7 +139,7 @@ export default function ManutencaoUpload() {
     <div className="container mx-auto max-w-3xl py-8 px-4">
       <Button
         variant="ghost"
-        onClick={() => navigate(urlClienteId ? `/manutencao?cliente=${urlClienteId}` : "/manutencao")}
+        onClick={() => navigate(urlClienteId ? `/manutencao/cliente/${urlClienteId}` : "/manutencao")}
         className="mb-4"
       >
         <ArrowLeft className="h-4 w-4" />

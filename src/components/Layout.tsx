@@ -18,7 +18,7 @@ const allNavItems = [
 ];
 
 const manutencaoSubItems = [
-  { title: "Dashboard", url: "/manutencao", icon: LayoutDashboard, adminOnly: false },
+  { title: "Dashboard Geral", url: "/manutencao", icon: LayoutDashboard, adminOnly: false },
   { title: "Clientes", url: "/manutencao/clientes", icon: Building2, adminOnly: true },
 ];
 

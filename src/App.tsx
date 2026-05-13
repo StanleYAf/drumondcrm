@@ -20,6 +20,7 @@ import Estoque from "./pages/Estoque";
 import Fornecedores from "./pages/Fornecedores";
 import Vendas from "./pages/Vendas";
 import Manutencao from "./pages/Manutencao";
+import ManutencaoGeral from "./pages/ManutencaoGeral";
 import ManutencaoUpload from "./pages/ManutencaoUpload";
 import ManutencaoClientes from "./pages/ManutencaoClientes";
 import Auth from "./pages/Auth";
@@ -57,9 +58,10 @@ const App = () => (
                               <Route path="/estoque" element={<RoleGuard allowed={["estoque", "admin"]}><Estoque /></RoleGuard>} />
                               <Route path="/fornecedores" element={<RoleGuard allowed={["estoque", "admin"]}><Fornecedores /></RoleGuard>} />
                               <Route path="/vendas" element={<RoleGuard allowed={["dash", "admin"]}><Vendas /></RoleGuard>} />
-                              <Route path="/manutencao" element={<RoleGuard allowed={["manutencao", "admin"]}><Manutencao /></RoleGuard>} />
+                              <Route path="/manutencao" element={<RoleGuard allowed={["manutencao", "admin"]}><ManutencaoGeral /></RoleGuard>} />
                               <Route path="/manutencao/upload" element={<RoleGuard allowed={["manutencao", "admin"]}><ManutencaoUpload /></RoleGuard>} />
                               <Route path="/manutencao/clientes" element={<RoleGuard allowed={["admin"]}><ManutencaoClientes /></RoleGuard>} />
+                              <Route path="/manutencao/cliente/:clienteId" element={<RoleGuard allowed={["manutencao", "admin"]}><Manutencao /></RoleGuard>} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </ErrorBoundary>

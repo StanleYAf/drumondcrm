@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { Upload, Wrench, CheckCircle, ClipboardList, CheckSquare, ArrowUp, ArrowDown, Minus, Building2 } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Upload, Wrench, CheckCircle, ClipboardList, CheckSquare, ArrowUp, ArrowDown, Minus, ArrowLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -25,8 +25,8 @@ function mesIndex(mes: string) {
 
 export default function Manutencao() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const clienteId = searchParams.get("cliente");
+  const { clienteId: paramId } = useParams<{ clienteId: string }>();
+  const clienteId = paramId || null;
   const [periodo, setPeriodo] = useState<string>("");
 
   const { indicadores, clientes, clienteSelecionado, loading, error } = useManutencaoData(clienteId);
@@ -59,44 +59,15 @@ export default function Manutencao() {
   // Subscribe to filtered tecnicos via hook (separate instance)
   const { tecnicosMes } = useManutencaoData(clienteId, mesSel, anoSel);
 
-  const handleClienteChange = (id: string) => {
-    setPeriodo("");
-    const next = new URLSearchParams(searchParams);
-    next.set("cliente", id);
-    setSearchParams(next);
-  };
-
-  const clienteSelector = (
-    <Select value={clienteId || ""} onValueChange={handleClienteChange}>
-      <SelectTrigger className="w-[220px]">
-        <SelectValue placeholder="Selecione um cliente" />
-      </SelectTrigger>
-      <SelectContent>
-        {clientes.map((c) => (
-          <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-
   if (!clienteId) {
     return (
       <div className="space-y-6 animate-in fade-in duration-300">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <h1 className="text-2xl font-bold text-foreground">Dashboard de Manutenção</h1>
-          <div className="flex items-center gap-2">{clienteSelector}</div>
-        </div>
+        <Button variant="ghost" onClick={() => navigate("/manutencao")} className="gap-2">
+          <ArrowLeft className="h-4 w-4" /> Voltar para Visão Geral
+        </Button>
         <Card>
-          <CardContent className="py-20 flex flex-col items-center justify-center text-center gap-3">
-            <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <Building2 className="h-7 w-7 text-primary" />
-            </div>
-            <p className="text-base font-medium text-foreground">
-              Selecione um cliente para visualizar os indicadores
-            </p>
-            <p className="text-sm text-muted-foreground max-w-md">
-              Cada cliente possui seu próprio histórico de manutenção. Use o seletor acima para começar.
-            </p>
+          <CardContent className="py-20 text-center text-muted-foreground">
+            Cliente não encontrado.
           </CardContent>
         </Card>
       </div>
@@ -135,15 +106,19 @@ export default function Manutencao() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
+      <Button variant="ghost" size="sm" onClick={() => navigate("/manutencao")} className="gap-2 -ml-2">
+        <ArrowLeft className="h-4 w-4" /> Voltar para Visão Geral
+      </Button>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Dashboard de Manutenção</h1>
-          {clienteSelecionado && (
-            <p className="text-sm text-muted-foreground mt-1">{clienteSelecionado.nome}</p>
+          <h1 className="text-2xl font-bold text-foreground">
+            Dashboard — {clienteSelecionado?.nome ?? "Cliente"}
+          </h1>
+          {clienteSelecionado?.responsavel && (
+            <p className="text-sm text-muted-foreground mt-1">{clienteSelecionado.responsavel}</p>
           )}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {clienteSelector}
           <Select value={periodo} onValueChange={setPeriodo}>
             <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Selecione o mês" />
