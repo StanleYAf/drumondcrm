@@ -1,7 +1,20 @@
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Power } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Plus, Pencil, Power, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/authContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,9 +48,14 @@ interface Cliente {
 }
 
 export default function ManutencaoClientes() {
+  const navigate = useNavigate();
+  const { hasCargo } = useAuth();
+  const isAdmin = hasCargo("admin");
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Cliente | null>(null);
@@ -129,10 +147,62 @@ export default function ManutencaoClientes() {
             Gerencie os clientes vinculados aos indicadores de manutenção
           </p>
         </div>
-        <Button onClick={openNew}>
-          <Plus className="h-4 w-4" />
-          Novo Cliente
-        </Button>
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="gap-2 text-destructive border-destructive/40 hover:bg-destructive/10 hover:text-destructive">
+                  <Trash2 className="h-4 w-4" />
+                  Limpar todos os dados
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Todos os dados de indicadores e técnicos serão apagados permanentemente. Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={clearing}>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    disabled={clearing}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      setClearing(true);
+                      try {
+                        const { error: e1 } = await supabase
+                          .from("indicadores_manutencao")
+                          .delete()
+                          .is("cliente_id", null);
+                        if (e1) throw e1;
+                        const { error: e2 } = await supabase
+                          .from("tecnicos_manutencao")
+                          .delete()
+                          .is("cliente_id", null);
+                        if (e2) throw e2;
+                        toast.success("Dados limpos com sucesso! Faça o upload de uma nova planilha.");
+                        setConfirmOpen(false);
+                        navigate("/manutencao/upload");
+                      } catch (err: any) {
+                        toast.error(err?.message || "Erro ao limpar dados");
+                      } finally {
+                        setClearing(false);
+                      }
+                    }}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {clearing ? "Limpando..." : "Sim, limpar tudo"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+          <Button onClick={openNew}>
+            <Plus className="h-4 w-4" />
+            Novo Cliente
+          </Button>
+        </div>
       </div>
 
       {loading ? (
