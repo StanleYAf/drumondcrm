@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      clientes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          responsavel: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome: string
+          responsavel?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          responsavel?: string | null
+        }
+        Relationships: []
+      }
       fornecedores: {
         Row: {
           cnpj: string | null
@@ -53,6 +77,7 @@ export type Database = {
       indicadores_manutencao: {
         Row: {
           ano: number
+          cliente_id: string | null
           created_at: string | null
           eng_corretivas_abertas: number | null
           eng_corretivas_atendidas_prazo: number | null
@@ -104,6 +129,7 @@ export type Database = {
         }
         Insert: {
           ano: number
+          cliente_id?: string | null
           created_at?: string | null
           eng_corretivas_abertas?: number | null
           eng_corretivas_atendidas_prazo?: number | null
@@ -155,6 +181,7 @@ export type Database = {
         }
         Update: {
           ano?: number
+          cliente_id?: string | null
           created_at?: string | null
           eng_corretivas_abertas?: number | null
           eng_corretivas_atendidas_prazo?: number | null
@@ -204,7 +231,15 @@ export type Database = {
           total_preventivas_abertas?: number | null
           total_preventivas_fechadas?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "indicadores_manutencao_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       indicadores_semanais: {
         Row: {
@@ -883,6 +918,7 @@ export type Database = {
         Row: {
           ano: number
           atendidas_no_prazo: number | null
+          cliente_id: string | null
           corretivas: number | null
           created_at: string | null
           fechadas_no_prazo: number | null
@@ -898,6 +934,7 @@ export type Database = {
         Insert: {
           ano: number
           atendidas_no_prazo?: number | null
+          cliente_id?: string | null
           corretivas?: number | null
           created_at?: string | null
           fechadas_no_prazo?: number | null
@@ -913,6 +950,7 @@ export type Database = {
         Update: {
           ano?: number
           atendidas_no_prazo?: number | null
+          cliente_id?: string | null
           corretivas?: number | null
           created_at?: string | null
           fechadas_no_prazo?: number | null
@@ -925,7 +963,15 @@ export type Database = {
           setor?: string
           total_os?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tecnicos_manutencao_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vendedores: {
         Row: {
