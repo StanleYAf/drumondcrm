@@ -622,6 +622,7 @@ export default function Estoque() {
     { key: "movimentacoes", label: "Movimentações" },
     { key: "alertas", label: "Saúde", badge: (belowMin + outOfStock.length + expiringProducts.length) > 0 ? belowMin + outOfStock.length + expiringProducts.length : undefined },
     { key: "aguardando", label: "Aguardando", badge: pendentes.length > 0 ? pendentes.length : undefined },
+    { key: "relatorios", label: "Relatórios" },
   ];
 
   return (
