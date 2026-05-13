@@ -8,6 +8,7 @@ const MESES = [
 export interface IndicadorRow {
   mes: string;
   ano: number;
+  cliente_id: string | null;
   total_corretivas_abertas: number;
   total_corretivas_fechadas: number;
   total_preventivas_abertas: number;
@@ -60,6 +61,7 @@ export interface IndicadorRow {
 export interface TecnicoRow {
   mes: string;
   ano: number;
+  cliente_id: string | null;
   nome: string;
   setor: string;
   corretivas: number;
@@ -137,9 +139,9 @@ function isNoPrazo(v: any): boolean {
   return n === "regular" || n === "no prazo" || n === "dentro do prazo" || n.startsWith("regular");
 }
 
-function emptyIndicador(mes: string, ano: number): IndicadorRow {
+function emptyIndicador(mes: string, ano: number, cliente_id: string | null): IndicadorRow {
   return {
-    mes, ano,
+    mes, ano, cliente_id,
     total_corretivas_abertas: 0, total_corretivas_fechadas: 0,
     total_preventivas_abertas: 0, total_preventivas_fechadas: 0,
     eng_corretivas_abertas: 0, eng_corretivas_fechadas: 0,
@@ -161,7 +163,7 @@ function emptyIndicador(mes: string, ano: number): IndicadorRow {
   };
 }
 
-export async function parseManutencaoXlsx(file: File): Promise<ParseResult> {
+export async function parseManutencaoXlsx(file: File, clienteId: string | null = null): Promise<ParseResult> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
   const sheetName = wb.SheetNames.find((n) => n.toLowerCase().includes("ordens")) || wb.SheetNames[0];
@@ -209,7 +211,7 @@ export async function parseManutencaoXlsx(file: File): Promise<ParseResult> {
 
   const ensure = (mes: string, ano: number) => {
     const k = `${ano}-${mes}`;
-    if (!bucket.has(k)) bucket.set(k, emptyIndicador(mes, ano));
+    if (!bucket.has(k)) bucket.set(k, emptyIndicador(mes, ano, clienteId));
     if (!slaBucket.has(k)) slaBucket.set(k, {
       eng: { Emergente: { total: 0, triagemPrazo: 0, fechPrazo: 0 }, Urgente: { total: 0, triagemPrazo: 0, fechPrazo: 0 }, "Pouco urgente": { total: 0, triagemPrazo: 0, fechPrazo: 0 } },
       pred: { Emergente: { total: 0, triagemPrazo: 0, fechPrazo: 0 }, Urgente: { total: 0, triagemPrazo: 0, fechPrazo: 0 }, "Pouco urgente": { total: 0, triagemPrazo: 0, fechPrazo: 0 } },
@@ -303,7 +305,7 @@ export async function parseManutencaoXlsx(file: File): Promise<ParseResult> {
       let t = tecBucket.get(tk);
       if (!t) {
         t = {
-          mes: dataCri.mes, ano: dataCri.ano, nome: responsavel, setor: quadro,
+          mes: dataCri.mes, ano: dataCri.ano, cliente_id: clienteId, nome: responsavel, setor: quadro,
           corretivas: 0, preventivas: 0, total_os: 0,
           atendidas_no_prazo: 0, fechadas_no_prazo: 0,
           percentual_atendimento: 0, percentual_fechamento: 0,
