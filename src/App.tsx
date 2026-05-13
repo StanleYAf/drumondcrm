@@ -21,6 +21,7 @@ import Fornecedores from "./pages/Fornecedores";
 import Vendas from "./pages/Vendas";
 import Manutencao from "./pages/Manutencao";
 import ManutencaoUpload from "./pages/ManutencaoUpload";
+import ManutencaoClientes from "./pages/ManutencaoClientes";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
@@ -58,6 +59,7 @@ const App = () => (
                               <Route path="/vendas" element={<RoleGuard allowed={["dash", "admin"]}><Vendas /></RoleGuard>} />
                               <Route path="/manutencao" element={<RoleGuard allowed={["manutencao", "admin"]}><Manutencao /></RoleGuard>} />
                               <Route path="/manutencao/upload" element={<RoleGuard allowed={["manutencao", "admin"]}><ManutencaoUpload /></RoleGuard>} />
+                              <Route path="/manutencao/clientes" element={<RoleGuard allowed={["admin"]}><ManutencaoClientes /></RoleGuard>} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </ErrorBoundary>
