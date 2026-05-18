@@ -1,26 +1,66 @@
-import { Fragment, useState } from "react";
+import { Fragment, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, FilePlus, BarChart3, PhoneCall, Settings, FileBarChart, Sun, Moon, Package, LogOut, Kanban, PanelLeftClose, PanelLeft, Wrench, Building2 } from "lucide-react";
+import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, Sun, Moon, Package, Boxes, LogOut, PanelLeftClose, PanelLeft, Wrench, Briefcase, Building2, ChevronDown } from "lucide-react";
 import { useTheme } from "@/lib/themeContext";
 import { useAuth } from "@/lib/authContext";
 
-const allNavItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard, group: "dash" },
-  { title: "Lançamentos", url: "/lancamentos", icon: FilePlus, group: "dash" },
-  { title: "Indicadores", url: "/indicadores", icon: BarChart3, group: "dash" },
-  { title: "Vendas", url: "/vendas", icon: Kanban, group: "dash" },
-  { title: "Pós-venda", url: "/pos-venda", icon: PhoneCall, group: "dash" },
-  { title: "Estoque", url: "/estoque", icon: Package, group: "estoque" },
-  { title: "Relatórios", url: "/relatorios", icon: FileBarChart, group: "dash" },
-  { title: "Manutenção", url: "/manutencao", icon: Wrench, group: "manutencao" },
-  { title: "Config", url: "/configuracoes", icon: Settings, group: "always" },
+type SubItem = { title: string; url: string; icon: any; adminOnly?: boolean };
+type Group = {
+  key: string;
+  title: string;
+  icon: any;
+  permission: "dash" | "estoque" | "manutencao";
+  subs: SubItem[];
+};
+
+const groups: Group[] = [
+  {
+    key: "engenharia",
+    title: "Engenharia",
+    icon: Wrench,
+    permission: "manutencao",
+    subs: [
+      { title: "Dashboard Geral", url: "/manutencao", icon: LayoutDashboard },
+      { title: "Clientes", url: "/manutencao/clientes", icon: Building2, adminOnly: true },
+    ],
+  },
+  {
+    key: "comercial",
+    title: "Comercial",
+    icon: Briefcase,
+    permission: "dash",
+    subs: [
+      { title: "Dashboard", url: "/", icon: LayoutDashboard },
+      { title: "Lançamentos", url: "/lancamentos", icon: BookOpen },
+      { title: "Indicadores", url: "/indicadores", icon: BarChart2 },
+      { title: "Vendas", url: "/vendas", icon: ShoppingCart },
+      { title: "Pós-venda", url: "/pos-venda", icon: Headphones },
+      { title: "Relatórios", url: "/relatorios", icon: FileText },
+    ],
+  },
+  {
+    key: "estoque",
+    title: "Estoque",
+    icon: Package,
+    permission: "estoque",
+    subs: [
+      { title: "Estoque", url: "/estoque", icon: Boxes },
+      { title: "Relatórios", url: "/estoque/relatorios", icon: FileText },
+    ],
+  },
 ];
 
-const manutencaoSubItems = [
-  { title: "Dashboard Geral", url: "/manutencao", icon: LayoutDashboard, adminOnly: false },
-  { title: "Clientes", url: "/manutencao/clientes", icon: Building2, adminOnly: true },
-];
+const comercialRoutes = ["/", "/lancamentos", "/indicadores", "/vendas", "/pos-venda", "/relatorios"];
+
+function isGroupActive(group: Group, pathname: string): boolean {
+  if (group.key === "comercial") {
+    return comercialRoutes.some(r => r === "/" ? pathname === "/" : pathname.startsWith(r));
+  }
+  if (group.key === "engenharia") return pathname.startsWith("/manutencao");
+  if (group.key === "estoque") return pathname.startsWith("/estoque");
+  return false;
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -29,18 +69,36 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const isDark = mode === "dark";
   const [collapsed, setCollapsed] = useState(false);
   const isAdmin = hasCargo("admin");
-  const inManutencao = location.pathname.startsWith("/manutencao");
-  const visibleManutencaoSubItems = manutencaoSubItems.filter((item) => !item.adminOnly || isAdmin);
-  const showManutencaoSubmenu = isAdmin && inManutencao && !collapsed && visibleManutencaoSubItems.length > 0;
 
-  const navItems = allNavItems.filter(item => {
-    if (item.group === "always") return true;
+  const canSee = (g: Group) => {
     if (isAdmin) return true;
-    if (hasCargo("dash") && item.group === "dash") return true;
-    if ((hasCargo("estoque") || hasCargo("Controlador")) && item.group === "estoque") return true;
-    if (hasCargo("manutencao") && item.group === "manutencao") return true;
+    if (g.permission === "dash") return hasCargo("dash");
+    if (g.permission === "estoque") return hasCargo("estoque") || hasCargo("Controlador");
+    if (g.permission === "manutencao") return hasCargo("manutencao");
     return false;
+  };
+
+  const visibleGroups = groups.filter(canSee);
+
+  const [openMap, setOpenMap] = useState<Record<string, boolean>>(() => {
+    const init: Record<string, boolean> = {};
+    visibleGroups.forEach(g => { init[g.key] = isGroupActive(g, location.pathname); });
+    return init;
   });
+
+  useEffect(() => {
+    setOpenMap(prev => {
+      const next = { ...prev };
+      visibleGroups.forEach(g => {
+        if (isGroupActive(g, location.pathname)) next[g.key] = true;
+      });
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // Mobile flat list for bottom bar
+  const mobileItems = visibleGroups.flatMap(g => g.subs.filter(s => !s.adminOnly || isAdmin)).slice(0, 5);
 
   return (
     <div className="min-h-screen flex w-full bg-background">
@@ -55,7 +113,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
           )}
           <div className={`flex items-center ${collapsed ? 'flex-col gap-2' : 'gap-2'}`}>
-            {/* Dark/Light toggle - pill style */}
             <button onClick={toggleMode}
               className="relative w-10 h-[22px] rounded-full transition-colors duration-300"
               style={{ background: isDark ? 'hsl(var(--primary) / 0.2)' : 'hsl(var(--muted))' }}
@@ -65,7 +122,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {isDark ? <Sun className="h-3 w-3 text-amber-500" /> : <Moon className="h-3 w-3 text-slate-500" />}
               </span>
             </button>
-            {/* Sidebar collapse toggle - pill style */}
             <button onClick={() => setCollapsed(!collapsed)}
               className="relative w-10 h-[22px] rounded-full transition-colors duration-300"
               style={{ background: collapsed ? 'hsl(var(--primary) / 0.2)' : 'hsl(var(--muted))' }}
@@ -77,27 +133,35 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
         </div>
-        <nav className="flex-1 px-3 py-2 space-y-0.5">
-          {navItems.map((item) => {
-            const isActive = item.url === '/' ? location.pathname === '/' : location.pathname.startsWith(item.url);
+        <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+          {visibleGroups.map((g) => {
+            const visibleSubs = g.subs.filter(s => !s.adminOnly || isAdmin);
+            const active = isGroupActive(g, location.pathname);
+            const isOpen = !!openMap[g.key];
+            const showSubs = !collapsed && isOpen;
             return (
-              <Fragment key={item.url}>
-                <NavLink
-                  to={item.url}
-                  end={item.url === "/"}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${collapsed ? 'justify-center' : ''} ${
-                    isActive ? 'text-foreground font-medium bg-secondary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              <Fragment key={g.key}>
+                <button
+                  onClick={() => setOpenMap(m => ({ ...m, [g.key]: !m[g.key] }))}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${collapsed ? 'justify-center' : ''} ${
+                    active ? 'text-foreground font-medium bg-secondary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
                   }`}
-                  activeClassName="bg-secondary text-foreground font-medium"
-                  title={collapsed ? item.title : undefined}
+                  title={collapsed ? g.title : undefined}
                 >
-                  <item.icon className={`h-5 w-5 flex-shrink-0 ${isActive ? 'text-primary' : ''}`} />
-                  {!collapsed && <span>{item.title}</span>}
-                </NavLink>
-                {item.url === "/manutencao" && showManutencaoSubmenu && (
-                  <div className="ml-5 mt-1 space-y-0.5 border-l border-border/70 pl-3">
-                    {visibleManutencaoSubItems.map((subItem) => {
-                      const isSubActive = location.pathname === subItem.url;
+                  <g.icon className={`h-5 w-5 flex-shrink-0 ${active ? 'text-primary' : ''}`} />
+                  {!collapsed && (
+                    <>
+                      <span className="flex-1 text-left">{g.title}</span>
+                      <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                    </>
+                  )}
+                </button>
+                {showSubs && (
+                  <div className="ml-5 mt-1 mb-1 space-y-0.5 border-l border-border/70 pl-3">
+                    {visibleSubs.map((subItem) => {
+                      const isSubActive = subItem.url === '/'
+                        ? location.pathname === '/'
+                        : location.pathname === subItem.url;
                       return (
                         <NavLink
                           key={subItem.url}
@@ -118,8 +182,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </Fragment>
             );
           })}
+
+          {/* Configurações - sempre visível */}
+          <NavLink
+            to="/configuracoes"
+            end
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${collapsed ? 'justify-center' : ''} text-muted-foreground hover:text-foreground hover:bg-secondary/50`}
+            activeClassName="bg-secondary text-foreground font-medium"
+            title={collapsed ? "Configurações" : undefined}
+          >
+            <Settings className="h-5 w-5 flex-shrink-0" />
+            {!collapsed && <span>Configurações</span>}
+          </NavLink>
         </nav>
-        {/* Logout */}
         <div className="p-3 border-t border-border">
           {!collapsed && user && (
             <p className="text-[11px] text-muted-foreground truncate mb-2 px-3">{user.email}</p>
@@ -143,7 +218,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Mobile Bottom Tab Bar */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 glass-nav safe-area-bottom">
         <div className="flex items-center justify-around px-2 py-1.5">
-          {navItems.map((item) => {
+          {mobileItems.map((item) => {
             const isActive = item.url === '/' ? location.pathname === '/' : location.pathname.startsWith(item.url);
             return (
               <NavLink
