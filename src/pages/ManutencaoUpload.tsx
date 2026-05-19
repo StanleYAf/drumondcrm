@@ -94,7 +94,7 @@ export default function ManutencaoUpload() {
     }
     setLoading(true);
     try {
-      const { indicadores, tecnicos, totalLinhas } = await parseManutencaoXlsx(file, finalClienteId);
+      const { indicadores, tecnicos, ordensServico, totalLinhas } = await parseManutencaoXlsx(file, finalClienteId);
       if (indicadores.length === 0) {
         toast.error("Nenhuma linha válida encontrada no arquivo");
         return;
@@ -115,6 +115,12 @@ export default function ManutencaoUpload() {
           .eq("cliente_id", finalClienteId)
           .eq("mes", mes)
           .eq("ano", ano);
+        await supabase
+          .from("ordens_servico")
+          .delete()
+          .eq("cliente_id", finalClienteId)
+          .eq("mes", mes)
+          .eq("ano", ano);
       }
 
       const { error: indErr } = await supabase.from("indicadores_manutencao").insert(indicadores);
@@ -125,7 +131,17 @@ export default function ManutencaoUpload() {
         if (tecErr) throw tecErr;
       }
 
-      toast.success(`Importado: ${totalLinhas} linhas, ${indicadores.length} mês(es), ${tecnicos.length} técnico(s).`);
+      if (ordensServico.length > 0) {
+        // insert em lotes para evitar payload muito grande
+        const chunkSize = 500;
+        for (let i = 0; i < ordensServico.length; i += chunkSize) {
+          const chunk = ordensServico.slice(i, i + chunkSize);
+          const { error: osErr } = await supabase.from("ordens_servico").insert(chunk);
+          if (osErr) throw osErr;
+        }
+      }
+
+      toast.success(`Importado: ${totalLinhas} linhas, ${indicadores.length} mês(es), ${tecnicos.length} técnico(s), ${ordensServico.length} OS.`);
       navigate(`/manutencao/cliente/${finalClienteId}`);
     } catch (e: any) {
       console.error("Erro upload manutenção:", e);
