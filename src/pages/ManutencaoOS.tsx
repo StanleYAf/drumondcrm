@@ -106,13 +106,28 @@ export default function ManutencaoOS() {
     setLoading(true);
     setError(null);
     try {
-      const [{ data: cls }, { data: os, error: osErr }] = await Promise.all([
-        supabase.from("clientes").select("id, nome").eq("ativo", true).order("nome"),
-        supabase.from("ordens_servico").select("*").order("data_criacao", { ascending: false }).limit(20000),
-      ]);
-      if (osErr) throw osErr;
+      const { data: cls } = await supabase
+        .from("clientes").select("id, nome").eq("ativo", true).order("nome");
+
+      // Paginação manual: PostgREST limita a 1000 linhas por request
+      const pageSize = 1000;
+      let from = 0;
+      const all: any[] = [];
+      while (true) {
+        const { data, error: osErr } = await supabase
+          .from("ordens_servico")
+          .select("*")
+          .order("data_criacao", { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (osErr) throw osErr;
+        const chunk = data || [];
+        all.push(...chunk);
+        if (chunk.length < pageSize) break;
+        from += pageSize;
+        if (from > 200000) break; // safety
+      }
       setClientes((cls || []) as Cliente[]);
-      setRows((os || []) as OS[]);
+      setRows(all as OS[]);
     } catch (e: any) {
       console.error(e);
       setError(e?.message || "Erro ao carregar OS");
