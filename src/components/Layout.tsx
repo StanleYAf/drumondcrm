@@ -1,7 +1,7 @@
 import { Fragment, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, Sun, Moon, Package, Boxes, LogOut, PanelLeftClose, PanelLeft, Wrench, Briefcase, Building2, ChevronDown, ClipboardList } from "lucide-react";
+import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, Sun, Moon, Package, Boxes, LogOut, PanelLeftClose, PanelLeft, Wrench, Briefcase, Building2, ChevronDown, ClipboardList, DollarSign } from "lucide-react";
 import { useTheme } from "@/lib/themeContext";
 import { useAuth } from "@/lib/authContext";
 
@@ -10,7 +10,7 @@ type Group = {
   key: string;
   title: string;
   icon: any;
-  permission: "dash" | "estoque" | "manutencao";
+  permission: "dash" | "estoque" | "manutencao" | "admin";
   subs: SubItem[];
 };
 
@@ -50,6 +50,15 @@ const groups: Group[] = [
       { title: "Relatórios", url: "/estoque/relatorios", icon: FileText },
     ],
   },
+  {
+    key: "financeiro",
+    title: "Financeiro",
+    icon: DollarSign,
+    permission: "admin",
+    subs: [
+      { title: "Dashboard", url: "/financeiro", icon: LayoutDashboard },
+    ],
+  },
 ];
 
 const comercialRoutes = ["/", "/lancamentos", "/indicadores", "/vendas", "/pos-venda", "/relatorios"];
@@ -60,6 +69,7 @@ function isGroupActive(group: Group, pathname: string): boolean {
   }
   if (group.key === "engenharia") return pathname.startsWith("/manutencao");
   if (group.key === "estoque") return pathname.startsWith("/estoque");
+  if (group.key === "financeiro") return pathname.startsWith("/financeiro");
   return false;
 }
 
@@ -73,6 +83,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const canSee = (g: Group) => {
     if (isAdmin) return true;
+    if (g.permission === "admin") return false;
     if (g.permission === "dash") return hasCargo("dash");
     if (g.permission === "estoque") return hasCargo("estoque") || hasCargo("Controlador");
     if (g.permission === "manutencao") return hasCargo("manutencao");
