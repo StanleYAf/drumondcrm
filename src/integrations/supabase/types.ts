@@ -38,6 +38,51 @@ export type Database = {
         }
         Relationships: []
       }
+      financeiro: {
+        Row: {
+          ano: number
+          contratos: number | null
+          created_at: string | null
+          geral: number | null
+          id: string
+          mes: string
+          meta_contratos: number | null
+          meta_geral: number | null
+          meta_servicos: number | null
+          meta_vendas: number | null
+          servicos_avulsos: number | null
+          vendas: number | null
+        }
+        Insert: {
+          ano: number
+          contratos?: number | null
+          created_at?: string | null
+          geral?: number | null
+          id?: string
+          mes: string
+          meta_contratos?: number | null
+          meta_geral?: number | null
+          meta_servicos?: number | null
+          meta_vendas?: number | null
+          servicos_avulsos?: number | null
+          vendas?: number | null
+        }
+        Update: {
+          ano?: number
+          contratos?: number | null
+          created_at?: string | null
+          geral?: number | null
+          id?: string
+          mes?: string
+          meta_contratos?: number | null
+          meta_geral?: number | null
+          meta_servicos?: number | null
+          meta_vendas?: number | null
+          servicos_avulsos?: number | null
+          vendas?: number | null
+        }
+        Relationships: []
+      }
       fornecedores: {
         Row: {
           cnpj: string | null
