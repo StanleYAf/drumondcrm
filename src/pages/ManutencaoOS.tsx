@@ -192,20 +192,57 @@ export default function ManutencaoOS() {
   const kpis = useMemo(() => {
     const total = filtered.length;
     let abertas = 0, fechadas = 0, buscaAtiva = 0;
-    let corrAbertas = 0, corrFechadas = 0;
     for (const r of filtered) {
       const est = normalizeEstado(r.estado);
       if (est === "Aberta") abertas++;
       if (est === "Fechada") fechadas++;
       if (r.tipo_servico === "Busca Ativa") buscaAtiva++;
-      if (r.tipo_servico === "Manutenção Corretiva") {
-        if (est === "Aberta") corrAbertas++;
-        if (est === "Fechada") corrFechadas++;
-      }
     }
-    const disponibilidade = corrAbertas > 0
-      ? Math.round((corrFechadas / corrAbertas) * 1000) / 10
-      : (corrFechadas > 0 ? 100 : 0);
+
+    // Disponibilidade por equipamento:
+    // Para cada equipamento (tag||numero_serie), considera o período desde a
+    // primeira OS registrada até hoje. Dias indisponíveis = soma dos
+    // intervalos das OS corretivas (data_criacao → data_conclusao, ou hoje
+    // se ainda aberta). Disponibilidade = (dias_totais - indisponiveis) / totais.
+    // A métrica exibida é a média das disponibilidades por equipamento.
+    const parseDate = (s?: string | null) => {
+      if (!s) return null;
+      const [y, m, d] = s.split("-").map(Number);
+      if (!y || !m || !d) return null;
+      return new Date(y, m - 1, d).getTime();
+    };
+    const today = new Date();
+    const todayMs = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const DAY = 86400000;
+
+    const porEquip = new Map<string, { first: number; indisp: number }>();
+    for (const r of filtered) {
+      const key = (r.tag || r.numero_serie || "").trim();
+      if (!key) continue;
+      const criacao = parseDate(r.data_criacao);
+      if (criacao == null) continue;
+      const entry = porEquip.get(key) || { first: criacao, indisp: 0 };
+      if (criacao < entry.first) entry.first = criacao;
+      if (r.tipo_servico === "Manutenção Corretiva") {
+        const fim = parseDate(r.data_conclusao) ?? todayMs;
+        const dias = Math.max(0, Math.round((fim - criacao) / DAY));
+        entry.indisp += dias;
+      }
+      porEquip.set(key, entry);
+    }
+    let somaPct = 0;
+    let qtdEquip = 0;
+    porEquip.forEach(({ first, indisp }) => {
+      const totalDias = Math.max(1, Math.round((todayMs - first) / DAY) + 1);
+      const indispLimit = Math.min(indisp, totalDias);
+      const pct = ((totalDias - indispLimit) / totalDias) * 100;
+      somaPct += pct;
+      qtdEquip++;
+    });
+    const disponibilidade = qtdEquip > 0
+      ? Math.round((somaPct / qtdEquip) * 10) / 10
+      : 0;
+
     const reincPct = equipamentosComCorretivas > 0
       ? Math.round((reincidentes.size / equipamentosComCorretivas) * 1000) / 10
       : 0;
