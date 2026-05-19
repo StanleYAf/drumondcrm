@@ -617,6 +617,98 @@ export type Database = {
           },
         ]
       }
+      ordens_servico: {
+        Row: {
+          ano: number | null
+          atendimento: string | null
+          cliente_id: string | null
+          created_at: string
+          data_conclusao: string | null
+          data_criacao: string | null
+          estado: string | null
+          estado_tempo_atendimento: string | null
+          estado_tempo_fechamento: string | null
+          fabricante: string | null
+          id: string
+          localizacao: string | null
+          mes: string | null
+          modelo: string | null
+          numero: string | null
+          numero_serie: string | null
+          plano: string | null
+          prioridade: string | null
+          problema_relatado: string | null
+          quadro_trabalho: string | null
+          responsavel: string | null
+          solicitante: string | null
+          tag: string | null
+          tipo_equipamento: string | null
+          tipo_servico: string | null
+        }
+        Insert: {
+          ano?: number | null
+          atendimento?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          data_conclusao?: string | null
+          data_criacao?: string | null
+          estado?: string | null
+          estado_tempo_atendimento?: string | null
+          estado_tempo_fechamento?: string | null
+          fabricante?: string | null
+          id?: string
+          localizacao?: string | null
+          mes?: string | null
+          modelo?: string | null
+          numero?: string | null
+          numero_serie?: string | null
+          plano?: string | null
+          prioridade?: string | null
+          problema_relatado?: string | null
+          quadro_trabalho?: string | null
+          responsavel?: string | null
+          solicitante?: string | null
+          tag?: string | null
+          tipo_equipamento?: string | null
+          tipo_servico?: string | null
+        }
+        Update: {
+          ano?: number | null
+          atendimento?: string | null
+          cliente_id?: string | null
+          created_at?: string
+          data_conclusao?: string | null
+          data_criacao?: string | null
+          estado?: string | null
+          estado_tempo_atendimento?: string | null
+          estado_tempo_fechamento?: string | null
+          fabricante?: string | null
+          id?: string
+          localizacao?: string | null
+          mes?: string | null
+          modelo?: string | null
+          numero?: string | null
+          numero_serie?: string | null
+          plano?: string | null
+          prioridade?: string | null
+          problema_relatado?: string | null
+          quadro_trabalho?: string | null
+          responsavel?: string | null
+          solicitante?: string | null
+          tag?: string | null
+          tipo_equipamento?: string | null
+          tipo_servico?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ordens_servico_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pendentes_estoque: {
         Row: {
           created_at: string
