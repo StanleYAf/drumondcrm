@@ -1,4 +1,4 @@
-import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, LogOut, Package, Boxes, Wrench, Briefcase, Building2, ChevronDown, ClipboardList } from "lucide-react";
+import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, LogOut, Package, Boxes, Wrench, Briefcase, Building2, ChevronDown, ClipboardList, DollarSign } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -25,7 +25,7 @@ type Group = {
   title: string;
   icon: any;
   matchPrefix: string;
-  permission: "dash" | "estoque" | "manutencao";
+  permission: "dash" | "estoque" | "manutencao" | "admin";
   subs: SubItem[];
 };
 
@@ -68,6 +68,16 @@ const groups: Group[] = [
       { title: "Relatórios", url: "/estoque/relatorios", icon: FileText },
     ],
   },
+  {
+    key: "financeiro",
+    title: "Financeiro",
+    icon: DollarSign,
+    matchPrefix: "/financeiro",
+    permission: "admin",
+    subs: [
+      { title: "Dashboard", url: "/financeiro", icon: LayoutDashboard },
+    ],
+  },
 ];
 
 const comercialRoutes = ["/", "/lancamentos", "/indicadores", "/vendas", "/pos-venda", "/relatorios"];
@@ -85,6 +95,7 @@ export function AppSidebar() {
 
   const canSee = (g: Group) => {
     if (hasCargo("admin")) return true;
+    if (g.permission === "admin") return false;
     if (g.permission === "dash") return hasCargo("dash");
     if (g.permission === "estoque") return hasCargo("estoque") || hasCargo("Controlador");
     if (g.permission === "manutencao") return hasCargo("manutencao");
