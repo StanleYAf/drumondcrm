@@ -1,7 +1,7 @@
 import { Fragment, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, Sun, Moon, Package, Boxes, LogOut, PanelLeftClose, PanelLeft, Wrench, Briefcase, Building2, ChevronDown } from "lucide-react";
+import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, Sun, Moon, Package, Boxes, LogOut, PanelLeftClose, PanelLeft, Wrench, Briefcase, Building2, ChevronDown, ClipboardList } from "lucide-react";
 import { useTheme } from "@/lib/themeContext";
 import { useAuth } from "@/lib/authContext";
 
@@ -23,6 +23,7 @@ const groups: Group[] = [
     subs: [
       { title: "Dashboard Geral", url: "/manutencao", icon: LayoutDashboard },
       { title: "Clientes", url: "/manutencao/clientes", icon: Building2, adminOnly: true },
+      { title: "Ordens de Serviço", url: "/manutencao/os", icon: ClipboardList },
     ],
   },
   {

@@ -1,4 +1,4 @@
-import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, LogOut, Package, Boxes, Wrench, Briefcase, Building2, ChevronDown } from "lucide-react";
+import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, LogOut, Package, Boxes, Wrench, Briefcase, Building2, ChevronDown, ClipboardList } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -39,6 +39,7 @@ const groups: Group[] = [
     subs: [
       { title: "Dashboard Geral", url: "/manutencao", icon: LayoutDashboard },
       { title: "Clientes", url: "/manutencao/clientes", icon: Building2, adminOnly: true },
+      { title: "Ordens de Serviço", url: "/manutencao/os", icon: ClipboardList },
     ],
   },
   {

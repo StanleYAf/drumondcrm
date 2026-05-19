@@ -73,9 +73,36 @@ export interface TecnicoRow {
   percentual_fechamento: number;
 }
 
+export interface OrdemServicoRow {
+  cliente_id: string | null;
+  mes: string;
+  ano: number;
+  numero: string | null;
+  tipo_servico: string | null;
+  estado: string | null;
+  solicitante: string | null;
+  localizacao: string | null;
+  tipo_equipamento: string | null;
+  numero_serie: string | null;
+  tag: string | null;
+  modelo: string | null;
+  fabricante: string | null;
+  responsavel: string | null;
+  data_criacao: string | null;
+  data_conclusao: string | null;
+  prioridade: string | null;
+  problema_relatado: string | null;
+  plano: string | null;
+  quadro_trabalho: string | null;
+  atendimento: string | null;
+  estado_tempo_atendimento: string | null;
+  estado_tempo_fechamento: string | null;
+}
+
 export interface ParseResult {
   indicadores: IndicadorRow[];
   tecnicos: TecnicoRow[];
+  ordensServico: OrdemServicoRow[];
   totalLinhas: number;
 }
 
@@ -89,6 +116,24 @@ function parseDataBR(s: any): { mes: string; ano: number } | null {
   const ano = parseInt(m[3], 10);
   if (mesIdx < 0 || mesIdx > 11) return null;
   return { mes: MESES[mesIdx], ano };
+}
+
+function parseDataISO(s: any): string | null {
+  if (!s) return null;
+  const str = String(s).trim();
+  const m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (!m) return null;
+  const dd = m[1].padStart(2, "0");
+  const mm = m[2].padStart(2, "0");
+  return `${m[3]}-${mm}-${dd}`;
+}
+
+function cell(r: any[], idx: number): string | null {
+  if (idx < 0) return null;
+  const v = r[idx];
+  if (v === null || v === undefined) return null;
+  const s = String(v).trim();
+  return s === "" ? null : s;
 }
 
 const FECHADAS_STATES = new Set(["Fechada", "Serviço finalizado"]);
@@ -190,6 +235,19 @@ export async function parseManutencaoXlsx(file: File, clienteId: string | null =
     estTriagem: idxOf("Estado tempo atendimento"),
     estFech: idxOf("Estado tempo fechamento"),
   };
+  const Iextra = {
+    numero: idxOf("NUMERO"),
+    solicitante: idxOf("SOLICITANTE"),
+    localizacao: idxOf("LOCALIZAÇÃO"),
+    tipoEquip: idxOf("TIPO DE EQUIPAMENTO"),
+    numSerie: idxOf("NÚMERO DE SÉRIE"),
+    tag: idxOf("TAG"),
+    modelo: idxOf("MODELO"),
+    fabricante: idxOf("FABRICANTE"),
+    dataConclusao: idxOf("DATA DE CONCLUSÃO"),
+    problema: idxOf("PROBLEMA RELATADO"),
+    atendimento: idxOf("ATENDIMENTO"),
+  };
   if (I.estTriagem < 0) {
     const alt = normHeaders.findIndex((h) => h.includes("estado") && h.includes("atendimento"));
     if (alt >= 0) I.estTriagem = alt;
@@ -208,6 +266,8 @@ export async function parseManutencaoXlsx(file: File, clienteId: string | null =
 
   // bucket de técnicos por mes/ano
   const tecBucket = new Map<string, TecnicoRow>();
+
+  const ordensServico: OrdemServicoRow[] = [];
 
   const ensure = (mes: string, ano: number) => {
     const k = `${ano}-${mes}`;
@@ -234,6 +294,32 @@ export async function parseManutencaoXlsx(file: File, clienteId: string | null =
     if (!dataCri) continue;
     const ind = ensure(dataCri.mes, dataCri.ano);
     const k = `${dataCri.ano}-${dataCri.mes}`;
+
+    ordensServico.push({
+      cliente_id: clienteId,
+      mes: dataCri.mes,
+      ano: dataCri.ano,
+      numero: cell(r, Iextra.numero),
+      tipo_servico: tipo || null,
+      estado: estado != null ? String(estado).trim() || null : null,
+      solicitante: cell(r, Iextra.solicitante),
+      localizacao: cell(r, Iextra.localizacao),
+      tipo_equipamento: cell(r, Iextra.tipoEquip),
+      numero_serie: cell(r, Iextra.numSerie),
+      tag: cell(r, Iextra.tag),
+      modelo: cell(r, Iextra.modelo),
+      fabricante: cell(r, Iextra.fabricante),
+      responsavel: responsavel || null,
+      data_criacao: parseDataISO(r[I.dataCriacao]),
+      data_conclusao: parseDataISO(r[Iextra.dataConclusao]),
+      prioridade: prioridade || null,
+      problema_relatado: cell(r, Iextra.problema),
+      plano: plano || null,
+      quadro_trabalho: quadro || null,
+      atendimento: cell(r, Iextra.atendimento),
+      estado_tempo_atendimento: estTriagem || null,
+      estado_tempo_fechamento: estFech || null,
+    });
 
     const fechada = isFechada(estado);
     const aberta = isAberta(estado);
@@ -362,6 +448,7 @@ export async function parseManutencaoXlsx(file: File, clienteId: string | null =
   return {
     indicadores: Array.from(bucket.values()),
     tecnicos: Array.from(tecBucket.values()),
+    ordensServico,
     totalLinhas: data.length,
   };
 }
