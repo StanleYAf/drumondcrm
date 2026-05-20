@@ -121,6 +121,8 @@ export default function ManutencaoGeral() {
         totalOs,
         corretivasAbertas: num(ind?.total_corretivas_abertas),
         corretivasFechadas: num(ind?.total_corretivas_fechadas),
+        preventivasAbertas: num(ind?.total_preventivas_abertas),
+        preventivasFechadas: num(ind?.total_preventivas_fechadas),
       };
     });
   }, [clientes, indicadoresMes]);
@@ -225,7 +227,7 @@ export default function ManutencaoGeral() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-center">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                       <div className="rounded-lg bg-secondary/40 p-2">
                         <div className="text-lg font-bold">{p.corretivasAbertas}</div>
                         <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Corr. Abertas</div>
@@ -233,6 +235,14 @@ export default function ManutencaoGeral() {
                       <div className="rounded-lg bg-secondary/40 p-2">
                         <div className="text-lg font-bold">{p.corretivasFechadas}</div>
                         <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Corr. Fechadas</div>
+                      </div>
+                      <div className="rounded-lg bg-secondary/40 p-2">
+                        <div className="text-lg font-bold">{p.preventivasAbertas}</div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Prev. Abertas</div>
+                      </div>
+                      <div className="rounded-lg bg-secondary/40 p-2">
+                        <div className="text-lg font-bold">{p.preventivasFechadas}</div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Prev. Fechadas</div>
                       </div>
                     </div>
 
