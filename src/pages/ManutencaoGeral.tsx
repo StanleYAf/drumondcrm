@@ -215,47 +215,6 @@ export default function ManutencaoGeral() {
             })}
           </div>
 
-          {periodos.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-primary" /> Ranking — SLA Médio
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {ranking.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Sem dados no mês selecionado</p>
-              ) : ranking.map((r, i) => {
-                const cor = statusColor(r.slaMedio);
-                return (
-                  <div key={r.cliente.id} className="flex items-center gap-4 rounded-lg border bg-card p-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-bold text-primary shrink-0">
-                      {i + 1}º
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="font-medium truncate">{r.cliente.nome}</span>
-                        <span className="text-sm font-semibold tabular-nums" style={{ color: cor }}>
-                          {r.slaMedio.toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
-                        <div className="h-full transition-all" style={{ width: `${Math.min(100, Math.max(0, r.slaMedio))}%`, background: cor }} />
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0 hidden sm:block">
-                      <div className="text-xl font-bold">{r.totalOs}</div>
-                      <div className="text-xs text-muted-foreground">OS abertas</div>
-                    </div>
-                    <Button size="sm" variant="outline" onClick={() => navigate(`/manutencao/cliente/${r.cliente.id}`)} className="gap-1 shrink-0">
-                      Detalhes <ArrowRight className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {porCliente.map(p => {
