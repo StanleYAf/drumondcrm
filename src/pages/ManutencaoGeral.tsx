@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Wrench, CheckCircle, ClipboardList, CheckSquare, ArrowRight, Trophy } from "lucide-react";
+import { Building2, Wrench, CheckCircle, ClipboardList, CheckSquare, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DashboardSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
@@ -126,10 +125,6 @@ export default function ManutencaoGeral() {
     });
   }, [clientes, indicadoresMes]);
 
-  const ranking = useMemo(
-    () => [...porCliente].filter(p => p.ind).sort((a, b) => b.slaMedio - a.slaMedio),
-    [porCliente],
-  );
 
   const chartData = useMemo(
     () => porCliente.filter(p => p.ind).map(p => ({
@@ -215,52 +210,10 @@ export default function ManutencaoGeral() {
             })}
           </div>
 
-          {periodos.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Trophy className="h-5 w-5 text-primary" /> Ranking — SLA Médio
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {ranking.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Sem dados no mês selecionado</p>
-              ) : ranking.map((r, i) => {
-                const cor = statusColor(r.slaMedio);
-                return (
-                  <div key={r.cliente.id} className="flex items-center gap-4 rounded-lg border bg-card p-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-bold text-primary shrink-0">
-                      {i + 1}º
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-2">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="font-medium truncate">{r.cliente.nome}</span>
-                        <span className="text-sm font-semibold tabular-nums" style={{ color: cor }}>
-                          {r.slaMedio.toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
-                        <div className="h-full transition-all" style={{ width: `${Math.min(100, Math.max(0, r.slaMedio))}%`, background: cor }} />
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0 hidden sm:block">
-                      <div className="text-xl font-bold">{r.totalOs}</div>
-                      <div className="text-xs text-muted-foreground">OS abertas</div>
-                    </div>
-                    <Button size="sm" variant="outline" onClick={() => navigate(`/manutencao/cliente/${r.cliente.id}`)} className="gap-1 shrink-0">
-                      Detalhes <ArrowRight className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {porCliente.map(p => {
               const semDados = !p.ind;
-              const cor = statusColor(p.slaMedio);
               return (
                 <Card key={p.cliente.id}>
                   <CardContent className="p-5 space-y-4">
@@ -280,7 +233,7 @@ export default function ManutencaoGeral() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="grid grid-cols-2 gap-2 text-center">
                       <div className="rounded-lg bg-secondary/40 p-2">
                         <div className="text-lg font-bold">{p.corretivasAbertas}</div>
                         <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Corr. Abertas</div>
@@ -289,19 +242,8 @@ export default function ManutencaoGeral() {
                         <div className="text-lg font-bold">{p.corretivasFechadas}</div>
                         <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Corr. Fechadas</div>
                       </div>
-                      <div className="rounded-lg bg-secondary/40 p-2">
-                        <div className="text-lg font-bold" style={{ color: semDados ? undefined : cor }}>
-                          {semDados ? "—" : `${p.slaMedio.toFixed(0)}%`}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">SLA Médio</div>
-                      </div>
                     </div>
 
-                    {!semDados && (
-                      <div className="space-y-1">
-                        <Progress value={p.slaMedio} className="h-1.5" />
-                      </div>
-                    )}
 
                     <Button size="sm" variant="outline" className="w-full gap-1" onClick={() => navigate(`/manutencao/cliente/${p.cliente.id}`)}>
                       Ver dashboard completo <ArrowRight className="h-3.5 w-3.5" />
