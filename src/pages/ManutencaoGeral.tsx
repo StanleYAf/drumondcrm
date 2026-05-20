@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DashboardSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
-import { Bar, BarChart, CartesianGrid, Legend, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/authContext";
 
@@ -126,14 +126,6 @@ export default function ManutencaoGeral() {
   }, [clientes, indicadoresMes]);
 
 
-  const chartData = useMemo(
-    () => porCliente.filter(p => p.ind).map(p => ({
-      nome: p.cliente.nome,
-      "SLA Engenharia": Number(p.slaEng.toFixed(1)),
-      "SLA Predial": Number(p.slaPred.toFixed(1)),
-    })),
-    [porCliente],
-  );
 
   const kpis = [
     { label: "Corretivas Abertas", icon: Wrench, value: totals.corretivasAbertas },
@@ -254,27 +246,6 @@ export default function ManutencaoGeral() {
             })}
           </div>
 
-          {chartData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Comparativo de SLA por Cliente</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={340}>
-                  <BarChart data={chartData} margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="nome" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <YAxis domain={[0, 100]} stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
-                    <Legend />
-                    <ReferenceLine y={80} stroke="hsl(var(--muted-foreground))" strokeDasharray="4 4" label={{ value: "Meta 80%", position: "right", fill: "hsl(var(--muted-foreground))", fontSize: 12 }} />
-                    <Bar dataKey="SLA Engenharia" fill="hsl(217 91% 60%)" radius={[6, 6, 0, 0]} />
-                    <Bar dataKey="SLA Predial" fill="hsl(25 95% 53%)" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-          )}
         </>
       )}
     </div>
