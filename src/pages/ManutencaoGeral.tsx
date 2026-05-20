@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building2, Wrench, CheckCircle, ClipboardList, CheckSquare, ArrowRight } from "lucide-react";
+import { Building2, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -96,15 +96,6 @@ export default function ManutencaoGeral() {
     [indicadores, anoSel, mesSel],
   );
 
-  const totals = useMemo(() => {
-    return indicadoresMes.reduce((acc, i) => ({
-      corretivasAbertas: acc.corretivasAbertas + num(i.total_corretivas_abertas),
-      corretivasFechadas: acc.corretivasFechadas + num(i.total_corretivas_fechadas),
-      preventivasAbertas: acc.preventivasAbertas + num(i.total_preventivas_abertas),
-      preventivasFechadas: acc.preventivasFechadas + num(i.total_preventivas_fechadas),
-    }), { corretivasAbertas: 0, corretivasFechadas: 0, preventivasAbertas: 0, preventivasFechadas: 0 });
-  }, [indicadoresMes]);
-
   const porCliente = useMemo(() => {
     return clientes.map(c => {
       const ind = indicadoresMes.find(i => i.cliente_id === c.id);
@@ -128,13 +119,6 @@ export default function ManutencaoGeral() {
   }, [clientes, indicadoresMes]);
 
 
-
-  const kpis = [
-    { label: "Corretivas Abertas", icon: Wrench, value: totals.corretivasAbertas },
-    { label: "Corretivas Fechadas", icon: CheckCircle, value: totals.corretivasFechadas },
-    { label: "Preventivas Abertas", icon: ClipboardList, value: totals.preventivasAbertas },
-    { label: "Preventivas Fechadas", icon: CheckSquare, value: totals.preventivasFechadas },
-  ];
 
   if (loading) return <DashboardSkeleton />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
@@ -184,26 +168,6 @@ export default function ManutencaoGeral() {
               </CardContent>
             </Card>
           )}
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {kpis.map(k => {
-              const Icon = k.icon;
-              return (
-                <Card key={k.label}>
-                  <CardContent className="p-5 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-muted-foreground">{k.label}</span>
-                      <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Icon className="h-4 w-4 text-primary" />
-                      </div>
-                    </div>
-                    <div className="text-3xl font-bold text-foreground">{k.value}</div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {porCliente.map(p => {
