@@ -125,10 +125,6 @@ export default function ManutencaoGeral() {
     });
   }, [clientes, indicadoresMes]);
 
-  const ranking = useMemo(
-    () => [...porCliente].filter(p => p.ind).sort((a, b) => b.slaMedio - a.slaMedio),
-    [porCliente],
-  );
 
   const chartData = useMemo(
     () => porCliente.filter(p => p.ind).map(p => ({
