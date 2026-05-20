@@ -239,7 +239,7 @@ export default function ManutencaoGeral() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="grid grid-cols-2 gap-2 text-center">
                       <div className="rounded-lg bg-secondary/40 p-2">
                         <div className="text-lg font-bold">{p.corretivasAbertas}</div>
                         <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Corr. Abertas</div>
@@ -248,19 +248,8 @@ export default function ManutencaoGeral() {
                         <div className="text-lg font-bold">{p.corretivasFechadas}</div>
                         <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Corr. Fechadas</div>
                       </div>
-                      <div className="rounded-lg bg-secondary/40 p-2">
-                        <div className="text-lg font-bold" style={{ color: semDados ? undefined : cor }}>
-                          {semDados ? "—" : `${p.slaMedio.toFixed(0)}%`}
-                        </div>
-                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">SLA Médio</div>
-                      </div>
                     </div>
 
-                    {!semDados && (
-                      <div className="space-y-1">
-                        <Progress value={p.slaMedio} className="h-1.5" />
-                      </div>
-                    )}
 
                     <Button size="sm" variant="outline" className="w-full gap-1" onClick={() => navigate(`/manutencao/cliente/${p.cliente.id}`)}>
                       Ver dashboard completo <ArrowRight className="h-3.5 w-3.5" />
