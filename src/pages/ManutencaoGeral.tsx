@@ -214,7 +214,6 @@ export default function ManutencaoGeral() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {porCliente.map(p => {
               const semDados = !p.ind;
-              const cor = statusColor(p.slaMedio);
               return (
                 <Card key={p.cliente.id}>
                   <CardContent className="p-5 space-y-4">
