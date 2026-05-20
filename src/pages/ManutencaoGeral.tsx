@@ -126,14 +126,6 @@ export default function ManutencaoGeral() {
   }, [clientes, indicadoresMes]);
 
 
-  const chartData = useMemo(
-    () => porCliente.filter(p => p.ind).map(p => ({
-      nome: p.cliente.nome,
-      "SLA Engenharia": Number(p.slaEng.toFixed(1)),
-      "SLA Predial": Number(p.slaPred.toFixed(1)),
-    })),
-    [porCliente],
-  );
 
   const kpis = [
     { label: "Corretivas Abertas", icon: Wrench, value: totals.corretivasAbertas },
