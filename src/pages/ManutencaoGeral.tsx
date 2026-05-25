@@ -23,11 +23,6 @@ const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCa
 interface Cliente { id: string; nome: string; responsavel: string | null; ativo: boolean; }
 interface Indicador { cliente_id: string; mes: string; ano: number; [k: string]: any; }
 
-function statusColor(sla: number) {
-  if (sla >= 80) return "hsl(142 71% 45%)";
-  if (sla >= 60) return "hsl(48 96% 53%)";
-  return "hsl(0 84% 60%)";
-}
 function statusBadgeCls(sla: number) {
   if (sla >= 80) return "bg-green-500/15 text-green-500 border-green-500/30";
   if (sla >= 60) return "bg-yellow-500/15 text-yellow-500 border-yellow-500/30";
