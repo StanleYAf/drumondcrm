@@ -52,15 +52,18 @@ export default function ManutencaoGeral() {
       setLoading(true);
       setError(null);
       try {
-        const [cRes, iRes] = await Promise.all([
+        const [cRes, iRes, osRes] = await Promise.all([
           supabase.from("clientes").select("id, nome, responsavel, ativo").eq("ativo", true).order("nome"),
           supabase.from("indicadores_manutencao").select("*"),
+          supabase.from("ordens_servico").select("estado, mes, ano"),
         ]);
         if (cRes.error) throw cRes.error;
         if (iRes.error) throw iRes.error;
+        if (osRes.error) throw osRes.error;
         if (!cancelled) {
           setClientes((cRes.data || []) as Cliente[]);
           setIndicadores((iRes.data || []) as Indicador[]);
+          setOrdensServico(osRes.data || []);
         }
       } catch (e: any) {
         if (!cancelled) setError(e.message || "Erro ao carregar dados");
