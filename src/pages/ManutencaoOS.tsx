@@ -285,11 +285,13 @@ export default function ManutencaoOS() {
     const contagem = new Map<string, number>();
     for (const os of filtered) {
       const estado = os.estado || "Sem estado";
+      if (FECHADAS.has(estado)) continue; // ocultar fechadas do gráfico
       contagem.set(estado, (contagem.get(estado) || 0) + 1);
     }
-    const total = filtered.length;
+    const totalVisivel = Array.from(contagem.values()).reduce((s, v) => s + v, 0);
+    if (totalVisivel === 0) return [];
     const dados = Array.from(contagem.entries()).map(([estado, qtd]) => ({
-      estado, qtd, pct: (qtd / total) * 100,
+      estado, qtd, pct: (qtd / totalVisivel) * 100,
     }));
     const principais = dados.filter(d => d.pct >= 1);
     const outros = dados.filter(d => d.pct < 1);
