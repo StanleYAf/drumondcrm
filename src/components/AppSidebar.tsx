@@ -40,6 +40,7 @@ const groups: Group[] = [
       { title: "Dash Engenharia", url: "/manutencao", icon: LayoutDashboard },
       { title: "Clientes", url: "/manutencao/clientes", icon: Building2, adminOnly: true },
       { title: "Indicadores", url: "/manutencao/os", icon: ClipboardList },
+      { title: "Boletim", url: "/manutencao/boletim", icon: FileText },
     ],
   },
   {
