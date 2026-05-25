@@ -24,6 +24,7 @@ import ManutencaoGeral from "./pages/ManutencaoGeral";
 import ManutencaoUpload from "./pages/ManutencaoUpload";
 import ManutencaoClientes from "./pages/ManutencaoClientes";
 import ManutencaoOS from "./pages/ManutencaoOS";
+import ManutencaoBoletim from "./pages/ManutencaoBoletim";
 import Financeiro from "./pages/Financeiro";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -64,6 +65,7 @@ const App = () => (
                               <Route path="/manutencao/upload" element={<RoleGuard allowed={["manutencao", "admin"]}><ManutencaoUpload /></RoleGuard>} />
                               <Route path="/manutencao/clientes" element={<RoleGuard allowed={["admin"]}><ManutencaoClientes /></RoleGuard>} />
                               <Route path="/manutencao/os" element={<RoleGuard allowed={["manutencao", "admin"]}><ManutencaoOS /></RoleGuard>} />
+                              <Route path="/manutencao/boletim" element={<RoleGuard allowed={["manutencao", "admin"]}><ManutencaoBoletim /></RoleGuard>} />
                               <Route path="/manutencao/cliente/:clienteId" element={<RoleGuard allowed={["manutencao", "admin"]}><Manutencao /></RoleGuard>} />
                               <Route path="/financeiro" element={<RoleGuard allowed={["admin"]}><Financeiro /></RoleGuard>} />
                               <Route path="*" element={<NotFound />} />
