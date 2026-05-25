@@ -123,7 +123,94 @@ export default function ManutencaoGeral() {
     });
   }, [clientes, indicadoresMes]);
 
+  const estadoCores: Record<string, string> = {
+    "Fechada": "#22c55e",
+    "Aberta": "#ef4444",
+    "Cancelada": "#6b7280",
+    "Aguardando peças": "#f97316",
+    "Aguardando Análise Crítica": "#eab308",
+    "Em Espera": "#a855f7",
+    "em manutenção": "#3b82f6",
+    "Em execução": "#06b6d4",
+    "Aguardando analise": "#ec4899",
+  };
+  const corPadrao = "#94a3b8";
 
+  const dadosGrafico = useMemo(() => {
+    const osMes = ordensServico.filter(os => os.ano === anoSel && os.mes === mesSel);
+    if (osMes.length === 0) return [];
+
+    const contagem = new Map<string, number>();
+    for (const os of osMes) {
+      const estado = os.estado || "Sem estado";
+      contagem.set(estado, (contagem.get(estado) || 0) + 1);
+    }
+
+    const total = osMes.length;
+    const dados = Array.from(contagem.entries()).map(([estado, qtd]) => ({
+      estado,
+      qtd,
+      pct: (qtd / total) * 100,
+    }));
+
+    const principais = dados.filter(d => d.pct >= 1);
+    const outros = dados.filter(d => d.pct < 1);
+
+    const resultado = principais.map(d => ({
+      name: d.estado,
+      value: d.qtd,
+      fill: estadoCores[d.estado] || corPadrao,
+      pct: d.pct,
+    }));
+
+    if (outros.length > 0) {
+      const qtdOutros = outros.reduce((s, d) => s + d.qtd, 0);
+      const pctOutros = outros.reduce((s, d) => s + d.pct, 0);
+      resultado.push({
+        name: "Outros",
+        value: qtdOutros,
+        fill: corPadrao,
+        pct: pctOutros,
+      });
+    }
+
+    return resultado.sort((a, b) => b.value - a.value);
+  }, [ordensServico, anoSel, mesSel]);
+
+  const renderLabel = (entry: any) => {
+    const pct = entry.pct;
+    if (pct < 3) return "";
+    return `${entry.value}`;
+  };
+
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const p = payload[0];
+      const pct = p.payload.pct as number;
+      return (
+        <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-lg">
+          <p className="font-semibold text-foreground text-sm">{p.name}</p>
+          <p className="text-muted-foreground text-xs">Quantidade: {p.value}</p>
+          <p className="text-muted-foreground text-xs">Percentual: {pct.toFixed(1)}%</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const CustomLegend = ({ payload }: any) => {
+    if (!payload) return null;
+    return (
+      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
+        {payload.map((entry: any) => (
+          <div key={entry.value} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
+            <span>{entry.value} ({entry.payload.value})</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   if (loading) return <DashboardSkeleton />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
