@@ -26,6 +26,7 @@ import { EmptyState } from "@/components/EmptyState";
 import {
   ClipboardList, Search, X, Activity, AlertTriangle, CheckCircle2, Inbox, Repeat, Zap, Plus,
 } from "lucide-react";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from "recharts";
 
 const MESES = [
   "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
@@ -264,6 +265,79 @@ export default function ManutencaoOS() {
   const dispColor = kpis.disponibilidade >= 85 ? "text-emerald-500"
     : kpis.disponibilidade >= 70 ? "text-amber-500" : "text-red-500";
 
+  // Gráfico de estado das OS (baseado nos filtros aplicados)
+  const estadoCores: Record<string, string> = {
+    "Fechada": "#22c55e",
+    "Aberta": "#ef4444",
+    "Cancelada": "#6b7280",
+    "Aguardando peças": "#f97316",
+    "Aguardando Análise Crítica": "#eab308",
+    "Em Espera": "#a855f7",
+    "em manutenção": "#3b82f6",
+    "Em execução": "#06b6d4",
+    "Aguardando analise": "#ec4899",
+    "Serviço finalizado": "#22c55e",
+  };
+  const corPadrao = "#94a3b8";
+
+  const dadosGraficoEstado = useMemo(() => {
+    if (filtered.length === 0) return [];
+    const contagem = new Map<string, number>();
+    for (const os of filtered) {
+      const estado = os.estado || "Sem estado";
+      contagem.set(estado, (contagem.get(estado) || 0) + 1);
+    }
+    const total = filtered.length;
+    const dados = Array.from(contagem.entries()).map(([estado, qtd]) => ({
+      estado, qtd, pct: (qtd / total) * 100,
+    }));
+    const principais = dados.filter(d => d.pct >= 1);
+    const outros = dados.filter(d => d.pct < 1);
+    const resultado = principais.map(d => ({
+      name: d.estado,
+      value: d.qtd,
+      fill: estadoCores[d.estado] || corPadrao,
+      pct: d.pct,
+    }));
+    if (outros.length > 0) {
+      const qtdOutros = outros.reduce((s, d) => s + d.qtd, 0);
+      const pctOutros = outros.reduce((s, d) => s + d.pct, 0);
+      resultado.push({ name: "Outros", value: qtdOutros, fill: corPadrao, pct: pctOutros });
+    }
+    return resultado.sort((a, b) => b.value - a.value);
+  }, [filtered]);
+
+  const renderLabelEstado = (entry: any) => (entry.pct < 3 ? "" : `${entry.value}`);
+
+  const TooltipEstado = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const p = payload[0];
+      const pct = p.payload.pct as number;
+      return (
+        <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-lg">
+          <p className="font-semibold text-foreground text-sm">{p.name}</p>
+          <p className="text-muted-foreground text-xs">Quantidade: {p.value}</p>
+          <p className="text-muted-foreground text-xs">Percentual: {pct.toFixed(1)}%</p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const LegendEstado = ({ payload }: any) => {
+    if (!payload) return null;
+    return (
+      <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
+        {payload.map((entry: any) => (
+          <div key={entry.value} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
+            <span>{entry.value} ({entry.payload.value})</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <TooltipProvider>
       <div className="space-y-6">
@@ -407,6 +481,43 @@ export default function ManutencaoOS() {
             accent={dispColor}
           />
         </div>
+
+        {/* Gráfico de Pizza - Estado das Ordens de Serviço */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Estado das Ordens de Serviço</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dadosGraficoEstado.length === 0 ? (
+              <div className="py-12 text-center text-sm text-muted-foreground">
+                Nenhuma OS encontrada no período
+              </div>
+            ) : (
+              <div className="w-full">
+                <ResponsiveContainer width="100%" height={360}>
+                  <PieChart>
+                    <Pie
+                      data={dadosGraficoEstado}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="45%"
+                      outerRadius="80%"
+                      labelLine={false}
+                      label={renderLabelEstado}
+                    >
+                      {dadosGraficoEstado.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <ReTooltip content={<TooltipEstado />} />
+                    <Legend content={<LegendEstado />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Tabela */}
         <Card>
