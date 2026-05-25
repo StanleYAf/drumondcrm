@@ -482,6 +482,43 @@ export default function ManutencaoOS() {
           />
         </div>
 
+        {/* Gráfico de Pizza - Estado das Ordens de Serviço */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Estado das Ordens de Serviço</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dadosGraficoEstado.length === 0 ? (
+              <div className="py-12 text-center text-sm text-muted-foreground">
+                Nenhuma OS encontrada no período
+              </div>
+            ) : (
+              <div className="w-full">
+                <ResponsiveContainer width="100%" height={360}>
+                  <PieChart>
+                    <Pie
+                      data={dadosGraficoEstado}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="45%"
+                      outerRadius="80%"
+                      labelLine={false}
+                      label={renderLabelEstado}
+                    >
+                      {dadosGraficoEstado.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <ReTooltip content={<TooltipEstado />} />
+                    <Legend content={<LegendEstado />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Tabela */}
         <Card>
           <CardHeader>
