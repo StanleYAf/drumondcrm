@@ -37,9 +37,9 @@ const groups: Group[] = [
     matchPrefix: "/manutencao",
     permission: "manutencao",
     subs: [
-      { title: "Dashboard Geral", url: "/manutencao", icon: LayoutDashboard },
+      { title: "Dash Engenharia", url: "/manutencao", icon: LayoutDashboard },
       { title: "Clientes", url: "/manutencao/clientes", icon: Building2, adminOnly: true },
-      { title: "Ordens de Serviço", url: "/manutencao/os", icon: ClipboardList },
+      { title: "Indicadores", url: "/manutencao/os", icon: ClipboardList },
     ],
   },
   {
