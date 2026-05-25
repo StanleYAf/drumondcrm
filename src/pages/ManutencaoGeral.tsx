@@ -41,6 +41,7 @@ export default function ManutencaoGeral() {
 
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [indicadores, setIndicadores] = useState<Indicador[]>([]);
+  const [ordensServico, setOrdensServico] = useState<any[]>([]);
   const [periodo, setPeriodo] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
