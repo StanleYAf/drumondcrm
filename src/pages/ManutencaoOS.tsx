@@ -63,6 +63,17 @@ interface OS {
 interface Cliente { id: string; nome: string }
 
 const FECHADAS = new Set(["Fechada", "Serviço finalizado"]);
+
+// Normaliza tipo_servico (lida com variações de caixa: "Manutenção corretiva" vs "Manutenção Corretiva")
+function tipoCanon(t: string | null): "Corretiva" | "Preventiva" | "Busca Ativa" | "Outro" {
+  const v = (t || "").toLowerCase();
+  if (v.includes("corret")) return "Corretiva";
+  if (v.includes("prevent")) return "Preventiva";
+  if (v.includes("busca ativa")) return "Busca Ativa";
+  return "Outro";
+}
+const isCorretiva = (t: string | null) => tipoCanon(t) === "Corretiva";
+
 function normalizeEstado(e: string | null): "Fechada" | "Aberta" | "Cancelada" | "Outro" {
   if (!e) return "Outro";
   const v = e.trim();
@@ -145,7 +156,7 @@ export default function ManutencaoOS() {
       if (fCliente !== "all" && r.cliente_id !== fCliente) return false;
       if (fMes !== "all" && r.mes !== fMes) return false;
       if (fEstado !== "all" && normalizeEstado(r.estado) !== fEstado) return false;
-      if (fTipo !== "all" && (r.tipo_servico || "") !== fTipo) return false;
+      if (fTipo !== "all" && tipoCanon(r.tipo_servico) !== tipoCanon(fTipo)) return false;
       if (fSetor !== "all" && (r.quadro_trabalho || "") !== fSetor) return false;
       if (fPrioridade !== "all" && (r.prioridade || "") !== fPrioridade) return false;
       if (q) {
@@ -161,7 +172,7 @@ export default function ManutencaoOS() {
   const reincidentes = useMemo(() => {
     const counts = new Map<string, number>();
     for (const r of filtered) {
-      if (r.tipo_servico !== "Manutenção Corretiva") continue;
+      if (!isCorretiva(r.tipo_servico)) continue;
       const key = (r.tag || r.numero_serie || "").trim();
       if (!key) continue;
       counts.set(key, (counts.get(key) || 0) + 1);
@@ -174,7 +185,7 @@ export default function ManutencaoOS() {
   const equipamentosComCorretivas = useMemo(() => {
     const set = new Set<string>();
     for (const r of filtered) {
-      if (r.tipo_servico !== "Manutenção Corretiva") continue;
+      if (!isCorretiva(r.tipo_servico)) continue;
       const key = (r.tag || r.numero_serie || "").trim();
       if (key) set.add(key);
     }
@@ -197,7 +208,7 @@ export default function ManutencaoOS() {
       const est = normalizeEstado(r.estado);
       if (est === "Aberta") abertas++;
       if (est === "Fechada") fechadas++;
-      if (r.tipo_servico === "Busca Ativa") buscaAtiva++;
+      if (tipoCanon(r.tipo_servico) === "Busca Ativa") buscaAtiva++;
     }
 
     // Disponibilidade por equipamento:
@@ -224,7 +235,7 @@ export default function ManutencaoOS() {
       if (criacao == null) continue;
       const entry = porEquip.get(key) || { first: criacao, indisp: 0 };
       if (criacao < entry.first) entry.first = criacao;
-      if (r.tipo_servico === "Manutenção Corretiva") {
+      if (isCorretiva(r.tipo_servico)) {
         const fim = parseDate(r.data_conclusao) ?? todayMs;
         const dias = Math.max(0, Math.round((fim - criacao) / DAY));
         entry.indisp += dias;
