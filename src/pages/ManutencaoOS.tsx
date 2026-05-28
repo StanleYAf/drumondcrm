@@ -74,6 +74,31 @@ function tipoCanon(t: string | null): "Corretiva" | "Preventiva" | "Busca Ativa"
 }
 const isCorretiva = (t: string | null) => tipoCanon(t) === "Corretiva";
 
+// Chave de identificação de equipamento para reincidência/disponibilidade.
+// Usa o primeiro identificador disponível (forte → fraco):
+//   1) numero_serie
+//   2) tag
+//   3) combinação tipo_equipamento + modelo + localizacao (precisa de >=2)
+// Retorna "" quando nada útil existe — esses casos ficam de fora.
+function equipKey(r: {
+  numero_serie?: string | null;
+  tag?: string | null;
+  tipo_equipamento?: string | null;
+  modelo?: string | null;
+  localizacao?: string | null;
+}): string {
+  const ns = (r.numero_serie || "").trim().toLowerCase();
+  if (ns) return `ns:${ns}`;
+  const tg = (r.tag || "").trim().toLowerCase();
+  if (tg) return `tg:${tg}`;
+  const tipo = (r.tipo_equipamento || "").trim().toLowerCase();
+  const modelo = (r.modelo || "").trim().toLowerCase();
+  const loc = (r.localizacao || "").trim().toLowerCase();
+  const partes = [tipo, modelo, loc].filter(Boolean);
+  if (partes.length >= 2) return `cmp:${partes.join("|")}`;
+  return "";
+}
+
 function normalizeEstado(e: string | null): "Fechada" | "Aberta" | "Cancelada" | "Outro" {
   if (!e) return "Outro";
   const v = e.trim();
