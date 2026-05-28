@@ -24,8 +24,7 @@ interface Indicador { cliente_id: string; mes: string; ano: number; [k: string]:
 
 function statusBadgeCls(sla: number) {
   if (sla >= 80) return "bg-green-500/15 text-green-500 border-green-500/30";
-  if (sla >= 60) return "bg-yellow-500/15 text-yellow-500 border-yellow-500/30";
-  return "bg-red-500/15 text-red-500 border-red-500/30";
+  return "bg-yellow-500/15 text-yellow-500 border-yellow-500/30";
 }
 
 export default function ManutencaoGeral() {
@@ -179,7 +178,7 @@ export default function ManutencaoGeral() {
                         <Badge variant="outline" className="bg-muted text-muted-foreground border-border">Sem dados</Badge>
                       ) : (
                         <Badge variant="outline" className={statusBadgeCls(p.slaMedio)}>
-                          {p.slaMedio >= 80 ? "Bom" : p.slaMedio >= 60 ? "Atenção" : "Crítico"}
+                          {p.slaMedio >= 80 ? "Bom" : "Atenção"}
                         </Badge>
                       )}
                     </div>
