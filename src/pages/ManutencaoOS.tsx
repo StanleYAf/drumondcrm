@@ -198,7 +198,7 @@ export default function ManutencaoOS() {
     const counts = new Map<string, number>();
     for (const r of filtered) {
       if (!isCorretiva(r.tipo_servico)) continue;
-      const key = (r.tag || r.numero_serie || "").trim();
+      const key = equipKey(r);
       if (!key) continue;
       counts.set(key, (counts.get(key) || 0) + 1);
     }
@@ -211,7 +211,7 @@ export default function ManutencaoOS() {
     const set = new Set<string>();
     for (const r of filtered) {
       if (!isCorretiva(r.tipo_servico)) continue;
-      const key = (r.tag || r.numero_serie || "").trim();
+      const key = equipKey(r);
       if (key) set.add(key);
     }
     return set.size;
@@ -220,7 +220,7 @@ export default function ManutencaoOS() {
   const displayed = useMemo(() => {
     if (!onlyReincidentes) return filtered;
     return filtered.filter((r) => {
-      const key = (r.tag || r.numero_serie || "").trim();
+      const key = equipKey(r);
       return key && reincidentes.has(key);
     });
   }, [filtered, onlyReincidentes, reincidentes]);
@@ -254,7 +254,7 @@ export default function ManutencaoOS() {
 
     const porEquip = new Map<string, { first: number; indisp: number }>();
     for (const r of filtered) {
-      const key = (r.tag || r.numero_serie || "").trim();
+      const key = equipKey(r);
       if (!key) continue;
       const criacao = parseDate(r.data_criacao);
       if (criacao == null) continue;
