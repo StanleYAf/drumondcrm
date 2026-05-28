@@ -265,8 +265,8 @@ export default function ManutencaoBoletim() {
               <div className="rounded-lg p-5" style={{ backgroundColor: "#f1f5f9" }}>
                 <h2 className="text-sm font-bold tracking-wider mb-3" style={{ color: "#1e3a5f" }}>O.S. POR UNIDADE</h2>
                 <div className="grid grid-cols-2 gap-3">
-                  <MiniChart title="Corretivas" data={stats.corretivasPorUnidade} color="#ef4444" />
-                  <MiniChart title="Preventivas" data={stats.preventivasPorUnidade} color="#2563eb" />
+                  <UnidadeRanking title="Corretivas" data={stats.corretivasPorUnidade} color="#ef4444" />
+                  <UnidadeRanking title="Preventivas" data={stats.preventivasPorUnidade} color="#2563eb" />
                 </div>
               </div>
             </div>
