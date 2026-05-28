@@ -63,6 +63,17 @@ interface OS {
 interface Cliente { id: string; nome: string }
 
 const FECHADAS = new Set(["Fechada", "Serviço finalizado"]);
+
+// Normaliza tipo_servico (lida com variações de caixa: "Manutenção corretiva" vs "Manutenção Corretiva")
+function tipoCanon(t: string | null): "Corretiva" | "Preventiva" | "Busca Ativa" | "Outro" {
+  const v = (t || "").toLowerCase();
+  if (v.includes("corret")) return "Corretiva";
+  if (v.includes("prevent")) return "Preventiva";
+  if (v.includes("busca ativa")) return "Busca Ativa";
+  return "Outro";
+}
+const isCorretiva = (t: string | null) => tipoCanon(t) === "Corretiva";
+
 function normalizeEstado(e: string | null): "Fechada" | "Aberta" | "Cancelada" | "Outro" {
   if (!e) return "Outro";
   const v = e.trim();
