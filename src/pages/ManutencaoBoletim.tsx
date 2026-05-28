@@ -265,8 +265,8 @@ export default function ManutencaoBoletim() {
               <div className="rounded-lg p-5" style={{ backgroundColor: "#f1f5f9" }}>
                 <h2 className="text-sm font-bold tracking-wider mb-3" style={{ color: "#1e3a5f" }}>O.S. POR UNIDADE</h2>
                 <div className="grid grid-cols-2 gap-3">
-                  <MiniChart title="Corretivas" data={stats.corretivasPorUnidade} color="#ef4444" />
-                  <MiniChart title="Preventivas" data={stats.preventivasPorUnidade} color="#2563eb" />
+                  <UnidadeRanking title="Corretivas" data={stats.corretivasPorUnidade} color="#ef4444" />
+                  <UnidadeRanking title="Preventivas" data={stats.preventivasPorUnidade} color="#2563eb" />
                 </div>
               </div>
             </div>
@@ -372,6 +372,45 @@ function MiniChart({ title, data, color }: { title: string; data: { unidade: str
           </ResponsiveContainer>
         )}
       </div>
+    </div>
+  );
+}
+
+function UnidadeRanking({ title, data, color }: { title: string; data: { unidade: string; qtd: number }[]; color: string }) {
+  const cleanLabel = (s: string) => {
+    const t = (s || "").trim();
+    if (!t || /^sem unidade$/i.test(t)) return "Não informado";
+    return t.replace(/^DSH\s*-\s*/i, "").replace(/^SEMPER\s*-\s*/i, "");
+  };
+  const rows = data.slice(0, 6).map(d => ({ ...d, label: cleanLabel(d.unidade) }));
+  const total = data.reduce((a, b) => a + b.qtd, 0);
+  const max = Math.max(1, ...rows.map(r => r.qtd));
+  return (
+    <div className="bg-white rounded-md p-3 border border-slate-200">
+      <div className="flex items-baseline justify-between mb-2">
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-700">{title}</div>
+        <div className="text-[10px] text-slate-500">Total <span className="font-bold text-slate-800">{total}</span></div>
+      </div>
+      {rows.length === 0 ? (
+        <div className="text-xs text-slate-400 text-center py-6">Sem dados</div>
+      ) : (
+        <ul className="space-y-1.5">
+          {rows.map((r) => {
+            const pct = (r.qtd / max) * 100;
+            return (
+              <li key={r.label} className="text-[11px]">
+                <div className="flex items-center justify-between mb-0.5">
+                  <span className="truncate text-slate-700 pr-2" title={r.label}>{r.label}</span>
+                  <span className="font-bold tabular-nums" style={{ color }}>{r.qtd}</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                  <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }
