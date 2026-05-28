@@ -178,7 +178,7 @@ export default function ManutencaoGeral() {
                         <Badge variant="outline" className="bg-muted text-muted-foreground border-border">Sem dados</Badge>
                       ) : (
                         <Badge variant="outline" className={statusBadgeCls(p.slaMedio)}>
-                          {p.slaMedio >= 80 ? "Bom" : p.slaMedio >= 60 ? "Atenção" : "Crítico"}
+                          {p.slaMedio >= 80 ? "Bom" : "Atenção"}
                         </Badge>
                       )}
                     </div>
