@@ -1051,6 +1051,45 @@ export type Database = {
         }
         Relationships: []
       }
+      sync_logs: {
+        Row: {
+          ano: number | null
+          cliente_id: string | null
+          created_at: string
+          id: string
+          mensagem: string | null
+          mes: string | null
+          status: string
+          total_indicadores: number
+          total_os: number
+          total_tecnicos: number
+        }
+        Insert: {
+          ano?: number | null
+          cliente_id?: string | null
+          created_at?: string
+          id?: string
+          mensagem?: string | null
+          mes?: string | null
+          status?: string
+          total_indicadores?: number
+          total_os?: number
+          total_tecnicos?: number
+        }
+        Update: {
+          ano?: number | null
+          cliente_id?: string | null
+          created_at?: string
+          id?: string
+          mensagem?: string | null
+          mes?: string | null
+          status?: string
+          total_indicadores?: number
+          total_os?: number
+          total_tecnicos?: number
+        }
+        Relationships: []
+      }
       tecnicos_manutencao: {
         Row: {
           ano: number
