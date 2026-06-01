@@ -1,7 +1,7 @@
 import { Fragment, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, Sun, Moon, Package, Boxes, LogOut, PanelLeftClose, PanelLeft, Wrench, Briefcase, Building2, ChevronDown, ClipboardList, DollarSign } from "lucide-react";
+import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, Sun, Moon, Package, Boxes, LogOut, PanelLeftClose, PanelLeft, Wrench, Briefcase, Building2, ChevronDown, ClipboardList, DollarSign, RefreshCw } from "lucide-react";
 import { useTheme } from "@/lib/themeContext";
 import { useAuth } from "@/lib/authContext";
 
@@ -25,6 +25,7 @@ const groups: Group[] = [
       { title: "Clientes", url: "/manutencao/clientes", icon: Building2, adminOnly: true },
       { title: "Indicadores", url: "/manutencao/os", icon: ClipboardList },
       { title: "Boletim", url: "/manutencao/boletim", icon: FileText },
+      { title: "Logs de Sincronização", url: "/manutencao/sync-logs", icon: RefreshCw, adminOnly: true },
     ],
   },
   {
