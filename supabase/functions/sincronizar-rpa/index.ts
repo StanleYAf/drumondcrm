@@ -101,6 +101,17 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    await supabase.from("sync_logs").insert({
+      cliente_id: cliente_id ?? null,
+      mes,
+      ano,
+      total_os: ordens_servico?.length ?? 0,
+      total_indicadores: indicadores?.length ?? 0,
+      total_tecnicos: tecnicos?.length ?? 0,
+      status: "sucesso",
+      mensagem: null,
+    });
+
     return new Response(
       JSON.stringify({
         ok: true,
@@ -114,6 +125,16 @@ Deno.serve(async (req: Request) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err: any) {
+    await supabase.from("sync_logs").insert({
+      cliente_id: cliente_id ?? null,
+      mes,
+      ano,
+      total_os: ordens_servico?.length ?? 0,
+      total_indicadores: indicadores?.length ?? 0,
+      total_tecnicos: tecnicos?.length ?? 0,
+      status: "erro",
+      mensagem: err.message,
+    });
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
