@@ -97,7 +97,53 @@ export default function SyncLogs() {
         </div>
       </Card>
 
-      <Card className="overflow-hidden">
+      {/* Card list - portrait / narrow */}
+      <div className="lg:hidden space-y-3">
+        {loading ? (
+          <Card className="p-6 text-center text-muted-foreground">Carregando...</Card>
+        ) : filtered.length === 0 ? (
+          <Card className="p-6 text-center text-muted-foreground">Nenhum log encontrado</Card>
+        ) : filtered.map(log => (
+          <Card key={log.id} className="p-4 space-y-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-sm font-medium truncate">
+                  {log.cliente_id ? (clienteMap.get(log.cliente_id) ?? "—") : <span className="text-muted-foreground italic">Global</span>}
+                </div>
+                <div className="text-xs text-muted-foreground tabular-nums">{formatDate(log.created_at)}</div>
+              </div>
+              <Badge variant={log.status === "sucesso" ? "default" : "destructive"} className="shrink-0">
+                {log.status}
+              </Badge>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {log.mes && log.ano ? `${log.mes}/${log.ano}` : "—"}
+            </div>
+            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border">
+              <div className="text-center">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">OS</div>
+                <div className="text-base font-semibold tabular-nums">{log.total_os}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Indicad.</div>
+                <div className="text-base font-semibold tabular-nums">{log.total_indicadores}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Técnicos</div>
+                <div className="text-base font-semibold tabular-nums">{log.total_tecnicos}</div>
+              </div>
+            </div>
+            {log.mensagem && (
+              <div className="text-xs text-muted-foreground pt-2 border-t border-border break-words">
+                {log.mensagem}
+              </div>
+            )}
+          </Card>
+        ))}
+      </div>
+
+      {/* Table - landscape / wide */}
+      <Card className="overflow-x-auto hidden lg:block">
         <Table>
           <TableHeader>
             <TableRow>
