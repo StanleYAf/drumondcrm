@@ -67,7 +67,6 @@ const groups: Group[] = [
     permission: "estoque",
     subs: [
       { title: "Estoque", url: "/estoque", icon: Boxes },
-      { title: "Relatórios", url: "/estoque/relatorios", icon: FileText },
     ],
   },
   {
