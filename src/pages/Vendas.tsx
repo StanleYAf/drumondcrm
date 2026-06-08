@@ -270,7 +270,7 @@ export default function Vendas() {
   // Form state
   const emptyForm = {
     nome_cliente: "", empresa: "", telefone: "", email: "",
-    origem: "Outro" as Origem, valor_estimado: "", responsavel: "", observacoes: "",
+    origem: "Outro" as Origem, tipo: "" as Tipo | "", valor_estimado: "", responsavel: "", observacoes: "",
   };
   const [form, setForm] = useState(emptyForm);
 
