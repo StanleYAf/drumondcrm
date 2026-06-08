@@ -615,6 +615,9 @@ export default function Vendas() {
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   <Badge variant="outline" className={ORIGEM_COLORS[detailLead.origem]}>{detailLead.origem}</Badge>
+                  {detailLead.tipo && (
+                    <Badge variant="outline" className={TIPO_COLORS[detailLead.tipo]}>{detailLead.tipo}</Badge>
+                  )}
                   <Badge variant="outline" className={ETAPAS.find((e) => e.key === detailLead.etapa)?.color}>
                     {ETAPAS.find((e) => e.key === detailLead.etapa)?.label}
                   </Badge>
