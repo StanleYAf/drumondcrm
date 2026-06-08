@@ -257,6 +257,7 @@ export default function Lancamentos() {
   const paginatedEntries = allEntries.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
 
   const totalMes = allEntries.reduce((s, e) => s + e.valor, 0);
+  const totalComissao = allEntries.reduce((s, e) => s + calcularComissao(e.cat, e.valor, e.custos ?? 0), 0);
   const { metas: currentMetas } = getMetasForMonth(data.historico_metas, filterMonth, filterYear, data.metas, data.meta_semanal);
   const metaCategoria = categoria === "todos"
     ? Object.values(currentMetas).reduce((a, b) => a + b, 0)
