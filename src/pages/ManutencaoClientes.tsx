@@ -154,7 +154,12 @@ export default function ManutencaoClientes() {
       toast.error("Token público ainda não gerado. Edite e salve o cliente.");
       return;
     }
-    const url = `${window.location.origin}/publico/cliente/${c.public_token}`;
+    // Use sempre o domínio publicado para garantir acesso sem login do Lovable.
+    // Previews (id-preview--*.lovable.app) exigem login da workspace.
+    const origin = window.location.hostname.includes("id-preview")
+      ? "https://drumondcrm.lovable.app"
+      : window.location.origin;
+    const url = `${origin}/publico/cliente/${c.public_token}`;
     try {
       await navigator.clipboard.writeText(url);
       toast.success("Link público copiado!");
