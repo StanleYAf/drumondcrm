@@ -38,6 +38,45 @@ export type Database = {
         }
         Relationships: []
       }
+      demandas: {
+        Row: {
+          created_at: string
+          criado_por: string
+          data_entrega: string | null
+          descricao: string | null
+          id: string
+          responsavel_id: string
+          setor: Database["public"]["Enums"]["demanda_setor"]
+          status: Database["public"]["Enums"]["demanda_status"]
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          criado_por: string
+          data_entrega?: string | null
+          descricao?: string | null
+          id?: string
+          responsavel_id: string
+          setor: Database["public"]["Enums"]["demanda_setor"]
+          status?: Database["public"]["Enums"]["demanda_status"]
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          criado_por?: string
+          data_entrega?: string | null
+          descricao?: string | null
+          id?: string
+          responsavel_id?: string
+          setor?: Database["public"]["Enums"]["demanda_setor"]
+          status?: Database["public"]["Enums"]["demanda_status"]
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       financeiro: {
         Row: {
           ano: number
@@ -1227,9 +1266,12 @@ export type Database = {
     Functions: {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_controlador: { Args: { _user_id: string }; Returns: boolean }
+      pode_ver_todas_demandas: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       categoria_lancamento: "produto" | "servico" | "contrato" | "acessorio"
+      demanda_setor: "engenharia" | "comercial" | "financeiro"
+      demanda_status: "pendente" | "execucao" | "feita"
       etapa_lead:
         | "novo_lead"
         | "primeiro_contato"
@@ -1374,6 +1416,8 @@ export const Constants = {
   public: {
     Enums: {
       categoria_lancamento: ["produto", "servico", "contrato", "acessorio"],
+      demanda_setor: ["engenharia", "comercial", "financeiro"],
+      demanda_status: ["pendente", "execucao", "feita"],
       etapa_lead: [
         "novo_lead",
         "primeiro_contato",
