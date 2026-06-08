@@ -40,6 +40,7 @@ import {
 
 // ── Types ──────────────────────────────────────────────────────
 type Origem = "Instagram" | "Facebook" | "Indicação" | "Site" | "Google" | "WhatsApp" | "Outro";
+type Tipo = "Clínica" | "Hospital" | "Veterinário" | "Consultório";
 type Etapa = "novo_lead" | "primeiro_contato" | "em_qualificacao" | "convertido" | "perdido";
 
 interface Lead {
@@ -50,6 +51,7 @@ interface Lead {
   telefone: string;
   email: string | null;
   origem: Origem;
+  tipo: Tipo | null;
   valor_estimado: number | null;
   responsavel: string | null;
   etapa: Etapa;
@@ -75,6 +77,13 @@ const ORIGEM_COLORS: Record<Origem, string> = {
   Google: "bg-red-500/20 text-red-300 border-red-500/30",
   WhatsApp: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
   Outro: "bg-zinc-500/20 text-zinc-300 border-zinc-500/30",
+};
+const TIPOS: Tipo[] = ["Clínica", "Hospital", "Veterinário", "Consultório"];
+const TIPO_COLORS: Record<Tipo, string> = {
+  Clínica: "bg-teal-500/20 text-teal-300 border-teal-500/30",
+  Hospital: "bg-rose-500/20 text-rose-300 border-rose-500/30",
+  Veterinário: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+  Consultório: "bg-sky-500/20 text-sky-300 border-sky-500/30",
 };
 
 const formatCurrency = (v: number) =>
@@ -226,6 +235,11 @@ function LeadCard({
         <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${ORIGEM_COLORS[lead.origem]}`}>
           {lead.origem}
         </Badge>
+        {lead.tipo && (
+          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${TIPO_COLORS[lead.tipo]}`}>
+            {lead.tipo}
+          </Badge>
+        )}
         {(lead.valor_estimado ?? 0) > 0 && (
           <span className="text-xs text-emerald-400 font-medium">{formatCurrency(lead.valor_estimado!)}</span>
         )}
@@ -254,13 +268,14 @@ export default function Vendas() {
   const [search, setSearch] = useState("");
   const [filterResp, setFilterResp] = useState("all");
   const [filterOrigem, setFilterOrigem] = useState<string>("all");
+  const [filterTipo, setFilterTipo] = useState<string>("all");
   const [filterDateStart, setFilterDateStart] = useState("");
   const [filterDateEnd, setFilterDateEnd] = useState("");
 
   // Form state
   const emptyForm = {
     nome_cliente: "", empresa: "", telefone: "", email: "",
-    origem: "Outro" as Origem, valor_estimado: "", responsavel: "", observacoes: "",
+    origem: "Outro" as Origem, tipo: "" as Tipo | "", valor_estimado: "", responsavel: "", observacoes: "",
   };
   const [form, setForm] = useState(emptyForm);
 
@@ -310,11 +325,12 @@ export default function Vendas() {
       }
       if (filterResp !== "all" && l.responsavel !== filterResp) return false;
       if (filterOrigem !== "all" && l.origem !== filterOrigem) return false;
+      if (filterTipo !== "all" && l.tipo !== filterTipo) return false;
       if (filterDateStart && l.created_at < filterDateStart) return false;
       if (filterDateEnd && l.created_at > filterDateEnd + "T23:59:59") return false;
       return true;
     });
-  }, [leads, search, filterResp, filterOrigem, filterDateStart, filterDateEnd]);
+  }, [leads, search, filterResp, filterOrigem, filterTipo, filterDateStart, filterDateEnd]);
 
   const responsaveis = useMemo(() => [...new Set(leads.map((l) => l.responsavel).filter(Boolean))], [leads]);
 
@@ -330,6 +346,7 @@ export default function Vendas() {
       telefone: form.telefone.trim(),
       email: form.email.trim() || null,
       origem: form.origem as any,
+      tipo: form.tipo ? (form.tipo as Tipo) : null,
       valor_estimado: parseCurrencyMask(form.valor_estimado) || 0,
       responsavel: form.responsavel.trim() || null,
       observacoes: form.observacoes.trim() || null,
@@ -367,6 +384,7 @@ export default function Vendas() {
       telefone: lead.telefone,
       email: lead.email || "",
       origem: lead.origem,
+      tipo: lead.tipo || "",
       valor_estimado: lead.valor_estimado ? numberToCurrencyMask(lead.valor_estimado) : "",
       responsavel: lead.responsavel || "",
       observacoes: lead.observacoes || "",
@@ -459,6 +477,13 @@ export default function Vendas() {
               {ORIGENS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={filterTipo} onValueChange={setFilterTipo}>
+            <SelectTrigger className="w-40 h-9"><SelectValue placeholder="Tipo" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              {TIPOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-muted-foreground whitespace-nowrap">De</span>
             <Input type="date" className="w-36 h-9" value={filterDateStart} onChange={(e) => setFilterDateStart(e.target.value)} />
@@ -532,6 +557,16 @@ export default function Vendas() {
               </Select>
             </div>
             <div>
+              <Label>Tipo</Label>
+              <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v as Tipo })}>
+                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">—</SelectItem>
+                  {TIPOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label>Valor estimado</Label>
               <Input value={form.valor_estimado} onChange={(e) => setForm({ ...form, valor_estimado: applyCurrencyMask(e.target.value) })} placeholder="R$ 0,00" />
             </div>
@@ -580,6 +615,9 @@ export default function Vendas() {
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   <Badge variant="outline" className={ORIGEM_COLORS[detailLead.origem]}>{detailLead.origem}</Badge>
+                  {detailLead.tipo && (
+                    <Badge variant="outline" className={TIPO_COLORS[detailLead.tipo]}>{detailLead.tipo}</Badge>
+                  )}
                   <Badge variant="outline" className={ETAPAS.find((e) => e.key === detailLead.etapa)?.color}>
                     {ETAPAS.find((e) => e.key === detailLead.etapa)?.label}
                   </Badge>
