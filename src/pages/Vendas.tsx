@@ -320,11 +320,12 @@ export default function Vendas() {
       }
       if (filterResp !== "all" && l.responsavel !== filterResp) return false;
       if (filterOrigem !== "all" && l.origem !== filterOrigem) return false;
+      if (filterTipo !== "all" && l.tipo !== filterTipo) return false;
       if (filterDateStart && l.created_at < filterDateStart) return false;
       if (filterDateEnd && l.created_at > filterDateEnd + "T23:59:59") return false;
       return true;
     });
-  }, [leads, search, filterResp, filterOrigem, filterDateStart, filterDateEnd]);
+  }, [leads, search, filterResp, filterOrigem, filterTipo, filterDateStart, filterDateEnd]);
 
   const responsaveis = useMemo(() => [...new Set(leads.map((l) => l.responsavel).filter(Boolean))], [leads]);
 
