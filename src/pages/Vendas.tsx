@@ -40,6 +40,7 @@ import {
 
 // ── Types ──────────────────────────────────────────────────────
 type Origem = "Instagram" | "Facebook" | "Indicação" | "Site" | "Google" | "WhatsApp" | "Outro";
+type Tipo = "Clínica" | "Hospital" | "Veterinário" | "Consultório";
 type Etapa = "novo_lead" | "primeiro_contato" | "em_qualificacao" | "convertido" | "perdido";
 
 interface Lead {
