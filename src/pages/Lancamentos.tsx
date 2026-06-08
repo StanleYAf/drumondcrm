@@ -1,9 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAppData } from "@/lib/dataContext";
 import { CATEGORIA_LABELS, CATEGORIA_ARRAY, CATEGORIA_FIELD, MESES, formatCurrency, formatDate, lancamentoSchema, getMetasForMonth, calcularComissao, type Categoria, type Lancamento, type LancamentoItem } from "@/lib/types";
 import { applyCurrencyMask, parseCurrencyMask, numberToCurrencyMask } from "@/lib/currencyMask";
-import { Trash2, ChevronDown, Search, ChevronUp, Pencil, X, ChevronLeft, ChevronRight, FileX, Download, Plus } from "lucide-react";
+import { Trash2, ChevronDown, Search, ChevronUp, Pencil, X, ChevronLeft, ChevronRight, FileX, Download, Plus, Paperclip, FileText } from "lucide-react";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { EmptyState } from "@/components/EmptyState";
@@ -77,6 +77,8 @@ export default function Lancamentos() {
   const [dataLanc, setDataLanc] = useState(now.toISOString().slice(0, 10));
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formItens, setFormItens] = useState<Omit<LancamentoItem, "lancamento_id">[]>([emptyItem()]);
+  const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [editItem, setEditItem] = useState<(Lancamento & { cat: Categoria }) | null>(null);
   const [editCliente, setEditCliente] = useState("");
@@ -140,7 +142,29 @@ export default function Lancamentos() {
       }
     }
 
-    setCliente(""); setDescricao(""); setTipo(""); setValor(""); setCustos(""); setVendedor(""); setFormItens([emptyItem()]); setShowForm(false);
+    // Upload staged attachments
+    if (stagedFiles.length > 0 && user) {
+      for (const file of stagedFiles) {
+        const safe = file.name.replace(/[^\w.\-]+/g, "_");
+        const path = `${user.id}/${newId}/${crypto.randomUUID()}-${safe}`;
+        const up = await supabase.storage.from("lancamento-anexos").upload(path, file, {
+          contentType: file.type || undefined,
+          upsert: false,
+        });
+        if (!up.error) {
+          await supabase.from("lancamento_anexos").insert({
+            lancamento_id: newId,
+            user_id: user.id,
+            nome: file.name,
+            path,
+            tipo: file.type || null,
+            tamanho: file.size,
+          });
+        }
+      }
+    }
+
+    setCliente(""); setDescricao(""); setTipo(""); setValor(""); setCustos(""); setVendedor(""); setFormItens([emptyItem()]); setStagedFiles([]); setShowForm(false);
     toast.success("Lançamento adicionado com sucesso");
   }
 
@@ -293,6 +317,25 @@ export default function Lancamentos() {
   }
   function addFormItem() {
     setFormItens(prev => [...prev, emptyItem()]);
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files) return;
+    const maxBytes = 10 * 1024 * 1024;
+    const valid = Array.from(files).filter(f => {
+      if (f.size > maxBytes) {
+        toast.error(`${f.name}: máximo 10MB`);
+        return false;
+      }
+      return true;
+    });
+    setStagedFiles(prev => [...prev, ...valid]);
+    e.target.value = "";
+  }
+
+  function removeStagedFile(index: number) {
+    setStagedFiles(prev => prev.filter((_, i) => i !== index));
   }
 
   function updateEditItemField(index: number, field: string, value: string) {
@@ -521,6 +564,49 @@ export default function Lancamentos() {
                 onAdd={addFormItem}
               />
             )}
+
+            {/* Staged attachments (creation) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-medium text-muted-foreground">Anexos (PDF ou imagens)</label>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-1 text-xs font-medium text-primary"
+                >
+                  <Paperclip className="h-3.5 w-3.5" />
+                  Adicionar
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,application/pdf"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+              </div>
+              {stagedFiles.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground text-center py-2 border border-dashed border-border rounded-lg">
+                  Nenhum anexo selecionado. Máx. 10MB por arquivo.
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  {stagedFiles.map((file, i) => (
+                    <div key={`${file.name}-${i}`} className="flex items-center gap-2 p-2 rounded-lg bg-muted/40 border border-border">
+                      <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">{file.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{(file.size / 1024 / 1024).toFixed(1)} MB</p>
+                      </div>
+                      <button type="button" onClick={() => removeStagedFile(i)} className="p-1 rounded hover:bg-muted">
+                        <Trash2 className="h-3.5 w-3.5" style={{ color: '#FF453A' }} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
             <button type="submit" className="w-full h-12 rounded-xl text-base font-semibold text-foreground bg-primary">
               Lançar
