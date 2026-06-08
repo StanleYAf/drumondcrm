@@ -377,6 +377,7 @@ export default function Vendas() {
       telefone: lead.telefone,
       email: lead.email || "",
       origem: lead.origem,
+      tipo: lead.tipo || "",
       valor_estimado: lead.valor_estimado ? numberToCurrencyMask(lead.valor_estimado) : "",
       responsavel: lead.responsavel || "",
       observacoes: lead.observacoes || "",
