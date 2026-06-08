@@ -62,7 +62,7 @@ interface QuickMoveState {
   documento_ref: string;
 }
 
-type TabKey = "produtos" | "movimentacoes" | "alertas" | "aguardando" | "relatorios";
+type TabKey = "produtos" | "movimentacoes" | "alertas" | "aguardando";
 type EstoqueSource = "dsh" | "dmedical";
 
 const ESTOQUE_TABLES: Record<EstoqueSource, { produtos: string; movimentacoes: string; pendentes: string }> = {
