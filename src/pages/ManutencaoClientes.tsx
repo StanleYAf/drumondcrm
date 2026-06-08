@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Pencil, Power, Trash2 } from "lucide-react";
+import { Plus, Pencil, Power, Trash2, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/authContext";
@@ -45,6 +45,7 @@ interface Cliente {
   responsavel: string | null;
   ativo: boolean;
   created_at: string;
+  public_token: string | null;
 }
 
 export default function ManutencaoClientes() {
@@ -146,6 +147,20 @@ export default function ManutencaoClientes() {
   const formatDate = (iso: string) => {
     const [y, m, d] = iso.slice(0, 10).split("-");
     return `${d}/${m}/${y}`;
+  };
+
+  const copyPublicLink = async (c: Cliente) => {
+    if (!c.public_token) {
+      toast.error("Token público ainda não gerado. Edite e salve o cliente.");
+      return;
+    }
+    const url = `${window.location.origin}/publico/cliente/${c.public_token}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link público copiado!");
+    } catch {
+      window.prompt("Copie o link público:", url);
+    }
   };
 
   return (
@@ -266,6 +281,15 @@ export default function ManutencaoClientes() {
                         >
                           <Pencil className="h-3.5 w-3.5" />
                           Editar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => copyPublicLink(c)}
+                          title="Copiar link público de visualização"
+                        >
+                          <LinkIcon className="h-3.5 w-3.5" />
+                          Link público
                         </Button>
                         <Button
                           size="sm"
