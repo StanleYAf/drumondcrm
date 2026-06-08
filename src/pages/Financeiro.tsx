@@ -470,20 +470,23 @@ export default function Financeiro() {
 
 /* ---------- Dialog: Lançar valores ---------- */
 function LancarDialog({
-  open, onClose, onSaved, anoPadrao,
-}: { open: boolean; onClose: () => void; onSaved: () => void; anoPadrao: number }) {
+  open, onClose, onSaved, anoPadrao, empresaPadrao,
+}: { open: boolean; onClose: () => void; onSaved: () => void; anoPadrao: number; empresaPadrao: Empresa }) {
   const [mes, setMes] = useState(MESES[0]);
   const [ano, setAno] = useState(anoPadrao);
+  const [empresa, setEmpresa] = useState<Empresa>(empresaPadrao);
   const [serv, setServ] = useState("");
   const [vendas, setVendas] = useState("");
   const [contratos, setContratos] = useState("");
+  const [custoProd, setCustoProd] = useState("");
+  const [custosGer, setCustosGer] = useState("");
   const [mServ, setMServ] = useState(numberToCurrencyMask(META_DEFAULTS.meta_servicos));
   const [mVendas, setMVendas] = useState(numberToCurrencyMask(META_DEFAULTS.meta_vendas));
   const [mContratos, setMContratos] = useState(numberToCurrencyMask(META_DEFAULTS.meta_contratos));
   const [mGeral, setMGeral] = useState(numberToCurrencyMask(META_DEFAULTS.meta_geral));
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { setAno(anoPadrao); }, [anoPadrao, open]);
+  useEffect(() => { setAno(anoPadrao); setEmpresa(empresaPadrao); }, [anoPadrao, empresaPadrao, open]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -491,23 +494,25 @@ function LancarDialog({
     const v = parseCurrencyMask(vendas);
     const c = parseCurrencyMask(contratos);
     const payload = {
-      mes, ano,
+      mes, ano, empresa,
       servicos_avulsos: s,
       vendas: v,
       contratos: c,
       geral: s + v + c,
+      custo_produtos: parseCurrencyMask(custoProd),
+      custos_gerais: parseCurrencyMask(custosGer),
       meta_servicos: parseCurrencyMask(mServ),
       meta_vendas: parseCurrencyMask(mVendas),
       meta_contratos: parseCurrencyMask(mContratos),
       meta_geral: parseCurrencyMask(mGeral),
     };
-    const { error } = await supabase.from("financeiro").upsert(payload, { onConflict: "mes,ano" });
+    const { error } = await supabase.from("financeiro").upsert(payload, { onConflict: "mes,ano,empresa" });
     setSaving(false);
     if (error) { toast.error("Erro ao salvar: " + error.message); return; }
     toast.success("Valores lançados com sucesso!");
     onSaved();
     onClose();
-    setServ(""); setVendas(""); setContratos("");
+    setServ(""); setVendas(""); setContratos(""); setCustoProd(""); setCustosGer("");
   };
 
   return (
@@ -515,6 +520,15 @@ function LancarDialog({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Lançar valores</DialogTitle></DialogHeader>
         <div className="grid grid-cols-2 gap-3 py-2">
+          <div className="space-y-1.5 col-span-2">
+            <Label>Empresa</Label>
+            <Select value={empresa} onValueChange={(v) => setEmpresa(v as Empresa)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {EMPRESAS.map((e) => <SelectItem key={e.key} value={e.key}>{e.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-1.5">
             <Label>Mês</Label>
             <Select value={mes} onValueChange={setMes}>
@@ -537,6 +551,17 @@ function LancarDialog({
           <div className="space-y-1.5 col-span-2">
             <Label>Contratos</Label>
             <Input value={contratos} onChange={(e) => setContratos(applyCurrencyMask(e.target.value))} placeholder="R$ 0,00" />
+          </div>
+          <div className="col-span-2 pt-2 border-t mt-1">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Custos</p>
+          </div>
+          <div className="space-y-1.5 col-span-2">
+            <Label>Custo de Produtos (CMV)</Label>
+            <Input value={custoProd} onChange={(e) => setCustoProd(applyCurrencyMask(e.target.value))} placeholder="R$ 0,00" />
+          </div>
+          <div className="space-y-1.5 col-span-2">
+            <Label>Custos Gerais</Label>
+            <Input value={custosGer} onChange={(e) => setCustosGer(applyCurrencyMask(e.target.value))} placeholder="R$ 0,00" />
           </div>
           <div className="col-span-2 pt-2 border-t mt-1">
             <p className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Metas</p>
@@ -581,13 +606,16 @@ interface ParsedRow {
 }
 
 function ImportarDialog({
-  open, onClose, onSaved,
-}: { open: boolean; onClose: () => void; onSaved: () => void }) {
+  open, onClose, onSaved, empresaPadrao,
+}: { open: boolean; onClose: () => void; onSaved: () => void; empresaPadrao: Empresa }) {
   const [fileName, setFileName] = useState<string | null>(null);
   const [preview, setPreview] = useState<ParsedRow[]>([]);
   const [ano, setAno] = useState<number>(2026);
+  const [empresa, setEmpresa] = useState<Empresa>(empresaPadrao);
   const [saving, setSaving] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+
+  useEffect(() => { setEmpresa(empresaPadrao); }, [empresaPadrao, open]);
 
   const reset = () => { setFileName(null); setPreview([]); };
 
@@ -661,8 +689,8 @@ function ImportarDialog({
   const handleConfirm = async () => {
     if (preview.length === 0) return;
     setSaving(true);
-    const payload = preview.map((p) => ({ ...p, ano }));
-    const { error } = await supabase.from("financeiro").upsert(payload, { onConflict: "mes,ano" });
+    const payload = preview.map((p) => ({ ...p, ano, empresa }));
+    const { error } = await supabase.from("financeiro").upsert(payload, { onConflict: "mes,ano,empresa" });
     setSaving(false);
     if (error) { toast.error("Erro: " + error.message); return; }
     toast.success(`${preview.length} meses importados com sucesso!`);
@@ -676,7 +704,14 @@ function ImportarDialog({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Importar XLSX</DialogTitle></DialogHeader>
         <div className="space-y-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Label className="text-sm">Empresa:</Label>
+            <Select value={empresa} onValueChange={(v) => setEmpresa(v as Empresa)}>
+              <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {EMPRESAS.map((e) => <SelectItem key={e.key} value={e.key}>{e.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
             <Label className="text-sm">Ano de destino:</Label>
             <Input type="number" className="w-28" value={ano} onChange={(e) => setAno(Number(e.target.value))} />
           </div>
