@@ -78,6 +78,13 @@ const ORIGEM_COLORS: Record<Origem, string> = {
   WhatsApp: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
   Outro: "bg-zinc-500/20 text-zinc-300 border-zinc-500/30",
 };
+const TIPOS: Tipo[] = ["Clínica", "Hospital", "Veterinário", "Consultório"];
+const TIPO_COLORS: Record<Tipo, string> = {
+  Clínica: "bg-teal-500/20 text-teal-300 border-teal-500/30",
+  Hospital: "bg-rose-500/20 text-rose-300 border-rose-500/30",
+  Veterinário: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+  Consultório: "bg-sky-500/20 text-sky-300 border-sky-500/30",
+};
 
 const formatCurrency = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
