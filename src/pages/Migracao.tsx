@@ -254,7 +254,7 @@ export default function Migracao() {
   };
 
   const mapProduto = (r: any, uid: string) => ({
-    id: r.id,
+    id: r.id || crypto.randomUUID(),
     user_id: uid,
     nome: r.nome,
     codigo_barras: r.codigo_barras,
@@ -278,7 +278,7 @@ export default function Migracao() {
   });
 
   const mapMov = (r: any, uid: string) => ({
-    id: r.id,
+    id: r.id || crypto.randomUUID(),
     user_id: uid,
     produto_id: r.produto_id,
     tipo: r.tipo,
@@ -292,7 +292,7 @@ export default function Migracao() {
   });
 
   const mapVendedor = (r: any, uid: string) => ({
-    id: r.id,
+    id: r.id || crypto.randomUUID(),
     user_id: uid,
     nome: r.nome,
     ativo: boolFromCsv(r.ativo),
