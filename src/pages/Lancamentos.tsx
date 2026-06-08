@@ -565,6 +565,49 @@ export default function Lancamentos() {
               />
             )}
 
+            {/* Staged attachments (creation) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-medium text-muted-foreground">Anexos (PDF ou imagens)</label>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-1 text-xs font-medium text-primary"
+                >
+                  <Paperclip className="h-3.5 w-3.5" />
+                  Adicionar
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,application/pdf"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+              </div>
+              {stagedFiles.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground text-center py-2 border border-dashed border-border rounded-lg">
+                  Nenhum anexo selecionado. Máx. 10MB por arquivo.
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  {stagedFiles.map((file, i) => (
+                    <div key={`${file.name}-${i}`} className="flex items-center gap-2 p-2 rounded-lg bg-muted/40 border border-border">
+                      <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">{file.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{(file.size / 1024 / 1024).toFixed(1)} MB</p>
+                      </div>
+                      <button type="button" onClick={() => removeStagedFile(i)} className="p-1 rounded hover:bg-muted">
+                        <Trash2 className="h-3.5 w-3.5" style={{ color: '#FF453A' }} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <button type="submit" className="w-full h-12 rounded-xl text-base font-semibold text-foreground bg-primary">
               Lançar
             </button>
