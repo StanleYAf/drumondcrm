@@ -164,9 +164,10 @@ export default function Relatorios() {
     });
   }, [reportData]);
 
-  // Totals for lancamentos
-  const totalValor = reportType === "lancamentos"
-    ? (reportData as { valor: number }[]).reduce((s, r) => s + r.valor, 0)
+  // Totals for lancamentos / leads
+  const valorColIndex = useMemo(() => headers.findIndex(h => h === "Valor"), [headers]);
+  const totalValor = (reportType === "lancamentos" || reportType === "leads")
+    ? (reportData as { valor: number }[]).reduce((s, r) => s + (r.valor || 0), 0)
     : null;
 
   function exportCSV() {
@@ -364,12 +365,14 @@ export default function Relatorios() {
                   </tr>
                 ))}
               </tbody>
-              {totalValor !== null && (
+              {totalValor !== null && valorColIndex >= 0 && (
                 <tfoot>
                   <tr style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                    <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-foreground">Total</td>
+                    <td colSpan={valorColIndex} className="px-4 py-3 text-sm font-semibold text-foreground">Total</td>
                     <td className="px-4 py-3 text-sm font-bold" style={{ color: '#30D158' }}>{formatCurrency(totalValor)}</td>
-                    <td colSpan={2}></td>
+                    {headers.length - valorColIndex - 1 > 0 && (
+                      <td colSpan={headers.length - valorColIndex - 1}></td>
+                    )}
                   </tr>
                 </tfoot>
               )}
