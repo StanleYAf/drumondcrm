@@ -235,6 +235,11 @@ function LeadCard({
         <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${ORIGEM_COLORS[lead.origem]}`}>
           {lead.origem}
         </Badge>
+        {lead.tipo && (
+          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${TIPO_COLORS[lead.tipo]}`}>
+            {lead.tipo}
+          </Badge>
+        )}
         {(lead.valor_estimado ?? 0) > 0 && (
           <span className="text-xs text-emerald-400 font-medium">{formatCurrency(lead.valor_estimado!)}</span>
         )}
