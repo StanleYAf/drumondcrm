@@ -42,12 +42,19 @@ const SECTION_LABELS: Record<SectionKey, string> = {
   vendedores: "Vendedores",
 };
 
-const parseCSV = (text: string, delimiter: string) => {
-  const lines = text.split("\n").filter((l) => l.trim());
+const detectDelimiter = (headerLine: string) => {
+  const c = (headerLine.match(/,/g) || []).length;
+  const s = (headerLine.match(/;/g) || []).length;
+  return s > c ? ";" : ",";
+};
+
+const parseCSV = (text: string, delimiter: string | "auto" = "auto") => {
+  const lines = text.replace(/\r/g, "").split("\n").filter((l) => l.trim());
   if (lines.length === 0) return [];
-  const headers = lines[0].split(delimiter).map((h) => h.trim().replace(/^"|"$/g, ""));
+  const delim = delimiter === "auto" ? detectDelimiter(lines[0]) : delimiter;
+  const headers = lines[0].split(delim).map((h) => h.trim().replace(/^"|"$/g, ""));
   return lines.slice(1).map((line) => {
-    const values = line.split(delimiter).map((v) => v.trim().replace(/^"|"$/g, ""));
+    const values = line.split(delim).map((v) => v.trim().replace(/^"|"$/g, ""));
     return Object.fromEntries(headers.map((h, i) => [h, values[i] === "" || values[i] === undefined ? null : values[i]]));
   });
 };
@@ -202,7 +209,9 @@ export default function Migracao() {
     try {
       update(key, { loading: true, progress: 0 });
       const text = await readFile(file);
-      const rows = parseCSV(text, delimiter).map((r) => mapper(r, user.id));
+      const rows = parseCSV(text, delimiter as any)
+        .map((r) => mapper(r, user.id))
+        .filter((r) => r !== null);
       await upsertChunks(table, rows, key, "id");
     } catch (e: any) {
       toast.error(`${SECTION_LABELS[key]}: ${e.message}`);
@@ -214,31 +223,38 @@ export default function Migracao() {
   const boolFromCsv = (v: any) =>
     v === null || v === undefined || v === "" ? true : v === "true" || v === "t" || v === "1";
 
-  const mapLead = (r: any, uid: string) => ({
-    id: r.id,
-    user_id: uid,
-    nome_cliente: r.nome_cliente,
-    empresa: r.empresa,
-    telefone: r.telefone,
-    email: r.email,
-    origem: r.origem || "Outro",
-    valor_estimado: numOrNull(r.valor_estimado) ?? 0,
-    responsavel: r.responsavel,
-    etapa: r.etapa || "novo_lead",
-    observacoes: r.observacoes,
-    created_at: r.created_at || new Date().toISOString(),
-  });
+  const mapLead = (r: any, uid: string) => {
+    const nome = r.nome_cliente || r.cliente || r.nome;
+    if (!nome) return null;
+    return {
+      id: r.id || crypto.randomUUID(),
+      user_id: uid,
+      nome_cliente: nome,
+      empresa: r.empresa,
+      telefone: r.telefone || "",
+      email: r.email,
+      origem: r.origem || "Outro",
+      valor_estimado: numOrNull(r.valor_estimado) ?? 0,
+      responsavel: r.responsavel,
+      etapa: r.etapa || "novo_lead",
+      observacoes: r.observacoes,
+      created_at: r.created_at || new Date().toISOString(),
+    };
+  };
 
-  const mapNota = (r: any, uid: string) => ({
-    id: r.id,
-    pos_venda_id: r.pos_venda_id,
-    user_id: uid,
-    texto: r.texto,
-    created_at: r.created_at || new Date().toISOString(),
-  });
+  const mapNota = (r: any, uid: string) => {
+    if (!r.pos_venda_id || !r.texto) return null;
+    return {
+      id: r.id || crypto.randomUUID(),
+      pos_venda_id: r.pos_venda_id,
+      user_id: uid,
+      texto: r.texto,
+      created_at: r.created_at || new Date().toISOString(),
+    };
+  };
 
   const mapProduto = (r: any, uid: string) => ({
-    id: r.id,
+    id: r.id || crypto.randomUUID(),
     user_id: uid,
     nome: r.nome,
     codigo_barras: r.codigo_barras,
@@ -262,7 +278,7 @@ export default function Migracao() {
   });
 
   const mapMov = (r: any, uid: string) => ({
-    id: r.id,
+    id: r.id || crypto.randomUUID(),
     user_id: uid,
     produto_id: r.produto_id,
     tipo: r.tipo,
@@ -276,7 +292,7 @@ export default function Migracao() {
   });
 
   const mapVendedor = (r: any, uid: string) => ({
-    id: r.id,
+    id: r.id || crypto.randomUUID(),
     user_id: uid,
     nome: r.nome,
     ativo: boolFromCsv(r.ativo),
