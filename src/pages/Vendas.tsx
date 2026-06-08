@@ -263,6 +263,7 @@ export default function Vendas() {
   const [search, setSearch] = useState("");
   const [filterResp, setFilterResp] = useState("all");
   const [filterOrigem, setFilterOrigem] = useState<string>("all");
+  const [filterTipo, setFilterTipo] = useState<string>("all");
   const [filterDateStart, setFilterDateStart] = useState("");
   const [filterDateEnd, setFilterDateEnd] = useState("");
 
