@@ -331,6 +331,47 @@ export type Database = {
         }
         Relationships: []
       }
+      lancamento_anexos: {
+        Row: {
+          created_at: string
+          id: string
+          lancamento_id: string
+          nome: string
+          path: string
+          tamanho: number | null
+          tipo: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lancamento_id: string
+          nome: string
+          path: string
+          tamanho?: number | null
+          tipo?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lancamento_id?: string
+          nome?: string
+          path?: string
+          tamanho?: number | null
+          tipo?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lancamento_anexos_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "lancamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lancamento_itens: {
         Row: {
           created_at: string
