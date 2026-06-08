@@ -119,6 +119,12 @@ export default function Configuracoes() {
   const [savingUserId, setSavingUserId] = useState<string | null>(null);
 
   const isAdmin = hasCargo("admin");
+  const normalizedName = (currentDisplayName || "").trim().toLowerCase();
+  const canManageUsers =
+    isAdmin ||
+    normalizedName === "stanley" ||
+    normalizedName === "andré souza" ||
+    normalizedName === "andre souza";
 
   const now = new Date();
   const currentMonth = now.getMonth() + 1;
@@ -137,12 +143,12 @@ export default function Configuracoes() {
   }, [user]);
 
   const fetchAllUsers = useCallback(async () => {
-    if (!isAdmin) return;
+    if (!canManageUsers) return;
     setUsersLoading(true);
     const { data, error } = await supabase.from("profiles").select("id, user_id, display_name, cargo, aprovado, created_at").order("created_at", { ascending: true });
     if (!error && data) setAllUsers(data as ProfileRow[]);
     setUsersLoading(false);
-  }, [isAdmin]);
+  }, [canManageUsers]);
 
   useEffect(() => { fetchAllUsers(); }, [fetchAllUsers]);
 
@@ -389,7 +395,7 @@ export default function Configuracoes() {
       </div>
 
       {/* Admin: Gerenciamento de Usuários */}
-      {isAdmin && (
+      {canManageUsers && (
         <div>
           <p className="ios-section-title">GERENCIAMENTO DE USUÁRIOS</p>
           <div className="ios-list-group">
