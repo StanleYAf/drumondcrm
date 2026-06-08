@@ -494,9 +494,21 @@ export default function Lancamentos() {
                 <ErrorMsg msg={formErrors.valor} />
               </div>
               <div>
+                <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Custos (R$)</label>
+                <input inputMode="numeric" value={custos} onChange={e => setCustos(applyCurrencyMask(e.target.value))} className="ios-input w-full" placeholder="R$ 0,00" disabled={formCat === "servico"} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
                 <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Data</label>
                 <input type="date" value={dataLanc} onChange={e => setDataLanc(e.target.value)} className="ios-input w-full" />
                 <ErrorMsg msg={formErrors.data} />
+              </div>
+              <div>
+                <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Comissão prevista</label>
+                <div className="ios-input w-full flex items-center" style={{ color: '#0A84FF', fontWeight: 600 }}>
+                  {formatCurrency(calcularComissao(formCat, parseCurrencyMask(valor), parseCurrencyMask(custos)))}
+                </div>
               </div>
             </div>
 
