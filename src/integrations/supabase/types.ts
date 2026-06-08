@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           id: string
           nome: string
+          public_token: string | null
           responsavel: string | null
         }
         Insert: {
@@ -27,6 +28,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome: string
+          public_token?: string | null
           responsavel?: string | null
         }
         Update: {
@@ -34,6 +36,7 @@ export type Database = {
           created_at?: string
           id?: string
           nome?: string
+          public_token?: string | null
           responsavel?: string | null
         }
         Relationships: []
@@ -1273,6 +1276,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_dados_publicos_cliente: { Args: { _token: string }; Returns: Json }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_controlador: { Args: { _user_id: string }; Returns: boolean }
       pode_gerenciar_usuarios: { Args: { _user_id: string }; Returns: boolean }
