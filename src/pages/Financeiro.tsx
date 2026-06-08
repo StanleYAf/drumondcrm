@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Upload, PlusCircle, DollarSign, TrendingUp, FileSpreadsheet, X } from "lucide-react";
+import { Upload, PlusCircle, DollarSign, TrendingUp, FileSpreadsheet, X, Building2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import {
@@ -36,15 +36,24 @@ interface FinanceiroRow {
   id?: string;
   mes: string;
   ano: number;
+  empresa: "dsh" | "dmedical";
   servicos_avulsos: number;
   vendas: number;
   contratos: number;
   geral: number;
+  custo_produtos: number;
+  custos_gerais: number;
   meta_servicos: number;
   meta_vendas: number;
   meta_contratos: number;
   meta_geral: number;
 }
+
+type Empresa = "dsh" | "dmedical";
+const EMPRESAS: { key: Empresa; label: string }[] = [
+  { key: "dsh", label: "DSH" },
+  { key: "dmedical", label: "DMedical" },
+];
 
 const brl = (v: number) =>
   (v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
@@ -78,6 +87,7 @@ export default function Financeiro() {
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<FinanceiroRow[]>([]);
   const [ano, setAno] = useState<number>(2026);
+  const [empresa, setEmpresa] = useState<Empresa>("dsh");
   const [openLanc, setOpenLanc] = useState(false);
   const [openImport, setOpenImport] = useState(false);
 
@@ -105,8 +115,8 @@ export default function Financeiro() {
   }, [rows]);
 
   const rowsAno = useMemo(
-    () => rows.filter((r) => r.ano === ano).sort((a, b) => MESES.indexOf(a.mes) - MESES.indexOf(b.mes)),
-    [rows, ano],
+    () => rows.filter((r) => r.ano === ano && r.empresa === empresa).sort((a, b) => MESES.indexOf(a.mes) - MESES.indexOf(b.mes)),
+    [rows, ano, empresa],
   );
 
   // KPI: mês mais recente disponível no ano
@@ -129,12 +139,16 @@ export default function Financeiro() {
 
   const chartData = MESES.map((m) => {
     const r = rowsAno.find((x) => x.mes === m);
+    const geral = r?.geral || ((r?.servicos_avulsos || 0) + (r?.vendas || 0) + (r?.contratos || 0));
+    const custos = (r?.custo_produtos || 0) + (r?.custos_gerais || 0);
     return {
       mes: m.slice(0, 3),
       Serviços: r?.servicos_avulsos || 0,
       Vendas: r?.vendas || 0,
       Contratos: r?.contratos || 0,
-      Geral: r?.geral || ((r?.servicos_avulsos || 0) + (r?.vendas || 0) + (r?.contratos || 0)),
+      Geral: geral,
+      Custos: custos,
+      Lucro: geral - custos,
       MetaGeral: r?.meta_geral || META_DEFAULTS.meta_geral,
     };
   });
@@ -146,10 +160,23 @@ export default function Financeiro() {
       c: acc.c + (r.contratos || 0),
       g: acc.g + (r.geral || r.servicos_avulsos + r.vendas + r.contratos),
       m: acc.m + (r.meta_geral || META_DEFAULTS.meta_geral),
+      cp: acc.cp + (r.custo_produtos || 0),
+      cg: acc.cg + (r.custos_gerais || 0),
     }),
-    { s: 0, v: 0, c: 0, g: 0, m: 0 },
+    { s: 0, v: 0, c: 0, g: 0, m: 0, cp: 0, cg: 0 },
   );
   const nMeses = rowsAno.length || 1;
+  const totalCustosAno = totalAno.cp + totalAno.cg;
+  const lucroAno = totalAno.g - totalCustosAno;
+  const margemAno = totalAno.g > 0 ? (lucroAno / totalAno.g) * 100 : 0;
+
+  // KPIs de custo do último mês
+  const ultimoCustoProd = ultimo?.custo_produtos || 0;
+  const ultimoCustoGer = ultimo?.custos_gerais || 0;
+  const ultimoCustoTotal = ultimoCustoProd + ultimoCustoGer;
+  const ultimoGeral = ultimo ? (ultimo.geral || ultimo.servicos_avulsos + ultimo.vendas + ultimo.contratos) : 0;
+  const ultimoLucro = ultimoGeral - ultimoCustoTotal;
+  const ultimoMargem = ultimoGeral > 0 ? (ultimoLucro / ultimoGeral) * 100 : 0;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -157,9 +184,24 @@ export default function Financeiro() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard Financeiro</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Faturamento mensal vs metas</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Faturamento, custos e metas — {EMPRESAS.find(e => e.key === empresa)?.label}
+          </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <div className="inline-flex rounded-lg border border-border bg-card p-0.5">
+            {EMPRESAS.map((e) => (
+              <button
+                key={e.key}
+                onClick={() => setEmpresa(e.key)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+                  empresa === e.key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Building2 className="h-3.5 w-3.5" /> {e.label}
+              </button>
+            ))}
+          </div>
           <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
             <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -182,7 +224,7 @@ export default function Financeiro() {
           <CardContent className="py-16 text-center">
             <DollarSign className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">
-              Nenhum dado financeiro lançado para o ano selecionado. Clique em "Lançar valores" para começar.
+              Nenhum dado financeiro lançado para {EMPRESAS.find(e => e.key === empresa)?.label} em {ano}. Clique em "Lançar valores" para começar.
             </p>
           </CardContent>
         </Card>
@@ -210,6 +252,48 @@ export default function Financeiro() {
             })}
           </div>
 
+          {/* KPIs de Custos & Lucro */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Custo Produtos (CMV)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl font-semibold text-amber-500">{brl(ultimoCustoProd)}</div>
+                <p className="text-[11px] text-muted-foreground mt-1">Último mês</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Custos Gerais</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl font-semibold text-amber-500">{brl(ultimoCustoGer)}</div>
+                <p className="text-[11px] text-muted-foreground mt-1">Último mês</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total Custos</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xl font-semibold text-red-500">{brl(ultimoCustoTotal)}</div>
+                <p className="text-[11px] text-muted-foreground mt-1">{ultimoGeral > 0 ? ((ultimoCustoTotal / ultimoGeral) * 100).toFixed(1) : "0"}% do faturamento</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Lucro Bruto</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-xl font-semibold ${ultimoLucro >= 0 ? "text-emerald-500" : "text-red-500"}`}>{brl(ultimoLucro)}</div>
+                <p className={`text-[11px] mt-1 ${ultimoMargem >= 20 ? "text-emerald-500" : ultimoMargem >= 0 ? "text-amber-500" : "text-red-500"}`}>
+                  Margem {ultimoMargem.toFixed(1)}%
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Bar chart */}
           <Card>
             <CardHeader><CardTitle className="text-base">Faturamento por categoria</CardTitle></CardHeader>
@@ -227,6 +311,27 @@ export default function Financeiro() {
                     <Bar dataKey="Vendas" fill="hsl(var(--chart-2, 160 70% 45%))" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="Contratos" fill="hsl(var(--chart-3, 280 65% 60%))" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="Geral" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Faturamento vs Custos vs Lucro */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Faturamento, Custos e Lucro</CardTitle></CardHeader>
+            <CardContent>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+                    <XAxis dataKey="mes" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(v: number) => brl(v)} contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Bar dataKey="Geral" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Custos" fill="hsl(0 70% 55%)" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Lucro" fill="hsl(150 65% 45%)" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -271,6 +376,9 @@ export default function Financeiro() {
                     <TableHead className="text-right">Vendas</TableHead>
                     <TableHead className="text-right">Contratos</TableHead>
                     <TableHead className="text-right">Geral</TableHead>
+                    <TableHead className="text-right">CMV</TableHead>
+                    <TableHead className="text-right">Custos Gerais</TableHead>
+                    <TableHead className="text-right">Lucro</TableHead>
                     <TableHead className="text-right">Meta Geral</TableHead>
                     <TableHead className="text-right">% Atingido</TableHead>
                     <TableHead>Status</TableHead>
@@ -289,6 +397,9 @@ export default function Financeiro() {
                           <TableCell className="text-right text-muted-foreground">—</TableCell>
                           <TableCell className="text-right text-muted-foreground">—</TableCell>
                           <TableCell className="text-right text-muted-foreground">—</TableCell>
+                          <TableCell className="text-right text-muted-foreground">—</TableCell>
+                          <TableCell className="text-right text-muted-foreground">—</TableCell>
+                          <TableCell className="text-right text-muted-foreground">—</TableCell>
                           <TableCell className="text-muted-foreground">—</TableCell>
                         </TableRow>
                       );
@@ -296,6 +407,8 @@ export default function Financeiro() {
                     const geral = r.geral || r.servicos_avulsos + r.vendas + r.contratos;
                     const meta = r.meta_geral || META_DEFAULTS.meta_geral;
                     const pct = meta > 0 ? (geral / meta) * 100 : 0;
+                    const custosMes = (r.custo_produtos || 0) + (r.custos_gerais || 0);
+                    const lucroMes = geral - custosMes;
                     return (
                       <TableRow key={m}>
                         <TableCell className="font-medium">{m}</TableCell>
@@ -303,6 +416,9 @@ export default function Financeiro() {
                         <TableCell className="text-right">{brl(r.vendas)}</TableCell>
                         <TableCell className="text-right">{brl(r.contratos)}</TableCell>
                         <TableCell className="text-right font-medium">{brl(geral)}</TableCell>
+                        <TableCell className="text-right text-amber-500">{brl(r.custo_produtos || 0)}</TableCell>
+                        <TableCell className="text-right text-amber-500">{brl(r.custos_gerais || 0)}</TableCell>
+                        <TableCell className={`text-right font-medium ${lucroMes >= 0 ? "text-emerald-500" : "text-red-500"}`}>{brl(lucroMes)}</TableCell>
                         <TableCell className="text-right text-muted-foreground">{brl(meta)}</TableCell>
                         <TableCell className={`text-right font-medium ${corPct(pct)}`}>{pct.toFixed(1)}%</TableCell>
                         <TableCell>{statusBadge(pct)}</TableCell>
@@ -317,6 +433,9 @@ export default function Financeiro() {
                     <TableCell className="text-right">{brl(totalAno.v)}</TableCell>
                     <TableCell className="text-right">{brl(totalAno.c)}</TableCell>
                     <TableCell className="text-right">{brl(totalAno.g)}</TableCell>
+                    <TableCell className="text-right text-amber-500">{brl(totalAno.cp)}</TableCell>
+                    <TableCell className="text-right text-amber-500">{brl(totalAno.cg)}</TableCell>
+                    <TableCell className={`text-right ${lucroAno >= 0 ? "text-emerald-500" : "text-red-500"}`}>{brl(lucroAno)} ({margemAno.toFixed(1)}%)</TableCell>
                     <TableCell className="text-right">{brl(totalAno.m)}</TableCell>
                     <TableCell className={`text-right ${corPct(totalAno.m ? (totalAno.g / totalAno.m) * 100 : 0)}`}>
                       {totalAno.m ? ((totalAno.g / totalAno.m) * 100).toFixed(1) : "0.0"}%
@@ -329,6 +448,9 @@ export default function Financeiro() {
                     <TableCell className="text-right">{brl(totalAno.v / nMeses)}</TableCell>
                     <TableCell className="text-right">{brl(totalAno.c / nMeses)}</TableCell>
                     <TableCell className="text-right">{brl(totalAno.g / nMeses)}</TableCell>
+                    <TableCell className="text-right">{brl(totalAno.cp / nMeses)}</TableCell>
+                    <TableCell className="text-right">{brl(totalAno.cg / nMeses)}</TableCell>
+                    <TableCell className="text-right">{brl(lucroAno / nMeses)}</TableCell>
                     <TableCell className="text-right">{brl(totalAno.m / nMeses)}</TableCell>
                     <TableCell />
                     <TableCell />
@@ -340,8 +462,8 @@ export default function Financeiro() {
         </>
       )}
 
-      <LancarDialog open={openLanc} onClose={() => setOpenLanc(false)} onSaved={fetchData} anoPadrao={ano} />
-      <ImportarDialog open={openImport} onClose={() => setOpenImport(false)} onSaved={fetchData} />
+      <LancarDialog open={openLanc} onClose={() => setOpenLanc(false)} onSaved={fetchData} anoPadrao={ano} empresaPadrao={empresa} />
+      <ImportarDialog open={openImport} onClose={() => setOpenImport(false)} onSaved={fetchData} empresaPadrao={empresa} />
     </div>
   );
 }
