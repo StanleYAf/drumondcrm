@@ -1,25 +1,48 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAppData } from "@/lib/dataContext";
 import { MESES, CATEGORIA_LABELS, CATEGORIA_ARRAY, formatCurrency, formatDate, type Categoria, type Lancamento } from "@/lib/types";
-import { FileSpreadsheet, FileText, Download, ChevronDown, Filter, Table2, BarChart3, PhoneCall } from "lucide-react";
+import { FileSpreadsheet, FileText, Download, ChevronDown, Filter, Table2, BarChart3, PhoneCall, Users } from "lucide-react";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { supabase } from "@/integrations/supabase/client";
 
-type ReportType = "lancamentos" | "indicadores" | "pos_venda";
+type ReportType = "lancamentos" | "indicadores" | "pos_venda" | "leads";
 
 const REPORT_OPTIONS: { key: ReportType; label: string; icon: React.ElementType }[] = [
   { key: "lancamentos", label: "Lançamentos", icon: Table2 },
   { key: "indicadores", label: "Indicadores Semanais", icon: BarChart3 },
   { key: "pos_venda", label: "Pós-venda", icon: PhoneCall },
+  { key: "leads", label: "Leads", icon: Users },
 ];
 
 function getDescricao(e: Lancamento) {
   return e.produto || e.servico || e.item || "";
 }
+
+interface LeadRow {
+  id: string;
+  nome_cliente: string;
+  empresa: string | null;
+  telefone: string;
+  email: string | null;
+  origem: string;
+  etapa: string;
+  responsavel: string | null;
+  valor_estimado: number | null;
+  created_at: string;
+}
+
+const ETAPA_LABELS: Record<string, string> = {
+  novo_lead: "Novo Lead",
+  primeiro_contato: "Primeiro Contato",
+  em_qualificacao: "Em Qualificação",
+  convertido: "Convertido",
+  perdido: "Perdido",
+};
 
 export default function Relatorios() {
   const { data, loading, error } = useAppData();
@@ -30,6 +53,29 @@ export default function Relatorios() {
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
   const [showPicker, setShowPicker] = useState(false);
+  const [leads, setLeads] = useState<LeadRow[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("id,nome_cliente,empresa,telefone,email,origem,etapa,responsavel,valor_estimado,created_at")
+        .order("created_at", { ascending: false });
+      if (!cancelled && !error && data) setLeads(data as LeadRow[]);
+    })();
+    const channel = supabase
+      .channel("relatorios-leads")
+      .on("postgres_changes", { event: "*", schema: "public", table: "leads" }, async () => {
+        const { data } = await supabase
+          .from("leads")
+          .select("id,nome_cliente,empresa,telefone,email,origem,etapa,responsavel,valor_estimado,created_at")
+          .order("created_at", { ascending: false });
+        if (!cancelled && data) setLeads(data as LeadRow[]);
+      })
+      .subscribe();
+    return () => { cancelled = true; supabase.removeChannel(channel); };
+  }, []);
 
   // Build report data
   const reportData = useMemo(() => {
@@ -69,8 +115,8 @@ export default function Relatorios() {
         }));
     }
 
-    // pos_venda
-    return data.pos_venda
+    if (reportType === "pos_venda") {
+      return data.pos_venda
       .filter(p => { const d = new Date(p.data); return d.getMonth() === month && d.getFullYear() === year; })
       .map(p => ({
         cliente: p.cliente,
@@ -79,12 +125,31 @@ export default function Relatorios() {
         data: p.data,
         notas: (p.notas || []).length,
       }));
-  }, [data, reportType, catFilter, month, year]);
+    }
+
+    // leads
+    return leads
+      .filter(l => {
+        const d = new Date(l.created_at);
+        return d.getMonth() === month && d.getFullYear() === year;
+      })
+      .map(l => ({
+        cliente: l.nome_cliente,
+        empresa: l.empresa || "",
+        telefone: l.telefone,
+        origem: l.origem,
+        etapa: ETAPA_LABELS[l.etapa] || l.etapa,
+        responsavel: l.responsavel || "",
+        valor: l.valor_estimado || 0,
+        data: l.created_at.slice(0, 10),
+      }));
+  }, [data, reportType, catFilter, month, year, leads]);
 
   const headers = useMemo(() => {
     if (reportType === "lancamentos") return ["Categoria", "Cliente", "Descrição", "Valor", "Data", "Vendedor"];
     if (reportType === "indicadores") return ["Semana", "Vendedor", "Captações", "Orçamentos", "Visitas", "Data"];
-    return ["Cliente", "Vendedor", "Status", "Data", "Notas"];
+    if (reportType === "pos_venda") return ["Cliente", "Vendedor", "Status", "Data", "Notas"];
+    return ["Cliente", "Empresa", "Telefone", "Origem", "Etapa", "Responsável", "Valor", "Data"];
   }, [reportType]);
 
   const tableRows = useMemo(() => {
