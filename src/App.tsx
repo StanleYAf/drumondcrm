@@ -70,7 +70,6 @@ const App = () => (
                               <Route path="/manutencao/sync-logs" element={<RoleGuard allowed={["admin"]}><SyncLogs /></RoleGuard>} />
                               <Route path="/manutencao/cliente/:clienteId" element={<RoleGuard allowed={["manutencao", "admin"]}><Manutencao /></RoleGuard>} />
                               <Route path="/financeiro" element={<RoleGuard allowed={["admin"]}><Financeiro /></RoleGuard>} />
-                              <Route path="/migracao" element={<Migracao />} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </ErrorBoundary>
