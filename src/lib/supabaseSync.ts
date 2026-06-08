@@ -28,6 +28,7 @@ export async function loadFromSupabase(userId: string): Promise<AppData> {
         id: row.id,
         cliente: row.cliente,
         valor: Number(row.valor),
+        custos: Number((row as any).custos ?? 0),
         data: row.data,
         produto: row.produto ?? undefined,
         servico: row.servico ?? undefined,
@@ -194,7 +195,7 @@ export async function syncToSupabase(userId: string, oldData: AppData, newData: 
     if (added.length > 0) {
       promises.push(supabase.from("lancamentos").insert(
         added.map((l) => ({
-          id: l.id, user_id: userId, categoria, cliente: l.cliente, valor: l.valor, data: l.data,
+          id: l.id, user_id: userId, categoria, cliente: l.cliente, valor: l.valor, custos: l.custos ?? 0, data: l.data,
           produto: l.produto ?? null, servico: l.servico ?? null, item: l.item ?? null, vendedor: l.vendedor ?? null,
           tipo: l.tipo ?? null,
         }))
@@ -202,7 +203,7 @@ export async function syncToSupabase(userId: string, oldData: AppData, newData: 
     }
     for (const l of updated) {
       promises.push(supabase.from("lancamentos").update({
-        cliente: l.cliente, valor: l.valor, data: l.data,
+        cliente: l.cliente, valor: l.valor, custos: l.custos ?? 0, data: l.data,
         produto: l.produto ?? null, servico: l.servico ?? null, item: l.item ?? null, vendedor: l.vendedor ?? null,
         tipo: l.tipo ?? null,
       }).eq("id", l.id).then());
