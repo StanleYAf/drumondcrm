@@ -687,6 +687,8 @@ export default function Lancamentos() {
               )
             )}
 
+            <AnexosLancamento lancamentoId={editItem.id} />
+
             <button onClick={handleEditSave} className="w-full h-12 rounded-xl text-base font-semibold text-foreground bg-primary">
               Salvar Alterações
             </button>
