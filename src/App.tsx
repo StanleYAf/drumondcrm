@@ -27,6 +27,7 @@ import ManutencaoOS from "./pages/ManutencaoOS";
 import ManutencaoBoletim from "./pages/ManutencaoBoletim";
 import SyncLogs from "./pages/SyncLogs";
 import Financeiro from "./pages/Financeiro";
+import Migracao from "./pages/Migracao";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
@@ -70,6 +71,7 @@ const App = () => (
                               <Route path="/manutencao/sync-logs" element={<RoleGuard allowed={["admin"]}><SyncLogs /></RoleGuard>} />
                               <Route path="/manutencao/cliente/:clienteId" element={<RoleGuard allowed={["manutencao", "admin"]}><Manutencao /></RoleGuard>} />
                               <Route path="/financeiro" element={<RoleGuard allowed={["admin"]}><Financeiro /></RoleGuard>} />
+                              <Route path="/migracao" element={<Migracao />} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
                           </ErrorBoundary>
