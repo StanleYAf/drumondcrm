@@ -558,10 +558,10 @@ export default function Vendas() {
             </div>
             <div>
               <Label>Tipo</Label>
-              <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v as Tipo })}>
+              <Select value={form.tipo || "none"} onValueChange={(v) => setForm({ ...form, tipo: (v === "none" ? "" : v) as Tipo })}>
                 <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">—</SelectItem>
+                  <SelectItem value="none">—</SelectItem>
                   {TIPOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                 </SelectContent>
               </Select>
