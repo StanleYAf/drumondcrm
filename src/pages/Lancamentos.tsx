@@ -650,9 +650,21 @@ export default function Lancamentos() {
                 <ErrorMsg msg={editErrors.valor} />
               </div>
               <div>
+                <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Custos (R$)</label>
+                <input inputMode="numeric" value={editCustos} onChange={e => setEditCustos(applyCurrencyMask(e.target.value))} className="ios-input w-full" placeholder="R$ 0,00" disabled={editItem.cat === "servico"} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
                 <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Data</label>
                 <input type="date" value={editData} onChange={e => setEditData(e.target.value)} className="ios-input w-full" />
                 <ErrorMsg msg={editErrors.data} />
+              </div>
+              <div>
+                <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Comissão prevista</label>
+                <div className="ios-input w-full flex items-center" style={{ color: '#0A84FF', fontWeight: 600 }}>
+                  {formatCurrency(calcularComissao(editItem.cat, parseCurrencyMask(editValor), parseCurrencyMask(editCustos)))}
+                </div>
               </div>
             </div>
 
