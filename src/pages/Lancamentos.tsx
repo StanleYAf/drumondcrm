@@ -142,7 +142,29 @@ export default function Lancamentos() {
       }
     }
 
-    setCliente(""); setDescricao(""); setTipo(""); setValor(""); setCustos(""); setVendedor(""); setFormItens([emptyItem()]); setShowForm(false);
+    // Upload staged attachments
+    if (stagedFiles.length > 0 && user) {
+      for (const file of stagedFiles) {
+        const safe = file.name.replace(/[^\w.\-]+/g, "_");
+        const path = `${user.id}/${newId}/${crypto.randomUUID()}-${safe}`;
+        const up = await supabase.storage.from("lancamento-anexos").upload(path, file, {
+          contentType: file.type || undefined,
+          upsert: false,
+        });
+        if (!up.error) {
+          await supabase.from("lancamento_anexos").insert({
+            lancamento_id: newId,
+            user_id: user.id,
+            nome: file.name,
+            path,
+            tipo: file.type || null,
+            tamanho: file.size,
+          });
+        }
+      }
+    }
+
+    setCliente(""); setDescricao(""); setTipo(""); setValor(""); setCustos(""); setVendedor(""); setFormItens([emptyItem()]); setStagedFiles([]); setShowForm(false);
     toast.success("Lançamento adicionado com sucesso");
   }
 
