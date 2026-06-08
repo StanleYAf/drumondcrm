@@ -582,7 +582,12 @@ export default function Lancamentos() {
                   </p>
                 </button>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-sm font-semibold" style={{ color: '#30D158' }}>{formatCurrency(e.valor)}</span>
+                  <div className="flex flex-col items-end">
+                    <span className="text-sm font-semibold" style={{ color: '#30D158' }}>{formatCurrency(e.valor)}</span>
+                    <span className="text-[10px] font-medium" style={{ color: '#0A84FF' }}>
+                      Com.: {formatCurrency(calcularComissao(e.cat, e.valor, e.custos ?? 0))}
+                    </span>
+                  </div>
                   <button onClick={() => openEdit(e)} className="p-1.5 rounded-lg hover:bg-muted">
                     <Pencil className="h-3.5 w-3.5 text-primary" />
                   </button>
