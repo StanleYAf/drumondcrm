@@ -48,15 +48,63 @@ const detectDelimiter = (headerLine: string) => {
   return s > c ? ";" : ",";
 };
 
+// RFC4180-ish CSV parser: handles quoted fields, embedded delimiters, escaped quotes ("") and newlines inside quotes.
+const parseCSVRows = (text: string, delim: string): string[][] => {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  const src = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  for (let i = 0; i < src.length; i++) {
+    const ch = src[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (src[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        field += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === delim) {
+        row.push(field);
+        field = "";
+      } else if (ch === "\n") {
+        row.push(field);
+        rows.push(row);
+        row = [];
+        field = "";
+      } else {
+        field += ch;
+      }
+    }
+  }
+  if (field.length > 0 || row.length > 0) {
+    row.push(field);
+    rows.push(row);
+  }
+  return rows.filter((r) => r.length > 0 && r.some((v) => v !== ""));
+};
+
 const parseCSV = (text: string, delimiter: string | "auto" = "auto") => {
-  const lines = text.replace(/\r/g, "").split("\n").filter((l) => l.trim());
-  if (lines.length === 0) return [];
-  const delim = delimiter === "auto" ? detectDelimiter(lines[0]) : delimiter;
-  const headers = lines[0].split(delim).map((h) => h.trim().replace(/^"|"$/g, ""));
-  return lines.slice(1).map((line) => {
-    const values = line.split(delim).map((v) => v.trim().replace(/^"|"$/g, ""));
-    return Object.fromEntries(headers.map((h, i) => [h, values[i] === "" || values[i] === undefined ? null : values[i]]));
-  });
+  const firstLine = text.replace(/\r/g, "").split("\n")[0] || "";
+  const delim = delimiter === "auto" ? detectDelimiter(firstLine) : delimiter;
+  const rows = parseCSVRows(text, delim);
+  if (rows.length === 0) return [];
+  const headers = rows[0].map((h) => h.trim());
+  return rows.slice(1).map((values) =>
+    Object.fromEntries(
+      headers.map((h, i) => {
+        const v = values[i];
+        return [h, v === undefined || v === "" ? null : v];
+      }),
+    ),
+  );
 };
 
 const chunk = <T,>(arr: T[], size: number): T[][] => {
