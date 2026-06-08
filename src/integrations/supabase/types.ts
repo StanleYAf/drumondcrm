@@ -476,6 +476,7 @@ export type Database = {
           origem: Database["public"]["Enums"]["origem_lead"]
           responsavel: string | null
           telefone: string
+          tipo: Database["public"]["Enums"]["tipo_lead"] | null
           updated_at: string
           user_id: string
           valor_estimado: number | null
@@ -491,6 +492,7 @@ export type Database = {
           origem?: Database["public"]["Enums"]["origem_lead"]
           responsavel?: string | null
           telefone: string
+          tipo?: Database["public"]["Enums"]["tipo_lead"] | null
           updated_at?: string
           user_id: string
           valor_estimado?: number | null
@@ -506,6 +508,7 @@ export type Database = {
           origem?: Database["public"]["Enums"]["origem_lead"]
           responsavel?: string | null
           telefone?: string
+          tipo?: Database["public"]["Enums"]["tipo_lead"] | null
           updated_at?: string
           user_id?: string
           valor_estimado?: number | null
@@ -1242,6 +1245,7 @@ export type Database = {
         | "WhatsApp"
         | "Outro"
       status_pos_venda: "Aguardando retorno" | "Contatado" | "Convertido"
+      tipo_lead: "Clínica" | "Hospital" | "Veterinário" | "Consultório"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1387,6 +1391,7 @@ export const Constants = {
         "Outro",
       ],
       status_pos_venda: ["Aguardando retorno", "Contatado", "Convertido"],
+      tipo_lead: ["Clínica", "Hospital", "Veterinário", "Consultório"],
     },
   },
 } as const
