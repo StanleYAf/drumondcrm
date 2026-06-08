@@ -27,7 +27,6 @@ import ManutencaoOS from "./pages/ManutencaoOS";
 import ManutencaoBoletim from "./pages/ManutencaoBoletim";
 import SyncLogs from "./pages/SyncLogs";
 import Financeiro from "./pages/Financeiro";
-import Migracao from "./pages/Migracao";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
