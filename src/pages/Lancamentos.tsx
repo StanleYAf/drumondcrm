@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAppData } from "@/lib/dataContext";
-import { CATEGORIA_LABELS, CATEGORIA_ARRAY, CATEGORIA_FIELD, MESES, formatCurrency, formatDate, lancamentoSchema, getMetasForMonth, type Categoria, type Lancamento, type LancamentoItem } from "@/lib/types";
+import { CATEGORIA_LABELS, CATEGORIA_ARRAY, CATEGORIA_FIELD, MESES, formatCurrency, formatDate, lancamentoSchema, getMetasForMonth, calcularComissao, type Categoria, type Lancamento, type LancamentoItem } from "@/lib/types";
 import { applyCurrencyMask, parseCurrencyMask, numberToCurrencyMask } from "@/lib/currencyMask";
 import { Trash2, ChevronDown, Search, ChevronUp, Pencil, X, ChevronLeft, ChevronRight, FileX, Download, Plus } from "lucide-react";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
@@ -71,6 +71,7 @@ export default function Lancamentos() {
   const [descricao, setDescricao] = useState("");
   const [tipo, setTipo] = useState("");
   const [valor, setValor] = useState("");
+  const [custos, setCustos] = useState("");
   const [vendedor, setVendedor] = useState("");
   const [dataLanc, setDataLanc] = useState(now.toISOString().slice(0, 10));
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -81,6 +82,7 @@ export default function Lancamentos() {
   const [editDescricao, setEditDescricao] = useState("");
   const [editTipo, setEditTipo] = useState("");
   const [editValor, setEditValor] = useState("");
+  const [editCustos, setEditCustos] = useState("");
   const [editData, setEditData] = useState("");
   const [editVendedor, setEditVendedor] = useState("");
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
@@ -109,6 +111,7 @@ export default function Lancamentos() {
     const newId = crypto.randomUUID();
     const newItem: Lancamento = {
       id: newId, cliente: cliente.trim(), valor: parseCurrencyMask(valor), data: dataLanc,
+      custos: parseCurrencyMask(custos),
       [CATEGORIA_FIELD[formCat]]: descricao.trim(),
       tipo: tipo.trim() || undefined,
       vendedor: vendedor || undefined,
@@ -136,7 +139,7 @@ export default function Lancamentos() {
       }
     }
 
-    setCliente(""); setDescricao(""); setTipo(""); setValor(""); setVendedor(""); setFormItens([emptyItem()]); setShowForm(false);
+    setCliente(""); setDescricao(""); setTipo(""); setValor(""); setCustos(""); setVendedor(""); setFormItens([emptyItem()]); setShowForm(false);
     toast.success("Lançamento adicionado com sucesso");
   }
 
@@ -146,6 +149,7 @@ export default function Lancamentos() {
     setEditDescricao(getDescricao(entry));
     setEditTipo(entry.tipo || "");
     setEditValor(numberToCurrencyMask(entry.valor));
+    setEditCustos(numberToCurrencyMask(entry.custos ?? 0));
     setEditData(entry.data);
     setEditVendedor(entry.vendedor || "");
     setEditErrors({});
@@ -181,7 +185,7 @@ export default function Lancamentos() {
       lancamentos: {
         ...prev.lancamentos,
         [arrKey]: prev.lancamentos[arrKey].map(l =>
-          l.id === editItem.id ? { ...l, cliente: editCliente.trim(), valor: parseCurrencyMask(editValor), data: editData, [fieldKey]: editDescricao.trim(), tipo: editTipo.trim() || undefined, vendedor: editVendedor || undefined } : l
+          l.id === editItem.id ? { ...l, cliente: editCliente.trim(), valor: parseCurrencyMask(editValor), custos: parseCurrencyMask(editCustos), data: editData, [fieldKey]: editDescricao.trim(), tipo: editTipo.trim() || undefined, vendedor: editVendedor || undefined } : l
         ),
       },
     }));
