@@ -30,6 +30,7 @@ import Financeiro from "./pages/Financeiro";
 import Demandas from "./pages/Demandas";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
+import PublicoCliente from "./pages/PublicoCliente";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
               <Routes>
                 <Route path="/login" element={<Auth />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/publico/cliente/:token" element={<PublicoCliente />} />
                 <Route
                   path="/*"
                   element={
