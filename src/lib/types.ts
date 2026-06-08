@@ -13,6 +13,7 @@ export interface Lancamento {
   id: string;
   cliente: string;
   valor: number;
+  custos?: number;
   data: string;
   produto?: string;
   servico?: string;
@@ -108,6 +109,19 @@ export function formatCurrency(value: number): string {
 export function formatDate(dateStr: string): string {
   const [y, m, d] = dateStr.split("-");
   return `${d}/${m}/${y}`;
+}
+
+/**
+ * Calcula a comissão de um lançamento.
+ * - Serviço: R$ 300 fixo se valor > 900, caso contrário 0.
+ * - Demais categorias: 20% de (valor - custos).
+ */
+export function calcularComissao(cat: Categoria, valor: number, custos: number = 0): number {
+  if (cat === "servico") {
+    return valor > 900 ? 300 : 0;
+  }
+  const liquido = Math.max(0, valor - (custos || 0));
+  return liquido * 0.2;
 }
 
 // Zod schemas

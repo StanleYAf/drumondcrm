@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAppData } from "@/lib/dataContext";
-import { CATEGORIA_LABELS, CATEGORIA_ARRAY, CATEGORIA_FIELD, MESES, formatCurrency, formatDate, lancamentoSchema, getMetasForMonth, type Categoria, type Lancamento, type LancamentoItem } from "@/lib/types";
+import { CATEGORIA_LABELS, CATEGORIA_ARRAY, CATEGORIA_FIELD, MESES, formatCurrency, formatDate, lancamentoSchema, getMetasForMonth, calcularComissao, type Categoria, type Lancamento, type LancamentoItem } from "@/lib/types";
 import { applyCurrencyMask, parseCurrencyMask, numberToCurrencyMask } from "@/lib/currencyMask";
 import { Trash2, ChevronDown, Search, ChevronUp, Pencil, X, ChevronLeft, ChevronRight, FileX, Download, Plus } from "lucide-react";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
@@ -71,6 +71,7 @@ export default function Lancamentos() {
   const [descricao, setDescricao] = useState("");
   const [tipo, setTipo] = useState("");
   const [valor, setValor] = useState("");
+  const [custos, setCustos] = useState("");
   const [vendedor, setVendedor] = useState("");
   const [dataLanc, setDataLanc] = useState(now.toISOString().slice(0, 10));
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -81,6 +82,7 @@ export default function Lancamentos() {
   const [editDescricao, setEditDescricao] = useState("");
   const [editTipo, setEditTipo] = useState("");
   const [editValor, setEditValor] = useState("");
+  const [editCustos, setEditCustos] = useState("");
   const [editData, setEditData] = useState("");
   const [editVendedor, setEditVendedor] = useState("");
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
@@ -109,6 +111,7 @@ export default function Lancamentos() {
     const newId = crypto.randomUUID();
     const newItem: Lancamento = {
       id: newId, cliente: cliente.trim(), valor: parseCurrencyMask(valor), data: dataLanc,
+      custos: parseCurrencyMask(custos),
       [CATEGORIA_FIELD[formCat]]: descricao.trim(),
       tipo: tipo.trim() || undefined,
       vendedor: vendedor || undefined,
@@ -136,7 +139,7 @@ export default function Lancamentos() {
       }
     }
 
-    setCliente(""); setDescricao(""); setTipo(""); setValor(""); setVendedor(""); setFormItens([emptyItem()]); setShowForm(false);
+    setCliente(""); setDescricao(""); setTipo(""); setValor(""); setCustos(""); setVendedor(""); setFormItens([emptyItem()]); setShowForm(false);
     toast.success("Lançamento adicionado com sucesso");
   }
 
@@ -146,6 +149,7 @@ export default function Lancamentos() {
     setEditDescricao(getDescricao(entry));
     setEditTipo(entry.tipo || "");
     setEditValor(numberToCurrencyMask(entry.valor));
+    setEditCustos(numberToCurrencyMask(entry.custos ?? 0));
     setEditData(entry.data);
     setEditVendedor(entry.vendedor || "");
     setEditErrors({});
@@ -181,7 +185,7 @@ export default function Lancamentos() {
       lancamentos: {
         ...prev.lancamentos,
         [arrKey]: prev.lancamentos[arrKey].map(l =>
-          l.id === editItem.id ? { ...l, cliente: editCliente.trim(), valor: parseCurrencyMask(editValor), data: editData, [fieldKey]: editDescricao.trim(), tipo: editTipo.trim() || undefined, vendedor: editVendedor || undefined } : l
+          l.id === editItem.id ? { ...l, cliente: editCliente.trim(), valor: parseCurrencyMask(editValor), custos: parseCurrencyMask(editCustos), data: editData, [fieldKey]: editDescricao.trim(), tipo: editTipo.trim() || undefined, vendedor: editVendedor || undefined } : l
         ),
       },
     }));
@@ -253,6 +257,7 @@ export default function Lancamentos() {
   const paginatedEntries = allEntries.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
 
   const totalMes = allEntries.reduce((s, e) => s + e.valor, 0);
+  const totalComissao = allEntries.reduce((s, e) => s + calcularComissao(e.cat, e.valor, e.custos ?? 0), 0);
   const { metas: currentMetas } = getMetasForMonth(data.historico_metas, filterMonth, filterYear, data.metas, data.meta_semanal);
   const metaCategoria = categoria === "todos"
     ? Object.values(currentMetas).reduce((a, b) => a + b, 0)
@@ -429,7 +434,7 @@ export default function Lancamentos() {
       </div>
 
       {/* Summary Card */}
-      <div className="glass-card p-4 grid grid-cols-3 gap-3">
+      <div className="glass-card p-4 grid grid-cols-4 gap-3">
         <div>
           <p className="text-[11px] font-medium text-muted-foreground">Total mês</p>
           <p className="text-lg font-bold text-foreground">{formatCurrency(totalMes)}</p>
@@ -441,6 +446,10 @@ export default function Lancamentos() {
         <div>
           <p className="text-[11px] font-medium text-muted-foreground">Falta</p>
           <p className="text-lg font-bold" style={{ color: '#FF453A' }}>{formatCurrency(Math.max(0, metaCategoria - totalCategoria))}</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-medium text-muted-foreground">Comissão</p>
+          <p className="text-lg font-bold" style={{ color: '#0A84FF' }}>{formatCurrency(totalComissao)}</p>
         </div>
       </div>
 
@@ -485,9 +494,21 @@ export default function Lancamentos() {
                 <ErrorMsg msg={formErrors.valor} />
               </div>
               <div>
+                <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Custos (R$)</label>
+                <input inputMode="numeric" value={custos} onChange={e => setCustos(applyCurrencyMask(e.target.value))} className="ios-input w-full" placeholder="R$ 0,00" disabled={formCat === "servico"} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
                 <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Data</label>
                 <input type="date" value={dataLanc} onChange={e => setDataLanc(e.target.value)} className="ios-input w-full" />
                 <ErrorMsg msg={formErrors.data} />
+              </div>
+              <div>
+                <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Comissão prevista</label>
+                <div className="ios-input w-full flex items-center" style={{ color: '#0A84FF', fontWeight: 600 }}>
+                  {formatCurrency(calcularComissao(formCat, parseCurrencyMask(valor), parseCurrencyMask(custos)))}
+                </div>
               </div>
             </div>
 
@@ -561,7 +582,12 @@ export default function Lancamentos() {
                   </p>
                 </button>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-sm font-semibold" style={{ color: '#30D158' }}>{formatCurrency(e.valor)}</span>
+                  <div className="flex flex-col items-end">
+                    <span className="text-sm font-semibold" style={{ color: '#30D158' }}>{formatCurrency(e.valor)}</span>
+                    <span className="text-[10px] font-medium" style={{ color: '#0A84FF' }}>
+                      Com.: {formatCurrency(calcularComissao(e.cat, e.valor, e.custos ?? 0))}
+                    </span>
+                  </div>
                   <button onClick={() => openEdit(e)} className="p-1.5 rounded-lg hover:bg-muted">
                     <Pencil className="h-3.5 w-3.5 text-primary" />
                   </button>
@@ -629,9 +655,21 @@ export default function Lancamentos() {
                 <ErrorMsg msg={editErrors.valor} />
               </div>
               <div>
+                <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Custos (R$)</label>
+                <input inputMode="numeric" value={editCustos} onChange={e => setEditCustos(applyCurrencyMask(e.target.value))} className="ios-input w-full" placeholder="R$ 0,00" disabled={editItem.cat === "servico"} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
                 <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Data</label>
                 <input type="date" value={editData} onChange={e => setEditData(e.target.value)} className="ios-input w-full" />
                 <ErrorMsg msg={editErrors.data} />
+              </div>
+              <div>
+                <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Comissão prevista</label>
+                <div className="ios-input w-full flex items-center" style={{ color: '#0A84FF', fontWeight: 600 }}>
+                  {formatCurrency(calcularComissao(editItem.cat, parseCurrencyMask(editValor), parseCurrencyMask(editCustos)))}
+                </div>
               </div>
             </div>
 

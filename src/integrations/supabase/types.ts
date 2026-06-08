@@ -377,6 +377,7 @@ export type Database = {
           categoria: Database["public"]["Enums"]["categoria_lancamento"]
           cliente: string
           created_at: string
+          custos: number
           data: string
           id: string
           item: string | null
@@ -392,6 +393,7 @@ export type Database = {
           categoria: Database["public"]["Enums"]["categoria_lancamento"]
           cliente: string
           created_at?: string
+          custos?: number
           data: string
           id?: string
           item?: string | null
@@ -407,6 +409,7 @@ export type Database = {
           categoria?: Database["public"]["Enums"]["categoria_lancamento"]
           cliente?: string
           created_at?: string
+          custos?: number
           data?: string
           id?: string
           item?: string | null
