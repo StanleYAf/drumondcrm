@@ -51,6 +51,7 @@ interface Lead {
   telefone: string;
   email: string | null;
   origem: Origem;
+  tipo: Tipo | null;
   valor_estimado: number | null;
   responsavel: string | null;
   etapa: Etapa;
