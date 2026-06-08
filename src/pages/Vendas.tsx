@@ -552,6 +552,16 @@ export default function Vendas() {
               </Select>
             </div>
             <div>
+              <Label>Tipo</Label>
+              <Select value={form.tipo} onValueChange={(v) => setForm({ ...form, tipo: v as Tipo })}>
+                <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">—</SelectItem>
+                  {TIPOS.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label>Valor estimado</Label>
               <Input value={form.valor_estimado} onChange={(e) => setForm({ ...form, valor_estimado: applyCurrencyMask(e.target.value) })} placeholder="R$ 0,00" />
             </div>
