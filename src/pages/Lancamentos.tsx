@@ -77,6 +77,8 @@ export default function Lancamentos() {
   const [dataLanc, setDataLanc] = useState(now.toISOString().slice(0, 10));
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formItens, setFormItens] = useState<Omit<LancamentoItem, "lancamento_id">[]>([emptyItem()]);
+  const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [editItem, setEditItem] = useState<(Lancamento & { cat: Categoria }) | null>(null);
   const [editCliente, setEditCliente] = useState("");
