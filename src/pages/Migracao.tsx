@@ -413,7 +413,7 @@ export default function Migracao() {
             accept=".csv,text/csv"
             label="leads.csv"
             loading={state.leads.loading}
-            onPick={(f) => handleCSV(f, "leads", "leads", ",", mapLead)}
+            onPick={(f) => handleCSV(f, "leads", "leads", "auto", mapLead)}
           />
           {state.leads.loading && <Progress value={state.leads.progress} />}
         </CardContent>
@@ -430,7 +430,7 @@ export default function Migracao() {
             accept=".csv,text/csv"
             label="notas_contato.csv"
             loading={state.notas.loading}
-            onPick={(f) => handleCSV(f, "notas_contato", "notas", ",", mapNota)}
+            onPick={(f) => handleCSV(f, "notas_contato", "notas", "auto", mapNota)}
           />
           {state.notas.loading && <Progress value={state.notas.progress} />}
         </CardContent>
@@ -448,7 +448,7 @@ export default function Migracao() {
               accept=".csv,text/csv"
               label="produtos_estoque.csv (DSH)"
               loading={state.produtos1.loading}
-              onPick={(f) => handleCSV(f, "produtos_estoque", "produtos1", ";", mapProduto)}
+              onPick={(f) => handleCSV(f, "produtos_estoque", "produtos1", "auto", mapProduto)}
             />
             {state.produtos1.loading && <Progress value={state.produtos1.progress} />}
           </div>
@@ -457,7 +457,7 @@ export default function Migracao() {
               accept=".csv,text/csv"
               label="produtos_estoque_2.csv (DMedical)"
               loading={state.produtos2.loading}
-              onPick={(f) => handleCSV(f, "produtos_estoque_2", "produtos2", ";", mapProduto)}
+              onPick={(f) => handleCSV(f, "produtos_estoque_2", "produtos2", "auto", mapProduto)}
             />
             {state.produtos2.loading && <Progress value={state.produtos2.progress} />}
           </div>
@@ -466,7 +466,7 @@ export default function Migracao() {
               accept=".csv,text/csv"
               label="movimentacoes_estoque.csv (DSH)"
               loading={state.mov1.loading}
-              onPick={(f) => handleCSV(f, "movimentacoes_estoque", "mov1", ";", mapMov)}
+              onPick={(f) => handleCSV(f, "movimentacoes_estoque", "mov1", "auto", mapMov)}
             />
             {state.mov1.loading && <Progress value={state.mov1.progress} />}
           </div>
@@ -475,7 +475,7 @@ export default function Migracao() {
               accept=".csv,text/csv"
               label="movimentacoes_estoque_2.csv (DMedical)"
               loading={state.mov2.loading}
-              onPick={(f) => handleCSV(f, "movimentacoes_estoque_2", "mov2", ";", mapMov)}
+              onPick={(f) => handleCSV(f, "movimentacoes_estoque_2", "mov2", "auto", mapMov)}
             />
             {state.mov2.loading && <Progress value={state.mov2.progress} />}
           </div>
@@ -493,7 +493,7 @@ export default function Migracao() {
             accept=".csv,text/csv"
             label="vendedores.csv"
             loading={state.vendedores.loading}
-            onPick={(f) => handleCSV(f, "vendedores", "vendedores", ";", mapVendedor)}
+            onPick={(f) => handleCSV(f, "vendedores", "vendedores", "auto", mapVendedor)}
           />
           {state.vendedores.loading && <Progress value={state.vendedores.progress} />}
         </CardContent>
