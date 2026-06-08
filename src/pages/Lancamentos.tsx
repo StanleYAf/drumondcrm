@@ -319,6 +319,25 @@ export default function Lancamentos() {
     setFormItens(prev => [...prev, emptyItem()]);
   }
 
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files) return;
+    const maxBytes = 10 * 1024 * 1024;
+    const valid = Array.from(files).filter(f => {
+      if (f.size > maxBytes) {
+        toast.error(`${f.name}: máximo 10MB`);
+        return false;
+      }
+      return true;
+    });
+    setStagedFiles(prev => [...prev, ...valid]);
+    e.target.value = "";
+  }
+
+  function removeStagedFile(index: number) {
+    setStagedFiles(prev => prev.filter((_, i) => i !== index));
+  }
+
   function updateEditItemField(index: number, field: string, value: string) {
     setEditItens(prev => prev.map((it, i) => i === index ? { ...it, [field]: value } : it));
   }
