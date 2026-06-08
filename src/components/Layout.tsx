@@ -1,7 +1,7 @@
 import { Fragment, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, Sun, Moon, Package, Boxes, LogOut, PanelLeftClose, PanelLeft, Wrench, Briefcase, Building2, ChevronDown, ClipboardList, DollarSign, RefreshCw } from "lucide-react";
+import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, Sun, Moon, Package, Boxes, LogOut, PanelLeftClose, PanelLeft, Wrench, Briefcase, Building2, ChevronDown, ClipboardList, DollarSign, RefreshCw, KanbanSquare } from "lucide-react";
 import { useTheme } from "@/lib/themeContext";
 import { useAuth } from "@/lib/authContext";
 
@@ -25,6 +25,7 @@ const groups: Group[] = [
       { title: "Clientes", url: "/manutencao/clientes", icon: Building2, adminOnly: true },
       { title: "Indicadores", url: "/manutencao/os", icon: ClipboardList },
       { title: "Boletim", url: "/manutencao/boletim", icon: FileText },
+      { title: "Demandas", url: "/demandas/engenharia", icon: KanbanSquare },
       { title: "Logs de Sincronização", url: "/manutencao/sync-logs", icon: RefreshCw, adminOnly: true },
     ],
   },
@@ -40,6 +41,7 @@ const groups: Group[] = [
       { title: "Vendas", url: "/vendas", icon: ShoppingCart },
       { title: "Pós-venda", url: "/pos-venda", icon: Headphones },
       { title: "Relatórios", url: "/relatorios", icon: FileText },
+      { title: "Demandas", url: "/demandas/comercial", icon: KanbanSquare },
     ],
   },
   {
@@ -58,6 +60,7 @@ const groups: Group[] = [
     permission: "admin",
     subs: [
       { title: "Dashboard", url: "/financeiro", icon: LayoutDashboard },
+      { title: "Demandas", url: "/demandas/financeiro", icon: KanbanSquare },
     ],
   },
 ];
@@ -66,11 +69,12 @@ const comercialRoutes = ["/", "/lancamentos", "/indicadores", "/vendas", "/pos-v
 
 function isGroupActive(group: Group, pathname: string): boolean {
   if (group.key === "comercial") {
+    if (pathname === "/demandas/comercial") return true;
     return comercialRoutes.some(r => r === "/" ? pathname === "/" : pathname.startsWith(r));
   }
-  if (group.key === "engenharia") return pathname.startsWith("/manutencao");
+  if (group.key === "engenharia") return pathname.startsWith("/manutencao") || pathname === "/demandas/engenharia";
   if (group.key === "estoque") return pathname.startsWith("/estoque");
-  if (group.key === "financeiro") return pathname.startsWith("/financeiro");
+  if (group.key === "financeiro") return pathname.startsWith("/financeiro") || pathname === "/demandas/financeiro";
   return false;
 }
 
