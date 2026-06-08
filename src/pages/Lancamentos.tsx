@@ -434,7 +434,7 @@ export default function Lancamentos() {
       </div>
 
       {/* Summary Card */}
-      <div className="glass-card p-4 grid grid-cols-3 gap-3">
+      <div className="glass-card p-4 grid grid-cols-4 gap-3">
         <div>
           <p className="text-[11px] font-medium text-muted-foreground">Total mês</p>
           <p className="text-lg font-bold text-foreground">{formatCurrency(totalMes)}</p>
@@ -446,6 +446,10 @@ export default function Lancamentos() {
         <div>
           <p className="text-[11px] font-medium text-muted-foreground">Falta</p>
           <p className="text-lg font-bold" style={{ color: '#FF453A' }}>{formatCurrency(Math.max(0, metaCategoria - totalCategoria))}</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-medium text-muted-foreground">Comissão</p>
+          <p className="text-lg font-bold" style={{ color: '#0A84FF' }}>{formatCurrency(totalComissao)}</p>
         </div>
       </div>
 
