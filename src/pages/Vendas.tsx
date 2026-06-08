@@ -341,6 +341,7 @@ export default function Vendas() {
       telefone: form.telefone.trim(),
       email: form.email.trim() || null,
       origem: form.origem as any,
+      tipo: form.tipo ? (form.tipo as Tipo) : null,
       valor_estimado: parseCurrencyMask(form.valor_estimado) || 0,
       responsavel: form.responsavel.trim() || null,
       observacoes: form.observacoes.trim() || null,
