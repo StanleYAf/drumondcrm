@@ -82,6 +82,9 @@ export type Database = {
           ano: number
           contratos: number | null
           created_at: string | null
+          custo_produtos: number
+          custos_gerais: number
+          empresa: Database["public"]["Enums"]["financeiro_empresa"]
           geral: number | null
           id: string
           mes: string
@@ -96,6 +99,9 @@ export type Database = {
           ano: number
           contratos?: number | null
           created_at?: string | null
+          custo_produtos?: number
+          custos_gerais?: number
+          empresa?: Database["public"]["Enums"]["financeiro_empresa"]
           geral?: number | null
           id?: string
           mes: string
@@ -110,6 +116,9 @@ export type Database = {
           ano?: number
           contratos?: number | null
           created_at?: string | null
+          custo_produtos?: number
+          custos_gerais?: number
+          empresa?: Database["public"]["Enums"]["financeiro_empresa"]
           geral?: number | null
           id?: string
           mes?: string
@@ -1278,6 +1287,7 @@ export type Database = {
         | "em_qualificacao"
         | "convertido"
         | "perdido"
+      financeiro_empresa: "dsh" | "dmedical"
       origem_lead:
         | "Instagram"
         | "Facebook"
@@ -1425,6 +1435,7 @@ export const Constants = {
         "convertido",
         "perdido",
       ],
+      financeiro_empresa: ["dsh", "dmedical"],
       origem_lead: [
         "Instagram",
         "Facebook",
