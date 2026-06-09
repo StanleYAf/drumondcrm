@@ -147,8 +147,6 @@ async function seedInitialData(userId: string): Promise<void> {
       }))
     ).then();
   }
-
-  console.log("[seed] Dados iniciais inseridos com sucesso");
 }
 
 // ---- Sync helpers ----
