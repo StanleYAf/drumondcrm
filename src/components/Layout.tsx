@@ -139,52 +139,45 @@ export function Layout({ children }: { children: React.ReactNode }) {
             const showSubs = !collapsed && isOpen;
             return (
               <Fragment key={g.key}>
-                {!collapsed && (
-                  <p className="px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-[#9CA3AF]">
-                    {g.title}
-                  </p>
-                )}
-                <button
-                  onClick={() => setOpenMap(m => ({ ...m, [g.key]: !m[g.key] }))}
-                  className={`relative w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${collapsed ? 'justify-center' : ''} ${
-                    active
-                      ? 'bg-accent text-accent-foreground font-medium shadow-[inset_3px_0_0_hsl(var(--primary))]'
-                      : 'text-sidebar-foreground hover:bg-secondary'
-                  }`}
-                  title={collapsed ? g.title : undefined}
-                >
-                  <g.icon className={`h-4 w-4 flex-shrink-0 ${active ? 'text-primary' : 'text-muted-foreground'}`} />
-                  {!collapsed && (
-                    <>
-                      <span className="flex-1 text-left">Visão geral</span>
-                      <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                    </>
-                  )}
-                </button>
-                {showSubs && (
-                  <div className="ml-3 mt-0.5 mb-1 space-y-0.5">
-                    {visibleSubs.map((subItem) => {
-                      const isSubActive = subItem.url === '/'
-                        ? location.pathname === '/'
-                        : location.pathname === subItem.url;
-                      return (
-                        <NavLink
-                          key={subItem.url}
-                          to={subItem.url}
-                          end
-                          className={`relative flex items-center gap-2 rounded-md pl-6 pr-3 py-2 text-[13px] transition-colors ${
-                            isSubActive
-                              ? 'bg-accent text-accent-foreground font-medium shadow-[inset_3px_0_0_hsl(var(--primary))]'
-                              : 'text-sidebar-foreground hover:bg-secondary'
-                          }`}
-                          activeClassName=""
-                        >
-                          <subItem.icon className={`h-4 w-4 flex-shrink-0 ${isSubActive ? 'text-primary' : 'text-muted-foreground'}`} />
-                          <span>{subItem.title}</span>
-                        </NavLink>
-                      );
-                    })}
-                    <div className="my-2 border-b border-sidebar-border" />
+                {collapsed ? (
+                  <button
+                    onClick={() => setOpenMap(m => ({ ...m, [g.key]: !m[g.key] }))}
+                    className={`w-full flex items-center justify-center px-3 py-2 rounded-md text-sm transition-colors ${
+                      active ? 'bg-accent text-accent-foreground' : 'text-sidebar-foreground hover:bg-secondary'
+                    }`}
+                    title={g.title}
+                  >
+                    <g.icon className={`h-4 w-4 ${active ? 'text-primary' : 'text-muted-foreground'}`} />
+                  </button>
+                ) : (
+                  <div className="pt-3">
+                    <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#9CA3AF]">
+                      {g.title}
+                    </p>
+                    <div className="space-y-0.5">
+                      {visibleSubs.map((subItem) => {
+                        const isSubActive = subItem.url === '/'
+                          ? location.pathname === '/'
+                          : location.pathname === subItem.url;
+                        return (
+                          <NavLink
+                            key={subItem.url}
+                            to={subItem.url}
+                            end
+                            className={`relative flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] transition-colors ${
+                              isSubActive
+                                ? 'bg-accent text-accent-foreground font-medium shadow-[inset_3px_0_0_hsl(var(--primary))]'
+                                : 'text-sidebar-foreground hover:bg-secondary'
+                            }`}
+                            activeClassName=""
+                          >
+                            <subItem.icon className={`h-4 w-4 flex-shrink-0 ${isSubActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                            <span>{subItem.title}</span>
+                          </NavLink>
+                        );
+                      })}
+                    </div>
+                    <div className="mx-3 mt-3 border-b border-sidebar-border" />
                   </div>
                 )}
               </Fragment>
