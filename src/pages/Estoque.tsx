@@ -355,7 +355,6 @@ export default function Estoque() {
             { fps: 10, qrbox: { width: 250, height: 150 } },
             (decodedText) => {
               const code = decodedText.trim();
-              console.log("[Scanner] Código lido:", code);
               // Stop scanner first, then process
               stopCamera().then(() => {
                 handleBarcodeScanRef.current(code);
