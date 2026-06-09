@@ -466,19 +466,6 @@ export default function Configuracoes() {
         <p className="ios-section-title">APARÊNCIA</p>
         <div className="ios-list-group">
           <div className="ios-list-item">
-            <span className="text-sm text-foreground">Tema</span>
-            <div className="segmented-control">
-              <button onClick={() => setMode("light")}
-                className={`segmented-btn flex items-center gap-1.5 ${mode === "light" ? "active" : ""}`}>
-                <Sun className="h-3.5 w-3.5" />Claro
-              </button>
-              <button onClick={() => setMode("dark")}
-                className={`segmented-btn flex items-center gap-1.5 ${mode === "dark" ? "active" : ""}`}>
-                <Moon className="h-3.5 w-3.5" />Escuro
-              </button>
-            </div>
-          </div>
-          <div className="ios-list-item">
             <span className="text-sm text-foreground">Cor de acento</span>
             <div className="flex gap-2">
               {(Object.keys(accentMap) as AccentColor[]).map((color) => (

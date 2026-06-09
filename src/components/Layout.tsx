@@ -1,8 +1,7 @@
 import { Fragment, useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, Sun, Moon, Package, Boxes, LogOut, PanelLeftClose, PanelLeft, Wrench, Briefcase, Building2, ChevronDown, ClipboardList, DollarSign, RefreshCw, KanbanSquare } from "lucide-react";
-import { useTheme } from "@/lib/themeContext";
+import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, Package, Boxes, LogOut, PanelLeftClose, PanelLeft, Wrench, Briefcase, Building2, ChevronDown, ClipboardList, DollarSign, RefreshCw, KanbanSquare } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 
 type SubItem = { title: string; url: string; icon: any; adminOnly?: boolean };
@@ -80,9 +79,7 @@ function isGroupActive(group: Group, pathname: string): boolean {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  const { mode, toggleMode } = useTheme();
   const { signOut, user, hasCargo } = useAuth();
-  const isDark = mode === "dark";
   const [collapsed, setCollapsed] = useState(false);
   const isAdmin = hasCargo("admin");
 
@@ -120,37 +117,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex w-full bg-background">
       {/* Desktop Sidebar */}
-      <aside className={`hidden md:flex flex-col fixed inset-y-0 left-0 z-40 border-r border-border bg-sidebar transition-all duration-200 ${collapsed ? 'w-16' : 'w-60'}`}
-        style={{ backdropFilter: 'blur(20px)' }}>
-        <div className={`p-4 pb-3 flex items-center ${collapsed ? 'flex-col gap-2 px-2' : 'justify-between'}`}>
+      <aside className={`hidden md:flex flex-col fixed inset-y-0 left-0 z-40 border-r border-sidebar-border bg-sidebar transition-all duration-200 ${collapsed ? 'w-16' : 'w-60'}`}>
+        <div className={`px-5 pt-5 pb-4 flex items-center ${collapsed ? 'flex-col gap-2 px-2' : 'justify-between'}`}>
           {!collapsed && (
             <div>
-              <h1 className="text-lg font-semibold text-foreground tracking-tight">Painel Comercial</h1>
+              <h1 className="text-base font-bold text-foreground tracking-tight">Painel Comercial</h1>
               <p className="text-xs mt-0.5 text-muted-foreground">Equipamentos Médicos</p>
             </div>
           )}
-          <div className={`flex items-center ${collapsed ? 'flex-col gap-2' : 'gap-2'}`}>
-            <button onClick={toggleMode}
-              className="relative w-10 h-[22px] rounded-full transition-colors duration-300"
-              style={{ background: isDark ? 'hsl(var(--primary) / 0.2)' : 'hsl(var(--muted))' }}
-              title={isDark ? "Modo claro" : "Modo escuro"}>
-              <span className="absolute top-[2px] transition-all duration-300 flex items-center justify-center w-[18px] h-[18px] rounded-full bg-white shadow-sm"
-                style={{ left: isDark ? '20px' : '2px' }}>
-                {isDark ? <Sun className="h-3 w-3 text-amber-500" /> : <Moon className="h-3 w-3 text-slate-500" />}
-              </span>
-            </button>
-            <button onClick={() => setCollapsed(!collapsed)}
-              className="relative w-10 h-[22px] rounded-full transition-colors duration-300"
-              style={{ background: collapsed ? 'hsl(var(--primary) / 0.2)' : 'hsl(var(--muted))' }}
-              title={collapsed ? "Expandir sidebar" : "Recolher sidebar"}>
-              <span className="absolute top-[2px] transition-all duration-300 flex items-center justify-center w-[18px] h-[18px] rounded-full bg-white shadow-sm"
-                style={{ left: collapsed ? '20px' : '2px' }}>
-                {collapsed ? <PanelLeft className="h-3 w-3 text-primary" /> : <PanelLeftClose className="h-3 w-3 text-slate-500" />}
-              </span>
-            </button>
-          </div>
+          <button onClick={() => setCollapsed(!collapsed)}
+            className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition"
+            title={collapsed ? "Expandir sidebar" : "Recolher sidebar"}>
+            {collapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
         </div>
-        <nav className="flex-1 px-3 py-2 space-y-0.5 overflow-y-auto">
+        <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
           {visibleGroups.map((g) => {
             const visibleSubs = g.subs.filter(s => !s.adminOnly || isAdmin);
             const active = isGroupActive(g, location.pathname);
@@ -158,23 +139,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
             const showSubs = !collapsed && isOpen;
             return (
               <Fragment key={g.key}>
+                {!collapsed && (
+                  <p className="px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-[#9CA3AF]">
+                    {g.title}
+                  </p>
+                )}
                 <button
                   onClick={() => setOpenMap(m => ({ ...m, [g.key]: !m[g.key] }))}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${collapsed ? 'justify-center' : ''} ${
-                    active ? 'text-foreground font-medium bg-secondary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+                  className={`relative w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${collapsed ? 'justify-center' : ''} ${
+                    active
+                      ? 'bg-accent text-accent-foreground font-medium shadow-[inset_3px_0_0_hsl(var(--primary))]'
+                      : 'text-sidebar-foreground hover:bg-secondary'
                   }`}
                   title={collapsed ? g.title : undefined}
                 >
-                  <g.icon className={`h-5 w-5 flex-shrink-0 ${active ? 'text-primary' : ''}`} />
+                  <g.icon className={`h-4 w-4 flex-shrink-0 ${active ? 'text-primary' : 'text-muted-foreground'}`} />
                   {!collapsed && (
                     <>
-                      <span className="flex-1 text-left">{g.title}</span>
+                      <span className="flex-1 text-left">Visão geral</span>
                       <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                     </>
                   )}
                 </button>
                 {showSubs && (
-                  <div className="ml-5 mt-1 mb-1 space-y-0.5 border-l border-border/70 pl-3">
+                  <div className="ml-3 mt-0.5 mb-1 space-y-0.5">
                     {visibleSubs.map((subItem) => {
                       const isSubActive = subItem.url === '/'
                         ? location.pathname === '/'
@@ -184,16 +172,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
                           key={subItem.url}
                           to={subItem.url}
                           end
-                          className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs transition-all ${
-                            isSubActive ? 'bg-secondary text-foreground font-medium' : 'text-muted-foreground hover:bg-secondary/50 hover:text-foreground'
+                          className={`relative flex items-center gap-2 rounded-md pl-6 pr-3 py-2 text-[13px] transition-colors ${
+                            isSubActive
+                              ? 'bg-accent text-accent-foreground font-medium shadow-[inset_3px_0_0_hsl(var(--primary))]'
+                              : 'text-sidebar-foreground hover:bg-secondary'
                           }`}
-                          activeClassName="bg-secondary text-foreground font-medium"
+                          activeClassName=""
                         >
-                          <subItem.icon className={`h-4 w-4 flex-shrink-0 ${isSubActive ? 'text-primary' : ''}`} />
+                          <subItem.icon className={`h-4 w-4 flex-shrink-0 ${isSubActive ? 'text-primary' : 'text-muted-foreground'}`} />
                           <span>{subItem.title}</span>
                         </NavLink>
                       );
                     })}
+                    <div className="my-2 border-b border-sidebar-border" />
                   </div>
                 )}
               </Fragment>
@@ -204,22 +195,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <NavLink
             to="/configuracoes"
             end
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all ${collapsed ? 'justify-center' : ''} text-muted-foreground hover:text-foreground hover:bg-secondary/50`}
-            activeClassName="bg-secondary text-foreground font-medium"
+            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${collapsed ? 'justify-center' : ''} text-sidebar-foreground hover:bg-secondary`}
+            activeClassName="bg-accent text-accent-foreground font-medium shadow-[inset_3px_0_0_hsl(var(--primary))]"
             title={collapsed ? "Configurações" : undefined}
           >
-            <Settings className="h-5 w-5 flex-shrink-0" />
+            <Settings className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
             {!collapsed && <span>Configurações</span>}
           </NavLink>
         </nav>
-        <div className="p-3 border-t border-border">
+        <div className="p-3 border-t border-sidebar-border">
           {!collapsed && user && (
-            <p className="text-[11px] text-muted-foreground truncate mb-2 px-3">{user.email}</p>
+            <div className="flex items-center gap-2 px-2 py-2 mb-1">
+              <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-xs font-semibold">
+                {(user.email || "?").charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium text-foreground truncate">{user.email}</p>
+                <p className="text-[10px] text-muted-foreground">Usuário</p>
+              </div>
+            </div>
           )}
           <button onClick={signOut}
-            className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm text-destructive hover:bg-destructive/10 transition-all ${collapsed ? 'justify-center' : ''}`}
+            className={`flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm text-destructive hover:bg-[#FEF2F2] transition ${collapsed ? 'justify-center' : ''}`}
             title={collapsed ? "Sair" : undefined}>
-            <LogOut className="h-5 w-5 flex-shrink-0" />
+            <LogOut className="h-4 w-4 flex-shrink-0" />
             {!collapsed && <span>Sair</span>}
           </button>
         </div>
