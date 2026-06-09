@@ -1277,6 +1277,10 @@ export type Database = {
     }
     Functions: {
       get_dados_publicos_cliente: { Args: { _token: string }; Returns: Json }
+      has_cargo: {
+        Args: { _cargo: string; _user_id: string }
+        Returns: boolean
+      }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_controlador: { Args: { _user_id: string }; Returns: boolean }
       pode_gerenciar_usuarios: { Args: { _user_id: string }; Returns: boolean }
