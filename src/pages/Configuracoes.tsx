@@ -9,13 +9,26 @@ import { Trash2, Plus, Download, Upload, AlertTriangle, Sun, Moon, Check, User, 
 import { ConfigSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { toast } from "sonner";
+import { PERM_GROUPS } from "@/lib/permissions";
 
-const CARGOS = [
-  { value: "dash", label: "Dash", desc: "Dashboard, lançamentos, indicadores e pós-venda" },
-  { value: "estoque", label: "Estoque", desc: "Estoque e fornecedores" },
+const SPECIAL_CARGOS = [
+  { value: "admin", label: "Admin", desc: "Acesso completo a todos os módulos" },
   { value: "Controlador", label: "Controlador", desc: "Estoque com aprovação de saídas" },
-  { value: "admin", label: "Admin", desc: "Acesso completo" },
 ];
+
+function cargoLabel(c: string): string {
+  const sp = SPECIAL_CARGOS.find(s => s.value === c);
+  if (sp) return sp.label;
+  for (const g of PERM_GROUPS) {
+    const item = g.items.find(i => i.code === c);
+    if (item) return `${g.title}: ${item.label}`;
+  }
+  // legacy labels
+  if (c === "dash") return "Comercial (todos)";
+  if (c === "manutencao") return "Engenharia (todos)";
+  if (c === "estoque") return "Estoque";
+  return c;
+}
 
 interface ProfileRow {
   id: string;
@@ -32,6 +45,7 @@ function UserRow({ u, user, savingUserId, onApprove, onRevoke, onReject, onToggl
   onToggleCargo: (id: string, cargo: string) => void;
 }) {
   const userCargos = u.cargo ? u.cargo.split(",").map(c => c.trim()) : [];
+  const isUserAdmin = userCargos.includes("admin");
   return (
     <div className="p-4 border-b border-border/30 last:border-0 space-y-3">
       <div className="flex items-center justify-between">
@@ -49,9 +63,7 @@ function UserRow({ u, user, savingUserId, onApprove, onRevoke, onReject, onToggl
             <p className="text-[11px] text-muted-foreground">
               Desde {new Date(u.created_at).toLocaleDateString("pt-BR")}
               {userCargos.length > 0 && (
-                <span className="ml-1.5">
-                  · {userCargos.map(c => CARGOS.find(cc => cc.value === c)?.label || c).join(", ")}
-                </span>
+                <span className="ml-1.5">· {userCargos.length} permissão{userCargos.length > 1 ? "ões" : ""}</span>
               )}
             </p>
           </div>
@@ -75,21 +87,58 @@ function UserRow({ u, user, savingUserId, onApprove, onRevoke, onReject, onToggl
         )}
       </div>
       {u.aprovado && (
-        <div className="grid grid-cols-4 gap-2">
-          {CARGOS.map(c => {
-            const isSelected = userCargos.includes(c.value);
-            return (
-              <button key={c.value} onClick={() => onToggleCargo(u.user_id, c.value)}
-                disabled={savingUserId === u.user_id}
-                className="p-2 rounded-xl text-center transition disabled:opacity-50"
-                style={{
-                  background: isSelected ? 'hsl(var(--primary) / 0.15)' : 'hsl(var(--muted))',
-                  border: isSelected ? '1px solid hsl(var(--primary) / 0.4)' : '1px solid transparent',
-                }}>
-                <p className="text-xs font-semibold" style={{ color: isSelected ? 'hsl(var(--primary))' : undefined }}>{c.label}</p>
-              </button>
-            );
-          })}
+        <div className="space-y-3">
+          {/* Cargos especiais */}
+          <div className="flex flex-wrap gap-2">
+            {SPECIAL_CARGOS.map(c => {
+              const isSelected = userCargos.includes(c.value);
+              return (
+                <button key={c.value} onClick={() => onToggleCargo(u.user_id, c.value)}
+                  disabled={savingUserId === u.user_id}
+                  title={c.desc}
+                  className="px-3 py-1.5 rounded-full text-[11px] font-semibold transition disabled:opacity-50"
+                  style={{
+                    background: isSelected ? 'hsl(var(--primary) / 0.15)' : 'hsl(var(--muted))',
+                    border: isSelected ? '1px solid hsl(var(--primary) / 0.4)' : '1px solid hsl(var(--border))',
+                    color: isSelected ? 'hsl(var(--primary))' : undefined,
+                  }}>
+                  {c.label}
+                </button>
+              );
+            })}
+          </div>
+          {/* Permissões por módulo */}
+          {isUserAdmin ? (
+            <p className="text-[11px] text-muted-foreground italic px-1">
+              Admin tem acesso a todos os módulos automaticamente.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {PERM_GROUPS.map(g => (
+                <div key={g.key} className="rounded-xl border border-border/40 p-3 bg-muted/30">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{g.title}</p>
+                  <div className="space-y-1.5">
+                    {g.items.map(item => {
+                      const isSelected = userCargos.includes(item.code);
+                      return (
+                        <label key={item.code}
+                          className="flex items-center gap-2 cursor-pointer text-[12px] text-foreground hover:bg-background/60 px-1.5 py-1 rounded-md transition">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            disabled={savingUserId === u.user_id}
+                            onChange={() => onToggleCargo(u.user_id, item.code)}
+                            className="h-3.5 w-3.5 rounded border-border accent-primary"
+                          />
+                          <span className={isSelected ? "font-medium" : ""}>{item.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
