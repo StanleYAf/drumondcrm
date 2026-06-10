@@ -108,37 +108,37 @@ function UserRow({ u, user, savingUserId, onApprove, onRevoke, onReject, onToggl
             })}
           </div>
           {/* Permissões por módulo */}
-          {isUserAdmin ? (
+          {isUserAdmin && (
             <p className="text-[11px] text-muted-foreground italic px-1">
-              Admin tem acesso a todos os módulos automaticamente.
+              Admin tem acesso a todos os módulos. Desmarque "Admin" para personalizar as permissões abaixo.
             </p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {PERM_GROUPS.map(g => (
-                <div key={g.key} className="rounded-xl border border-border/40 p-3 bg-muted/30">
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{g.title}</p>
-                  <div className="space-y-1.5">
-                    {g.items.map(item => {
-                      const isSelected = userCargos.includes(item.code);
-                      return (
-                        <label key={item.code}
-                          className="flex items-center gap-2 cursor-pointer text-[12px] text-foreground hover:bg-background/60 px-1.5 py-1 rounded-md transition">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            disabled={savingUserId === u.user_id}
-                            onChange={() => onToggleCargo(u.user_id, item.code)}
-                            className="h-3.5 w-3.5 rounded border-border accent-primary"
-                          />
-                          <span className={isSelected ? "font-medium" : ""}>{item.label}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </div>
           )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {PERM_GROUPS.map(g => (
+              <div key={g.key} className="rounded-xl border border-border/40 p-3 bg-muted/30">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{g.title}</p>
+                <div className="space-y-1.5">
+                  {g.items.map(item => {
+                    const isSelected = isUserAdmin || userCargos.includes(item.code);
+                    const disabled = savingUserId === u.user_id || isUserAdmin;
+                    return (
+                      <label key={item.code}
+                        className={`flex items-center gap-2 text-[12px] text-foreground px-1.5 py-1 rounded-md transition ${disabled ? "opacity-70 cursor-not-allowed" : "cursor-pointer hover:bg-background/60"}`}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          disabled={disabled}
+                          onChange={() => onToggleCargo(u.user_id, item.code)}
+                          className="h-3.5 w-3.5 rounded border-border accent-primary"
+                        />
+                        <span className={isSelected ? "font-medium" : ""}>{item.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
