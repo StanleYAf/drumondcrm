@@ -53,12 +53,20 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-export function RoleGuard({ allowed, children }: { allowed: string[]; children: React.ReactNode }) {
-  const { cargo, hasCargo } = useAuth();
+export function RoleGuard({ allowed, perm, children }: { allowed?: string[]; perm?: string | string[]; children: React.ReactNode }) {
+  const { cargo, hasCargo, canAccess, canAccessAny } = useAuth();
   if (!cargo) return <>{children}</>;
   if (hasCargo("admin")) return <>{children}</>;
-  const userCargos = cargo.split(",").map(c => c.trim());
-  if (userCargos.some(c => allowed.includes(c))) return <>{children}</>;
+  if (perm) {
+    const perms = Array.isArray(perm) ? perm : [perm];
+    if (canAccessAny(perms)) return <>{children}</>;
+  }
+  if (allowed && allowed.length) {
+    const userCargos = cargo.split(",").map(c => c.trim());
+    if (userCargos.some(c => allowed.includes(c))) return <>{children}</>;
+    // legacy fallback: try perms via expansion
+    if (canAccessAny(allowed)) return <>{children}</>;
+  }
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
       <AlertTriangle className="h-12 w-12 text-destructive" />

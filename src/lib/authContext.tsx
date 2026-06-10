@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
+import { canAccessPerm, hasAnyPerm } from "@/lib/permissions";
 
 interface AuthContextType {
   user: User | null;
@@ -10,6 +11,8 @@ interface AuthContextType {
   displayName: string | null;
   aprovado: boolean | null;
   hasCargo: (role: string) => boolean;
+  canAccess: (perm: string) => boolean;
+  canAccessAny: (perms: string[]) => boolean;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: string | null }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -72,6 +75,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return cargo.split(",").map(c => c.trim()).includes(role);
   }, [cargo]);
 
+  const canAccess = useCallback((perm: string) => canAccessPerm(cargo, perm), [cargo]);
+  const canAccessAny = useCallback((perms: string[]) => hasAnyPerm(cargo, perms), [cargo]);
+
   const signUp = useCallback(async (email: string, password: string, displayName?: string) => {
     const { error } = await supabase.auth.signUp({
       email, password,
@@ -90,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, cargo, displayName, aprovado, hasCargo, signUp, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, loading, cargo, displayName, aprovado, hasCargo, canAccess, canAccessAny, signUp, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

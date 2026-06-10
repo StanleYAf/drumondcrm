@@ -3,13 +3,13 @@ import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, Package, Boxes, LogOut, PanelLeftClose, PanelLeft, Wrench, Briefcase, Building2, ChevronDown, ClipboardList, DollarSign, RefreshCw, KanbanSquare } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
+import type { PermCode } from "@/lib/permissions";
 
-type SubItem = { title: string; url: string; icon: any; adminOnly?: boolean };
+type SubItem = { title: string; url: string; icon: any; perm?: PermCode | string; adminOnly?: boolean };
 type Group = {
   key: string;
   title: string;
   icon: any;
-  permission: "dash" | "estoque" | "manutencao" | "admin";
   subs: SubItem[];
 };
 
@@ -18,48 +18,44 @@ const groups: Group[] = [
     key: "engenharia",
     title: "Engenharia",
     icon: Wrench,
-    permission: "manutencao",
     subs: [
-      { title: "Dash Engenharia", url: "/manutencao", icon: LayoutDashboard },
-      { title: "Clientes", url: "/manutencao/clientes", icon: Building2, adminOnly: true },
-      { title: "Indicadores", url: "/manutencao/os", icon: ClipboardList },
-      { title: "Boletim", url: "/manutencao/boletim", icon: FileText },
-      { title: "Demandas", url: "/demandas/engenharia", icon: KanbanSquare },
-      { title: "Logs de Sincronização", url: "/manutencao/sync-logs", icon: RefreshCw, adminOnly: true },
+      { title: "Dash Engenharia", url: "/manutencao", icon: LayoutDashboard, perm: "eng_dashboard" },
+      { title: "Clientes", url: "/manutencao/clientes", icon: Building2, perm: "eng_clientes" },
+      { title: "Indicadores", url: "/manutencao/os", icon: ClipboardList, perm: "eng_os" },
+      { title: "Boletim", url: "/manutencao/boletim", icon: FileText, perm: "eng_boletim" },
+      { title: "Demandas", url: "/demandas/engenharia", icon: KanbanSquare, perm: "eng_dashboard" },
+      { title: "Logs de Sincronização", url: "/manutencao/sync-logs", icon: RefreshCw, perm: "eng_synclogs" },
     ],
   },
   {
     key: "comercial",
     title: "Comercial",
     icon: Briefcase,
-    permission: "dash",
     subs: [
-      { title: "Dashboard", url: "/", icon: LayoutDashboard },
-      { title: "Lançamentos", url: "/lancamentos", icon: BookOpen },
-      { title: "Indicadores", url: "/indicadores", icon: BarChart2 },
-      { title: "Vendas", url: "/vendas", icon: ShoppingCart },
-      { title: "Pós-venda", url: "/pos-venda", icon: Headphones },
-      { title: "Relatórios", url: "/relatorios", icon: FileText },
-      { title: "Demandas", url: "/demandas/comercial", icon: KanbanSquare },
+      { title: "Dashboard", url: "/", icon: LayoutDashboard, perm: "com_dashboard" },
+      { title: "Lançamentos", url: "/lancamentos", icon: BookOpen, perm: "com_lancamentos" },
+      { title: "Indicadores", url: "/indicadores", icon: BarChart2, perm: "com_indicadores" },
+      { title: "Vendas", url: "/vendas", icon: ShoppingCart, perm: "com_vendas" },
+      { title: "Pós-venda", url: "/pos-venda", icon: Headphones, perm: "com_posvenda" },
+      { title: "Relatórios", url: "/relatorios", icon: FileText, perm: "com_relatorios" },
+      { title: "Demandas", url: "/demandas/comercial", icon: KanbanSquare, perm: "com_dashboard" },
     ],
   },
   {
     key: "estoque",
     title: "Estoque",
     icon: Package,
-    permission: "estoque",
     subs: [
-      { title: "Estoque", url: "/estoque", icon: Boxes },
+      { title: "Estoque", url: "/estoque", icon: Boxes, perm: "est_estoque" },
     ],
   },
   {
     key: "financeiro",
     title: "Financeiro",
     icon: DollarSign,
-    permission: "admin",
     subs: [
-      { title: "Dashboard", url: "/financeiro", icon: LayoutDashboard },
-      { title: "Demandas", url: "/demandas/financeiro", icon: KanbanSquare },
+      { title: "Dashboard", url: "/financeiro", icon: LayoutDashboard, perm: "fin_dashboard" },
+      { title: "Demandas", url: "/demandas/financeiro", icon: KanbanSquare, perm: "fin_dashboard" },
     ],
   },
 ];
@@ -79,20 +75,20 @@ function isGroupActive(group: Group, pathname: string): boolean {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  const { signOut, user, hasCargo } = useAuth();
+  const { signOut, user, hasCargo, canAccess } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const isAdmin = hasCargo("admin");
 
-  const canSee = (g: Group) => {
+  const canSeeSub = (s: SubItem) => {
     if (isAdmin) return true;
-    if (g.permission === "admin") return false;
-    if (g.permission === "dash") return hasCargo("dash");
-    if (g.permission === "estoque") return hasCargo("estoque") || hasCargo("Controlador");
-    if (g.permission === "manutencao") return hasCargo("manutencao");
-    return false;
+    if (s.adminOnly) return false;
+    if (!s.perm) return true;
+    return canAccess(s.perm);
   };
 
-  const visibleGroups = groups.filter(canSee);
+  const visibleGroups = groups
+    .map(g => ({ ...g, subs: g.subs.filter(canSeeSub) }))
+    .filter(g => g.subs.length > 0);
 
   const [openMap, setOpenMap] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
@@ -112,7 +108,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   }, [location.pathname]);
 
   // Mobile flat list for bottom bar
-  const mobileItems = visibleGroups.flatMap(g => g.subs.filter(s => !s.adminOnly || isAdmin)).slice(0, 5);
+  const mobileItems = visibleGroups.flatMap(g => g.subs).slice(0, 5);
 
   return (
     <div className="min-h-screen flex w-full bg-background">
@@ -133,7 +129,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
         <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
           {visibleGroups.map((g) => {
-            const visibleSubs = g.subs.filter(s => !s.adminOnly || isAdmin);
+            const visibleSubs = g.subs;
             const active = isGroupActive(g, location.pathname);
             const isOpen = !!openMap[g.key];
             const showSubs = !collapsed && isOpen;
