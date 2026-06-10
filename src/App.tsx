@@ -56,23 +56,23 @@ const App = () => (
                         <Layout>
                           <ErrorBoundary fallbackTitle="Erro ao carregar a página">
                             <Routes>
-                              <Route path="/" element={<RoleGuard allowed={["dash", "admin"]}><Index /></RoleGuard>} />
-                              <Route path="/lancamentos" element={<RoleGuard allowed={["dash", "admin"]}><Lancamentos /></RoleGuard>} />
-                              <Route path="/indicadores" element={<RoleGuard allowed={["dash", "admin"]}><Indicadores /></RoleGuard>} />
-                              <Route path="/pos-venda" element={<RoleGuard allowed={["dash", "admin"]}><PosVenda /></RoleGuard>} />
+                              <Route path="/" element={<RoleGuard perm="com_dashboard"><Index /></RoleGuard>} />
+                              <Route path="/lancamentos" element={<RoleGuard perm="com_lancamentos"><Lancamentos /></RoleGuard>} />
+                              <Route path="/indicadores" element={<RoleGuard perm="com_indicadores"><Indicadores /></RoleGuard>} />
+                              <Route path="/pos-venda" element={<RoleGuard perm="com_posvenda"><PosVenda /></RoleGuard>} />
                               <Route path="/configuracoes" element={<Configuracoes />} />
-                              <Route path="/relatorios" element={<RoleGuard allowed={["dash", "admin"]}><Relatorios /></RoleGuard>} />
-                              <Route path="/estoque" element={<RoleGuard allowed={["estoque", "admin"]}><Estoque /></RoleGuard>} />
-                              <Route path="/fornecedores" element={<RoleGuard allowed={["estoque", "admin"]}><Fornecedores /></RoleGuard>} />
-                              <Route path="/vendas" element={<RoleGuard allowed={["dash", "admin"]}><Vendas /></RoleGuard>} />
-                              <Route path="/manutencao" element={<RoleGuard allowed={["manutencao", "admin"]}><ManutencaoGeral /></RoleGuard>} />
-                              <Route path="/manutencao/upload" element={<RoleGuard allowed={["manutencao", "admin"]}><ManutencaoUpload /></RoleGuard>} />
-                              <Route path="/manutencao/clientes" element={<RoleGuard allowed={["admin"]}><ManutencaoClientes /></RoleGuard>} />
-                              <Route path="/manutencao/os" element={<RoleGuard allowed={["manutencao", "admin"]}><ManutencaoOS /></RoleGuard>} />
-                              <Route path="/manutencao/boletim" element={<RoleGuard allowed={["manutencao", "admin"]}><ManutencaoBoletim /></RoleGuard>} />
-                              <Route path="/manutencao/sync-logs" element={<RoleGuard allowed={["admin"]}><SyncLogs /></RoleGuard>} />
-                              <Route path="/manutencao/cliente/:clienteId" element={<RoleGuard allowed={["manutencao", "admin"]}><Manutencao /></RoleGuard>} />
-                              <Route path="/financeiro" element={<RoleGuard allowed={["admin"]}><Financeiro /></RoleGuard>} />
+                              <Route path="/relatorios" element={<RoleGuard perm="com_relatorios"><Relatorios /></RoleGuard>} />
+                              <Route path="/estoque" element={<RoleGuard perm="est_estoque"><Estoque /></RoleGuard>} />
+                              <Route path="/fornecedores" element={<RoleGuard perm="est_estoque"><Fornecedores /></RoleGuard>} />
+                              <Route path="/vendas" element={<RoleGuard perm="com_vendas"><Vendas /></RoleGuard>} />
+                              <Route path="/manutencao" element={<RoleGuard perm="eng_dashboard"><ManutencaoGeral /></RoleGuard>} />
+                              <Route path="/manutencao/upload" element={<RoleGuard perm="eng_dashboard"><ManutencaoUpload /></RoleGuard>} />
+                              <Route path="/manutencao/clientes" element={<RoleGuard perm="eng_clientes"><ManutencaoClientes /></RoleGuard>} />
+                              <Route path="/manutencao/os" element={<RoleGuard perm="eng_os"><ManutencaoOS /></RoleGuard>} />
+                              <Route path="/manutencao/boletim" element={<RoleGuard perm="eng_boletim"><ManutencaoBoletim /></RoleGuard>} />
+                              <Route path="/manutencao/sync-logs" element={<RoleGuard perm="eng_synclogs"><SyncLogs /></RoleGuard>} />
+                              <Route path="/manutencao/cliente/:clienteId" element={<RoleGuard perm="eng_dashboard"><Manutencao /></RoleGuard>} />
+                              <Route path="/financeiro" element={<RoleGuard perm="fin_dashboard"><Financeiro /></RoleGuard>} />
                               <Route path="/demandas/:setor" element={<Demandas />} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
