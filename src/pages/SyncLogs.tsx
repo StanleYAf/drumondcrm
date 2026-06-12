@@ -119,14 +119,10 @@ export default function SyncLogs() {
             <div className="text-xs text-muted-foreground">
               {log.mes && log.ano ? `${log.mes}/${log.ano}` : "—"}
             </div>
-            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border">
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border">
               <div className="text-center">
                 <div className="text-[10px] uppercase tracking-wide text-muted-foreground">OS</div>
                 <div className="text-base font-semibold tabular-nums">{log.total_os}</div>
-              </div>
-              <div className="text-center">
-                <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Indicad.</div>
-                <div className="text-base font-semibold tabular-nums">{log.total_indicadores}</div>
               </div>
               <div className="text-center">
                 <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Técnicos</div>
@@ -151,7 +147,6 @@ export default function SyncLogs() {
               <TableHead>Cliente</TableHead>
               <TableHead>Mês/Ano</TableHead>
               <TableHead className="text-right">OS</TableHead>
-              <TableHead className="text-right">Indicadores</TableHead>
               <TableHead className="text-right">Técnicos</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Mensagem</TableHead>
@@ -159,16 +154,15 @@ export default function SyncLogs() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Carregando...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Carregando...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum log encontrado</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhum log encontrado</TableCell></TableRow>
             ) : filtered.map(log => (
               <TableRow key={log.id}>
                 <TableCell className="tabular-nums whitespace-nowrap">{formatDate(log.created_at)}</TableCell>
                 <TableCell>{log.cliente_id ? (clienteMap.get(log.cliente_id) ?? "—") : <span className="text-muted-foreground italic">Global</span>}</TableCell>
                 <TableCell className="whitespace-nowrap">{log.mes && log.ano ? `${log.mes}/${log.ano}` : "—"}</TableCell>
                 <TableCell className="text-right tabular-nums">{log.total_os}</TableCell>
-                <TableCell className="text-right tabular-nums">{log.total_indicadores}</TableCell>
                 <TableCell className="text-right tabular-nums">{log.total_tecnicos}</TableCell>
                 <TableCell>
                   <Badge variant={log.status === "sucesso" ? "default" : "destructive"}>
