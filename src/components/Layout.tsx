@@ -70,7 +70,7 @@ const groups: ModuleDef[] = [
     title: "Administrativo",
     icon: Landmark,
     subs: [
-      { title: "Contratos", url: "/administrativo/contratos", icon: FileSignature },
+      { title: "Contratos", url: "/administrativo/contratos", icon: FileSignature, perm: "adm_contratos" },
     ],
   },
 ];
