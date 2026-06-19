@@ -112,6 +112,7 @@ function isGroupActive(group: Group, pathname: string): boolean {
   if (group.key === "engenharia") return pathname.startsWith("/manutencao") || pathname === "/demandas/engenharia";
   if (group.key === "estoque") return pathname.startsWith("/estoque");
   if (group.key === "financeiro") return pathname.startsWith("/financeiro") || pathname === "/demandas/financeiro";
+  if (group.key === "administrativo") return pathname.startsWith("/administrativo");
   return false;
 }
 
