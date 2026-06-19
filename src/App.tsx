@@ -74,7 +74,7 @@ const App = () => (
                               <Route path="/manutencao/sync-logs" element={<RoleGuard perm="eng_synclogs"><SyncLogs /></RoleGuard>} />
                               <Route path="/manutencao/cliente/:clienteId" element={<RoleGuard perm="eng_dashboard"><Manutencao /></RoleGuard>} />
                               <Route path="/financeiro" element={<RoleGuard perm="fin_dashboard"><Financeiro /></RoleGuard>} />
-                              <Route path="/administrativo/contratos" element={<Contratos />} />
+                              <Route path="/administrativo/contratos" element={<RoleGuard perm="adm_contratos"><Contratos /></RoleGuard>} />
                               <Route path="/demandas/:setor" element={<Demandas />} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>

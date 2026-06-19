@@ -15,9 +15,10 @@ export type PermCode =
   | "eng_boletim"
   | "eng_synclogs"
   | "est_estoque"
-  | "fin_dashboard";
+  | "fin_dashboard"
+  | "adm_contratos";
 
-export type PermGroupKey = "comercial" | "engenharia" | "estoque" | "financeiro";
+export type PermGroupKey = "comercial" | "engenharia" | "estoque" | "financeiro" | "administrativo";
 
 export interface PermItem {
   code: PermCode;
@@ -67,6 +68,13 @@ export const PERM_GROUPS: PermGroup[] = [
     title: "Financeiro",
     items: [
       { code: "fin_dashboard", label: "Dashboard", desc: "Painel financeiro" },
+    ],
+  },
+  {
+    key: "administrativo",
+    title: "Administrativo",
+    items: [
+      { code: "adm_contratos", label: "Contratos", desc: "Gestão de contratos" },
     ],
   },
 ];
