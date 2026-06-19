@@ -4,7 +4,7 @@ import { NavLink } from "@/components/NavLink";
 import {
   LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings,
   Boxes, LogOut, Briefcase, Building2, ClipboardList, DollarSign, RefreshCw, KanbanSquare,
-  Stethoscope, Plus,
+  Stethoscope, Plus, Landmark, FileSignature,
 } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 import type { PermCode } from "@/lib/permissions";
@@ -65,6 +65,14 @@ const groups: ModuleDef[] = [
       { title: "Demandas", url: "/demandas/financeiro", icon: KanbanSquare, perm: "fin_dashboard" },
     ],
   },
+  {
+    key: "administrativo",
+    title: "Administrativo",
+    icon: Landmark,
+    subs: [
+      { title: "Contratos", url: "/administrativo/contratos", icon: FileSignature },
+    ],
+  },
 ];
 
 const comercialRoutes = ["/", "/lancamentos", "/indicadores", "/vendas", "/pos-venda", "/relatorios"];
@@ -86,6 +94,7 @@ const ROUTE_TITLES: Record<string, { title: string; module: string }> = {
   "/estoque": { title: "Estoque", module: "Estoque" },
   "/financeiro": { title: "Dashboard Financeiro", module: "Financeiro" },
   "/demandas/financeiro": { title: "Demandas", module: "Financeiro" },
+  "/administrativo/contratos": { title: "Contratos", module: "Administrativo" },
   "/configuracoes": { title: "Configurações", module: "Sistema" },
 };
 
@@ -103,6 +112,7 @@ function isGroupActive(group: Group, pathname: string): boolean {
   if (group.key === "engenharia") return pathname.startsWith("/manutencao") || pathname === "/demandas/engenharia";
   if (group.key === "estoque") return pathname.startsWith("/estoque");
   if (group.key === "financeiro") return pathname.startsWith("/financeiro") || pathname === "/demandas/financeiro";
+  if (group.key === "administrativo") return pathname.startsWith("/administrativo");
   return false;
 }
 

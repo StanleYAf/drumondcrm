@@ -41,6 +41,65 @@ export type Database = {
         }
         Relationships: []
       }
+      contratos: {
+        Row: {
+          cliente_id: string | null
+          created_at: string
+          drive_url: string | null
+          equipamentos_cobertos: string | null
+          id: string
+          numero_contrato: string
+          observacoes: string | null
+          responsavel_comercial: string | null
+          tipo: string
+          updated_at: string
+          valor_anual: number | null
+          valor_mensal: number | null
+          vigencia_fim: string
+          vigencia_inicio: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          created_at?: string
+          drive_url?: string | null
+          equipamentos_cobertos?: string | null
+          id?: string
+          numero_contrato: string
+          observacoes?: string | null
+          responsavel_comercial?: string | null
+          tipo: string
+          updated_at?: string
+          valor_anual?: number | null
+          valor_mensal?: number | null
+          vigencia_fim: string
+          vigencia_inicio: string
+        }
+        Update: {
+          cliente_id?: string | null
+          created_at?: string
+          drive_url?: string | null
+          equipamentos_cobertos?: string | null
+          id?: string
+          numero_contrato?: string
+          observacoes?: string | null
+          responsavel_comercial?: string | null
+          tipo?: string
+          updated_at?: string
+          valor_anual?: number | null
+          valor_mensal?: number | null
+          vigencia_fim?: string
+          vigencia_inicio?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contratos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demandas: {
         Row: {
           created_at: string
