@@ -298,8 +298,8 @@ export default function ManutencaoOS() {
     setOnlyReincidentes(false);
   };
 
-  const dispColor = kpis.disponibilidade >= 85 ? "text-emerald-500"
-    : kpis.disponibilidade >= 70 ? "text-amber-500" : "text-red-500";
+  const dispColor = kpis.disponibilidade >= 85 ? "text-[#35AA72]"
+    : kpis.disponibilidade >= 70 ? "text-[#F59E0B]" : "text-[#F43F5E]";
 
   // Gráfico de estado das OS (baseado nos filtros aplicados)
   const estadoCores: Record<string, string> = {
@@ -495,8 +495,8 @@ export default function ManutencaoOS() {
         {/* KPIs */}
         <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
           <KpiCard icon={ClipboardList} label="Total de OS" value={kpis.total} />
-          <KpiCard icon={Inbox} label="OS Abertas" value={kpis.abertas} accent="text-red-500" />
-          <KpiCard icon={CheckCircle2} label="OS Fechadas" value={kpis.fechadas} accent="text-emerald-500" />
+          <KpiCard icon={Inbox} label="OS Abertas" value={kpis.abertas} accent="text-[#F43F5E]" />
+          <KpiCard icon={CheckCircle2} label="OS Fechadas" value={kpis.fechadas} accent="text-[#35AA72]" />
           <KpiCard
             icon={Activity} label="Busca Ativa" value={kpis.buscaAtiva}
             tooltip="OS geradas proativamente pela equipe"
@@ -507,7 +507,7 @@ export default function ManutencaoOS() {
             value={kpis.reincQtd}
             suffix={equipamentosComCorretivas > 0 ? `${kpis.reincPct}%` : undefined}
             tooltip="Equipamentos com 3 ou mais OS corretivas no período"
-            accent="text-amber-500"
+            accent="text-[#F59E0B]"
             onClick={() => setOnlyReincidentes((v) => !v)}
             active={onlyReincidentes}
           />
@@ -649,16 +649,16 @@ function KpiCard({
 }) {
   const body = (
     <Card
-      className={`${onClick ? "cursor-pointer hover:border-primary/50 transition-colors" : ""} ${active ? "border-primary" : ""}`}
+      className={`bg-white border border-[#E2E8F0] rounded-2xl shadow-none ${onClick ? "cursor-pointer hover:border-[#50B9EC] transition-colors" : ""} ${active ? "!border-[#50B9EC]" : ""}`}
       onClick={onClick}
     >
-      <CardContent className="pt-5">
+      <CardContent className="p-4">
         <div className="flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">{label}</span>
-          <Icon className={`h-4 w-4 ${accent || "text-muted-foreground"}`} />
+          <span className="text-[11px] text-[#64748B] font-medium">{label}</span>
+          <Icon className={`h-4 w-4 ${accent || "text-[#64748B]"}`} />
         </div>
-        <div className={`mt-2 text-2xl font-semibold ${accent || ""}`}>{value}</div>
-        {suffix && <div className="text-xs text-muted-foreground mt-0.5">{suffix} dos equipamentos</div>}
+        <div className={`mt-1.5 text-[25px] font-bold ${accent || "text-[#0F172A]"}`}>{value}</div>
+        {suffix && <div className="text-xs text-[#64748B] mt-0.5">{suffix} dos equipamentos</div>}
       </CardContent>
     </Card>
   );
@@ -673,28 +673,28 @@ function KpiCard({
 
 function EstadoBadge({ estado }: { estado: string | null }) {
   const n = normalizeEstado(estado);
-  if (n === "Fechada") return <Badge className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15 border-emerald-500/20">Fechada</Badge>;
-  if (n === "Cancelada") return <Badge variant="secondary">Cancelada</Badge>;
-  if (n === "Aberta") return <Badge className="bg-red-500/15 text-red-600 hover:bg-red-500/15 border-red-500/20">Aberta</Badge>;
-  return <Badge variant="outline">{estado || "—"}</Badge>;
+  if (n === "Fechada")   return <Badge className="bg-[#DCFCE7] text-[#15803D] border-0 font-semibold text-[11px] rounded-[13px] px-2.5">Fechada</Badge>;
+  if (n === "Aberta")    return <Badge className="bg-[#FEE2E2] text-[#B91C1C] border-0 font-semibold text-[11px] rounded-[13px] px-2.5">Aberta</Badge>;
+  if (n === "Cancelada") return <Badge className="bg-[#F1F5F9] text-[#475569] border-0 font-semibold text-[11px] rounded-[13px] px-2.5">Cancelada</Badge>;
+  return <Badge className="bg-[#EAF4FD] text-[#25598C] border-0 font-semibold text-[11px] rounded-[13px] px-2.5">{estado || "—"}</Badge>;
 }
 
 function PrioridadeBadge({ prioridade }: { prioridade: string | null }) {
-  if (!prioridade) return <span className="text-muted-foreground">—</span>;
+  if (!prioridade) return <span className="text-[#64748B]">—</span>;
   const p = prioridade.trim();
-  if (p === "Emergente") return <Badge className="bg-red-500/15 text-red-600 hover:bg-red-500/15 border-red-500/20">Emergente</Badge>;
-  if (p === "Urgente") return <Badge className="bg-amber-500/15 text-amber-600 hover:bg-amber-500/15 border-amber-500/20">Urgente</Badge>;
-  if (p === "Pouco urgente") return <Badge className="bg-blue-500/15 text-blue-600 hover:bg-blue-500/15 border-blue-500/20">Pouco Urgente</Badge>;
-  return <Badge variant="outline">{p}</Badge>;
+  if (p === "Emergente")     return <Badge className="bg-[#F43F5E] text-white border-0 font-semibold text-[11px] rounded-[13px] px-2.5">Emergente</Badge>;
+  if (p === "Urgente")       return <Badge className="bg-[#F59E0B] text-white border-0 font-semibold text-[11px] rounded-[13px] px-2.5">Urgente</Badge>;
+  if (p === "Pouco urgente") return <Badge className="bg-[#35AA72] text-white border-0 font-semibold text-[11px] rounded-[13px] px-2.5">Pouco Urgente</Badge>;
+  return <Badge className="bg-[#EAF4FD] text-[#25598C] border-0 font-semibold text-[11px] rounded-[13px] px-2.5">{p}</Badge>;
 }
 
 function SlaBadge({ value }: { value: string | null }) {
-  if (!value) return <span className="text-muted-foreground">—</span>;
+  if (!value) return <span className="text-[#64748B]">—</span>;
   const n = value.trim().toLowerCase();
   const ok = n === "regular" || n === "no prazo" || n === "dentro do prazo" || n.startsWith("regular");
   return ok
-    ? <Badge className="bg-emerald-500/15 text-emerald-600 hover:bg-emerald-500/15 border-emerald-500/20">Regular</Badge>
-    : <Badge className="bg-red-500/15 text-red-600 hover:bg-red-500/15 border-red-500/20"><AlertTriangle className="h-3 w-3 mr-1" />Atrasado</Badge>;
+    ? <Badge className="bg-[#DCFCE7] text-[#15803D] border-0 font-semibold text-[11px] rounded-[13px] px-2.5">Regular</Badge>
+    : <Badge className="bg-[#FEE2E2] text-[#B91C1C] border-0 font-semibold text-[11px] rounded-[13px] px-2.5"><AlertTriangle className="h-3 w-3 mr-1" />Atrasado</Badge>;
 }
 
 function DetailDialog({ os, onClose }: { os: OS | null; onClose: () => void }) {
