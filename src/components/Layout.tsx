@@ -1,9 +1,14 @@
-import { Fragment, useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { Fragment, useMemo, useState, useEffect } from "react";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
-import { LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings, Package, Boxes, LogOut, PanelLeftClose, PanelLeft, Wrench, Briefcase, Building2, ChevronDown, ClipboardList, DollarSign, RefreshCw, KanbanSquare } from "lucide-react";
+import {
+  LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings,
+  Boxes, LogOut, Briefcase, Building2, ClipboardList, DollarSign, RefreshCw, KanbanSquare,
+  Stethoscope, Plus,
+} from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 import type { PermCode } from "@/lib/permissions";
+import logoDsh from "@/assets/logo-dsh.png";
 
 type SubItem = { title: string; url: string; icon: any; perm?: PermCode | string; adminOnly?: boolean };
 type Group = {
@@ -13,11 +18,13 @@ type Group = {
   subs: SubItem[];
 };
 
-const groups: Group[] = [
+type ModuleDef = Group & { color?: string };
+
+const groups: ModuleDef[] = [
   {
     key: "engenharia",
     title: "Engenharia",
-    icon: Wrench,
+    icon: Stethoscope,
     subs: [
       { title: "Dash Engenharia", url: "/manutencao", icon: LayoutDashboard, perm: "eng_dashboard" },
       { title: "Clientes", url: "/manutencao/clientes", icon: Building2, perm: "eng_clientes" },
@@ -44,7 +51,7 @@ const groups: Group[] = [
   {
     key: "estoque",
     title: "Estoque",
-    icon: Package,
+    icon: Boxes,
     subs: [
       { title: "Estoque", url: "/estoque", icon: Boxes, perm: "est_estoque" },
     ],
@@ -62,6 +69,32 @@ const groups: Group[] = [
 
 const comercialRoutes = ["/", "/lancamentos", "/indicadores", "/vendas", "/pos-venda", "/relatorios"];
 
+const ROUTE_TITLES: Record<string, { title: string; module: string }> = {
+  "/": { title: "Dashboard Comercial", module: "Comercial" },
+  "/lancamentos": { title: "Lançamentos", module: "Comercial" },
+  "/indicadores": { title: "Indicadores", module: "Comercial" },
+  "/vendas": { title: "Vendas", module: "Comercial" },
+  "/pos-venda": { title: "Pós-venda", module: "Comercial" },
+  "/relatorios": { title: "Relatórios", module: "Comercial" },
+  "/demandas/comercial": { title: "Demandas", module: "Comercial" },
+  "/manutencao": { title: "Dashboard Engenharia", module: "Engenharia" },
+  "/manutencao/clientes": { title: "Clientes", module: "Engenharia" },
+  "/manutencao/os": { title: "Ordens de Serviço", module: "Engenharia" },
+  "/manutencao/boletim": { title: "Boletim", module: "Engenharia" },
+  "/manutencao/sync-logs": { title: "Logs de Sincronização", module: "Engenharia" },
+  "/demandas/engenharia": { title: "Demandas", module: "Engenharia" },
+  "/estoque": { title: "Estoque", module: "Estoque" },
+  "/financeiro": { title: "Dashboard Financeiro", module: "Financeiro" },
+  "/demandas/financeiro": { title: "Demandas", module: "Financeiro" },
+  "/configuracoes": { title: "Configurações", module: "Sistema" },
+};
+
+function pageInfo(pathname: string) {
+  if (ROUTE_TITLES[pathname]) return ROUTE_TITLES[pathname];
+  const match = Object.keys(ROUTE_TITLES).find((p) => p !== "/" && pathname.startsWith(p));
+  return match ? ROUTE_TITLES[match] : { title: "DSH Hub", module: "Sistema" };
+}
+
 function isGroupActive(group: Group, pathname: string): boolean {
   if (group.key === "comercial") {
     if (pathname === "/demandas/comercial") return true;
@@ -75,8 +108,8 @@ function isGroupActive(group: Group, pathname: string): boolean {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { signOut, user, hasCargo, canAccess } = useAuth();
-  const [collapsed, setCollapsed] = useState(false);
   const isAdmin = hasCargo("admin");
 
   const canSeeSub = (s: SubItem) => {
@@ -90,132 +123,184 @@ export function Layout({ children }: { children: React.ReactNode }) {
     .map(g => ({ ...g, subs: g.subs.filter(canSeeSub) }))
     .filter(g => g.subs.length > 0);
 
-  const [openMap, setOpenMap] = useState<Record<string, boolean>>(() => {
-    const init: Record<string, boolean> = {};
-    visibleGroups.forEach(g => { init[g.key] = isGroupActive(g, location.pathname); });
-    return init;
-  });
+  const activeFromRoute = visibleGroups.find((g) => isGroupActive(g, location.pathname))?.key
+    ?? visibleGroups[0]?.key
+    ?? "engenharia";
+  const [activeModule, setActiveModule] = useState<string>(activeFromRoute);
 
   useEffect(() => {
-    setOpenMap(prev => {
-      const next = { ...prev };
-      visibleGroups.forEach(g => {
-        if (isGroupActive(g, location.pathname)) next[g.key] = true;
-      });
-      return next;
-    });
+    const fromRoute = visibleGroups.find((g) => isGroupActive(g, location.pathname))?.key;
+    if (fromRoute) setActiveModule(fromRoute);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
+
+  const currentGroup = visibleGroups.find((g) => g.key === activeModule) ?? visibleGroups[0];
+  const info = pageInfo(location.pathname);
 
   // Mobile flat list for bottom bar
   const mobileItems = visibleGroups.flatMap(g => g.subs).slice(0, 5);
 
   return (
-    <div className="min-h-screen flex w-full bg-background">
-      {/* Desktop Sidebar */}
-      <aside className={`hidden md:flex flex-col fixed inset-y-0 left-0 z-40 border-r border-sidebar-border bg-sidebar transition-all duration-200 ${collapsed ? 'w-16' : 'w-60'}`}>
-        <div className={`px-5 pt-5 pb-4 flex items-center ${collapsed ? 'flex-col gap-2 px-2' : 'justify-between'}`}>
-          {!collapsed && (
-            <div>
-              <h1 className="text-base font-bold text-foreground tracking-tight">Painel Comercial</h1>
-              <p className="text-xs mt-0.5 text-muted-foreground">Equipamentos Médicos</p>
-            </div>
-          )}
-          <button onClick={() => setCollapsed(!collapsed)}
-            className="w-7 h-7 flex items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground transition"
-            title={collapsed ? "Expandir sidebar" : "Recolher sidebar"}>
-            {collapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </button>
-        </div>
-        <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-          {visibleGroups.map((g) => {
-            const visibleSubs = g.subs;
-            const active = isGroupActive(g, location.pathname);
-            const isOpen = !!openMap[g.key];
-            const showSubs = !collapsed && isOpen;
-            return (
-              <Fragment key={g.key}>
-                {collapsed ? (
-                  <button
-                    onClick={() => setOpenMap(m => ({ ...m, [g.key]: !m[g.key] }))}
-                    className={`w-full flex items-center justify-center px-3 py-2 rounded-md text-sm transition-colors ${
-                      active ? 'bg-accent text-accent-foreground' : 'text-sidebar-foreground hover:bg-secondary'
-                    }`}
-                    title={g.title}
-                  >
-                    <g.icon className={`h-4 w-4 ${active ? 'text-primary' : 'text-muted-foreground'}`} />
-                  </button>
-                ) : (
-                  <div className="pt-3">
-                    <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#9CA3AF]">
-                      {g.title}
-                    </p>
-                    <div className="space-y-0.5">
-                      {visibleSubs.map((subItem) => {
-                        const isSubActive = subItem.url === '/'
-                          ? location.pathname === '/'
-                          : location.pathname === subItem.url;
-                        return (
-                          <NavLink
-                            key={subItem.url}
-                            to={subItem.url}
-                            end
-                            className={`relative flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] transition-colors ${
-                              isSubActive
-                                ? 'bg-accent text-accent-foreground font-medium shadow-[inset_3px_0_0_hsl(var(--primary))]'
-                                : 'text-sidebar-foreground hover:bg-secondary'
-                            }`}
-                            activeClassName=""
-                          >
-                            <subItem.icon className={`h-4 w-4 flex-shrink-0 ${isSubActive ? 'text-primary' : 'text-muted-foreground'}`} />
-                            <span>{subItem.title}</span>
-                          </NavLink>
-                        );
-                      })}
-                    </div>
-                    <div className="mx-3 mt-3 border-b border-sidebar-border" />
-                  </div>
-                )}
-              </Fragment>
-            );
-          })}
+    <div className="min-h-screen w-full bg-[#F4F8FB]">
+      {/* ===== Top Header ===== */}
+      <header
+        className="hidden md:flex fixed top-0 inset-x-0 h-20 z-50 items-center justify-between px-6 text-white overflow-hidden"
+        style={{ background: "linear-gradient(90deg, #1F4E79 0%, #25598C 100%)" }}
+      >
+        {/* ECG decoration */}
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          viewBox="0 0 1600 80"
+          preserveAspectRatio="none"
+          aria-hidden
+        >
+          <path
+            d="M0 40 L200 40 L230 20 L260 60 L290 10 L320 70 L350 40 L800 40 L830 25 L860 55 L890 15 L920 65 L950 40 L1600 40"
+            stroke="white"
+            strokeOpacity="0.12"
+            strokeWidth="1.5"
+            fill="none"
+          />
+        </svg>
 
-          {/* Configurações - sempre visível */}
-          <NavLink
-            to="/configuracoes"
-            end
-            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${collapsed ? 'justify-center' : ''} text-sidebar-foreground hover:bg-secondary`}
-            activeClassName="bg-accent text-accent-foreground font-medium shadow-[inset_3px_0_0_hsl(var(--primary))]"
-            title={collapsed ? "Configurações" : undefined}
-          >
-            <Settings className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-            {!collapsed && <span>Configurações</span>}
-          </NavLink>
-        </nav>
-        <div className="p-3 border-t border-sidebar-border">
-          {!collapsed && user && (
-            <div className="flex items-center gap-2 px-2 py-2 mb-1">
-              <div className="w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center text-xs font-semibold">
-                {(user.email || "?").charAt(0).toUpperCase()}
+        <div className="relative flex items-center gap-3 min-w-0">
+          <Link to="/" className="flex items-center gap-3">
+            <img src={logoDsh} alt="DSH Hub" className="h-10 w-10 object-contain" />
+            <div className="leading-tight">
+              <div className="text-xl font-bold tracking-tight">
+                <span className="text-white">DSH</span>
+                <span style={{ color: "#50B9EC" }}>Hub</span>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-foreground truncate">{user.email}</p>
-                <p className="text-[10px] text-muted-foreground">Usuário</p>
-              </div>
+              <div className="text-[11px] text-white/70">Sistema de gestão integrada</div>
             </div>
-          )}
-          <button onClick={signOut}
-            className={`flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm text-destructive hover:bg-[#FEF2F2] transition ${collapsed ? 'justify-center' : ''}`}
-            title={collapsed ? "Sair" : undefined}>
-            <LogOut className="h-4 w-4 flex-shrink-0" />
-            {!collapsed && <span>Sair</span>}
-          </button>
+          </Link>
         </div>
+
+        <div className="relative hidden lg:flex flex-col items-center text-center min-w-0 px-4">
+          <div className="text-[18px] font-bold truncate">{info.title}</div>
+          <div className="text-[12px]" style={{ color: "#BCD7EC" }}>
+            {info.module} <span className="opacity-50 mx-1">/</span> {info.title}
+          </div>
+        </div>
+
+        <div className="relative flex items-center gap-3">
+          <button
+            onClick={() => navigate("/manutencao/os")}
+            className="hidden md:inline-flex items-center gap-2 h-9 px-4 rounded-[10px] text-sm font-medium text-white transition hover:brightness-110"
+            style={{ background: "#50B9EC" }}
+          >
+            <Plus className="h-4 w-4" /> Nova OS
+          </button>
+          <button
+            onClick={signOut}
+            className="h-9 w-9 grid place-items-center rounded-full text-white/80 hover:text-white hover:bg-white/10 transition"
+            title="Sair"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+          <div
+            className="h-10 w-10 rounded-full grid place-items-center text-white text-sm font-semibold border-2"
+            style={{ background: "#25598C", borderColor: "#50B9EC" }}
+            title={user?.email || ""}
+          >
+            {(user?.email || "?").charAt(0).toUpperCase()}
+          </div>
+        </div>
+      </header>
+
+      {/* ===== Icon Sidebar (modules) ===== */}
+      <aside className="hidden md:flex fixed top-20 bottom-0 left-0 w-[68px] z-40 flex-col items-stretch py-3 gap-1 bg-white border-r border-[#E2E8F0]">
+        {visibleGroups.map((g) => {
+          const active = g.key === activeModule;
+          return (
+            <button
+              key={g.key}
+              onClick={() => {
+                setActiveModule(g.key);
+                // jump to first sub for fast navigation
+                const first = g.subs[0];
+                if (first) navigate(first.url);
+              }}
+              className="relative flex flex-col items-center justify-center gap-1 py-3 mx-2 rounded-[10px] transition-colors"
+              style={{
+                background: active ? "#EAF4FD" : "transparent",
+                color: active ? "#25598C" : "#94A3B8",
+                boxShadow: active ? "inset 3px 0 0 #50B9EC" : undefined,
+              }}
+              title={g.title}
+            >
+              <g.icon className="h-5 w-5" />
+              <span className="text-[10px] font-medium">{g.title}</span>
+            </button>
+          );
+        })}
+
+        <div className="flex-1" />
+
+        <NavLink
+          to="/configuracoes"
+          end
+          className="flex flex-col items-center justify-center gap-1 py-3 mx-2 rounded-[10px] text-[#94A3B8] hover:text-[#25598C] hover:bg-[#EAF4FD] transition-colors"
+          activeClassName="!bg-[#EAF4FD] !text-[#25598C]"
+        >
+          <Settings className="h-5 w-5" />
+          <span className="text-[10px] font-medium">Config</span>
+        </NavLink>
       </aside>
 
-      {/* Main content */}
-      <main className={`flex-1 pb-24 md:pb-6 transition-all duration-200 ${collapsed ? 'md:ml-16' : 'md:ml-60'}`}>
-        <div className="max-w-4xl mx-auto px-4 py-5 md:px-6 md:py-6">
+      {/* ===== Secondary Sidebar (subitems) ===== */}
+      {currentGroup && (
+        <aside className="hidden md:flex fixed top-20 bottom-0 left-[68px] w-[188px] z-30 flex-col bg-white border-r border-[#E2E8F0]">
+          <div className="px-4 pt-5 pb-3">
+            <div className="text-[10px] uppercase tracking-wider font-semibold text-[#94A3B8]">
+              Módulo
+            </div>
+            <div className="text-[14px] font-semibold text-[#0F172A]">{currentGroup.title}</div>
+          </div>
+          <nav className="flex-1 overflow-y-auto px-2 pb-3 space-y-0.5">
+            {currentGroup.subs.map((subItem) => {
+              const isSubActive = subItem.url === "/"
+                ? location.pathname === "/"
+                : location.pathname === subItem.url;
+              return (
+                <NavLink
+                  key={subItem.url}
+                  to={subItem.url}
+                  end
+                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-[10px] text-[13px] transition-colors text-[#475569] hover:bg-[#F1F5F9]"
+                  activeClassName="!bg-[#EAF4FD] !text-[#25598C] font-semibold"
+                >
+                  <subItem.icon className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">{subItem.title}</span>
+                </NavLink>
+              );
+            })}
+
+            <div className="my-3 border-t border-[#E2E8F0]" />
+
+            <NavLink
+              to="/configuracoes"
+              end
+              className="flex items-center gap-2.5 px-2.5 py-2 rounded-[10px] text-[13px] transition-colors text-[#475569] hover:bg-[#F1F5F9]"
+              activeClassName="!bg-[#EAF4FD] !text-[#25598C] font-semibold"
+            >
+              <Settings className="h-4 w-4 flex-shrink-0" />
+              <span>Configurações</span>
+            </NavLink>
+          </nav>
+
+          {user && (
+            <div className="px-3 py-3 border-t border-[#E2E8F0]">
+              <p className="text-[11px] font-medium text-[#0F172A] truncate">{user.email}</p>
+              <p className="text-[10px] text-[#64748B]">Usuário</p>
+            </div>
+          )}
+        </aside>
+      )}
+
+      {/* ===== Main content ===== */}
+      <main className="pb-24 md:pb-6 md:pl-[256px] md:pt-20">
+        <div className="max-w-[1400px] mx-auto px-4 py-5 md:px-6 md:py-6">
           {children}
         </div>
       </main>
