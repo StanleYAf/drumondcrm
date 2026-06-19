@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 import type { PermCode } from "@/lib/permissions";
-import logoDsh from "@/assets/logo-dsh.png";
+
 
 type SubItem = { title: string; url: string; icon: any; perm?: PermCode | string; adminOnly?: boolean };
 type Group = {
@@ -175,7 +175,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <div className="relative flex items-center gap-3 min-w-0">
           <Link to="/" className="flex items-center gap-3">
-            <img src={logoDsh} alt="DSH Hub" className="h-10 w-10 object-contain" />
+            <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M19 33C19 33 5 23.5 5 13.5C5 9.36 8.36 6 12.5 6C15.1 6 17.4 7.3 19 9.3C20.6 7.3 22.9 6 25.5 6C29.64 6 33 9.36 33 13.5C33 23.5 19 33 19 33Z"
+                stroke="#50B9EC"
+                strokeWidth="1.8"
+                fill="none"
+              />
+              <path
+                d="M9 17h4l2-4 3 8 2-5 2 3h7"
+                stroke="#50B9EC"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                fill="none"
+              />
+            </svg>
             <div className="leading-tight">
               <div className="text-xl font-bold tracking-tight">
                 <span className="text-white">DSH</span>
