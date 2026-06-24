@@ -58,6 +58,7 @@ export type Database = {
           parcelas: number | null
           responsavel_comercial: string | null
           retem_iss: boolean | null
+          segmento: string
           servico_contratado: string | null
           status_manual: string | null
           tipo: string
@@ -84,6 +85,7 @@ export type Database = {
           parcelas?: number | null
           responsavel_comercial?: string | null
           retem_iss?: boolean | null
+          segmento?: string
           servico_contratado?: string | null
           status_manual?: string | null
           tipo: string
@@ -110,6 +112,7 @@ export type Database = {
           parcelas?: number | null
           responsavel_comercial?: string | null
           retem_iss?: boolean | null
+          segmento?: string
           servico_contratado?: string | null
           status_manual?: string | null
           tipo?: string
