@@ -13,8 +13,6 @@ import { ClienteCard } from "@/features/engenharia/components/ClienteCard";
 import { ProdutividadeTecnicos } from "@/features/engenharia/components/ProdutividadeTecnicos";
 import { PendenciasTecnicoBar } from "@/features/engenharia/components/PendenciasTecnicoBar";
 
-const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : s);
-
 export default function ManutencaoGeral() {
   const navigate = useNavigate();
   const { hasCargo } = useAuth();
