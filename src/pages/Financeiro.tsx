@@ -132,7 +132,14 @@ export default function Financeiro() {
   // KPI: mês mais recente disponível no ano
   const ultimo = useMemo(() => {
     if (rowsAno.length === 0) return null;
-    return rowsAno[rowsAno.length - 1];
+    // Último mês COM dados reais (faturamento ou custos > 0).
+    // Evita pegar meses futuros pré-criados com zeros.
+    const comDados = rowsAno.filter((r) => {
+      const g = r.geral || r.servicos_avulsos + r.vendas + r.contratos;
+      return g > 0 || (r.custo_produtos || 0) > 0 || (r.custos_gerais || 0) > 0;
+    });
+    if (comDados.length === 0) return null;
+    return comDados[comDados.length - 1];
   }, [rowsAno]);
 
   if (loading) return <DashboardSkeleton />;
@@ -146,6 +153,7 @@ export default function Financeiro() {
         { label: "Faturamento Geral", valor: ultimo.geral || (ultimo.servicos_avulsos + ultimo.vendas + ultimo.contratos), meta: ultimo.meta_geral || META_DEFAULTS.meta_geral },
       ]
     : [];
+  const ultimoMesLabel = ultimo ? `${ultimo.mes}/${ultimo.ano}` : "—";
 
   const chartData = MESES.map((m) => {
     const r = rowsAno.find((x) => x.mes === m);
