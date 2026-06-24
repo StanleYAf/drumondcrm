@@ -172,6 +172,7 @@ export default function Configuracoes() {
   const canManageUsers =
     isAdmin ||
     normalizedName === "stanley" ||
+    normalizedName === "jessica drumond" ||
     normalizedName === "andré souza" ||
     normalizedName === "andre souza";
 
