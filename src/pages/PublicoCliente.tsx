@@ -6,6 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { DashboardSkeleton } from "@/components/LoadingSkeleton";
 import { supabase } from "@/integrations/supabase/client";
+import { DisponibilidadeEquipamentos } from "@/features/engenharia/components/DisponibilidadeEquipamentos";
+import { OsPorEstado } from "@/features/engenharia/components/OsPorEstado";
+import { OsPorSetor } from "@/features/engenharia/components/OsPorSetor";
+import type { OSOperacaoRow } from "@/features/engenharia/hooks/useClienteOperacaoData";
 
 const MES_ORDEM: Record<string, number> = {
   janeiro: 1, fevereiro: 2, março: 3, marco: 3, abril: 4, maio: 5, junho: 6,
@@ -22,6 +26,7 @@ export default function PublicoCliente() {
   const { token } = useParams<{ token: string }>();
   const [cliente, setCliente] = useState<Cliente | null>(null);
   const [indicadores, setIndicadores] = useState<Indicador[]>([]);
+  const [ordens, setOrdens] = useState<OSOperacaoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [periodo, setPeriodo] = useState("");
@@ -38,6 +43,7 @@ export default function PublicoCliente() {
       const payload = data as any;
       setCliente(payload.cliente);
       setIndicadores(payload.indicadores || []);
+      setOrdens((payload.ordens_servico || []) as OSOperacaoRow[]);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -62,6 +68,20 @@ export default function PublicoCliente() {
   const idxAtual = periodos.findIndex(p => `${p.ano}-${p.mes}` === periodo);
   const atual = idxAtual >= 0 ? indicadores.find(i => i.ano === periodos[idxAtual].ano && i.mes === periodos[idxAtual].mes) : undefined;
   const anterior = idxAtual > 0 ? indicadores.find(i => i.ano === periodos[idxAtual - 1].ano && i.mes === periodos[idxAtual - 1].mes) : undefined;
+
+  const periodoAtivo = idxAtual >= 0 ? periodos[idxAtual] : undefined;
+  const osPeriodo = useMemo(() => {
+    if (!periodoAtivo) return [] as OSOperacaoRow[];
+    return ordens.filter(o => o.ano === periodoAtivo.ano && (o.mes || "").toLowerCase() === periodoAtivo.mes.toLowerCase());
+  }, [ordens, periodoAtivo]);
+  const equipamentosTotais = useMemo(() => {
+    const set = new Set<string>();
+    for (const o of ordens) {
+      const k = (o.numero_serie || o.tag || "").trim();
+      if (k) set.add(k);
+    }
+    return set;
+  }, [ordens]);
 
   const chartData = periodos.map(p => {
     const row = indicadores.find(i => i.ano === p.ano && i.mes === p.mes);
@@ -242,6 +262,12 @@ export default function PublicoCliente() {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
+
+            <DisponibilidadeEquipamentos osPeriodo={osPeriodo} equipamentosTotais={equipamentosTotais} />
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <OsPorEstado os={osPeriodo} />
+              <OsPorSetor os={osPeriodo} />
+            </div>
           </>
         )}
 
