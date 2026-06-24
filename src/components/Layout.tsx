@@ -22,16 +22,11 @@ type ModuleDef = Group & { color?: string };
 
 const groups: ModuleDef[] = [
   {
-    key: "engenharia",
-    title: "Engenharia",
-    icon: Stethoscope,
+    key: "administrativo",
+    title: "Administrativo",
+    icon: Landmark,
     subs: [
-      { title: "Dash Engenharia", url: "/manutencao", icon: LayoutDashboard, perm: "eng_dashboard" },
-      { title: "Clientes", url: "/manutencao/clientes", icon: Building2, perm: "eng_clientes" },
-      { title: "Indicadores", url: "/manutencao/os", icon: ClipboardList, perm: "eng_os" },
-      { title: "Boletim", url: "/manutencao/boletim", icon: FileText, perm: "eng_boletim" },
-      { title: "Demandas", url: "/demandas/engenharia", icon: KanbanSquare, perm: "eng_dashboard" },
-      { title: "Logs de Sincronização", url: "/manutencao/sync-logs", icon: RefreshCw, perm: "eng_synclogs" },
+      { title: "Contratos", url: "/administrativo/contratos", icon: FileSignature, perm: "adm_contratos" },
     ],
   },
   {
@@ -40,12 +35,25 @@ const groups: ModuleDef[] = [
     icon: Briefcase,
     subs: [
       { title: "Dashboard", url: "/", icon: LayoutDashboard, perm: "com_dashboard" },
-      { title: "Lançamentos", url: "/lancamentos", icon: BookOpen, perm: "com_lancamentos" },
+      { title: "Demandas", url: "/demandas/comercial", icon: KanbanSquare, perm: "com_dashboard" },
       { title: "Indicadores", url: "/indicadores", icon: BarChart2, perm: "com_indicadores" },
-      { title: "Vendas", url: "/vendas", icon: ShoppingCart, perm: "com_vendas" },
+      { title: "Lançamentos", url: "/lancamentos", icon: BookOpen, perm: "com_lancamentos" },
       { title: "Pós-venda", url: "/pos-venda", icon: Headphones, perm: "com_posvenda" },
       { title: "Relatórios", url: "/relatorios", icon: FileText, perm: "com_relatorios" },
-      { title: "Demandas", url: "/demandas/comercial", icon: KanbanSquare, perm: "com_dashboard" },
+      { title: "Vendas", url: "/vendas", icon: ShoppingCart, perm: "com_vendas" },
+    ],
+  },
+  {
+    key: "engenharia",
+    title: "Engenharia",
+    icon: Stethoscope,
+    subs: [
+      { title: "Boletim", url: "/manutencao/boletim", icon: FileText, perm: "eng_boletim" },
+      { title: "Clientes", url: "/manutencao/clientes", icon: Building2, perm: "eng_clientes" },
+      { title: "Dash Engenharia", url: "/manutencao", icon: LayoutDashboard, perm: "eng_dashboard" },
+      { title: "Demandas", url: "/demandas/engenharia", icon: KanbanSquare, perm: "eng_dashboard" },
+      { title: "Indicadores", url: "/manutencao/os", icon: ClipboardList, perm: "eng_os" },
+      { title: "Logs de Sincronização", url: "/manutencao/sync-logs", icon: RefreshCw, perm: "eng_synclogs" },
     ],
   },
   {
@@ -63,14 +71,6 @@ const groups: ModuleDef[] = [
     subs: [
       { title: "Dashboard", url: "/financeiro", icon: LayoutDashboard, perm: "fin_dashboard" },
       { title: "Demandas", url: "/demandas/financeiro", icon: KanbanSquare, perm: "fin_dashboard" },
-    ],
-  },
-  {
-    key: "administrativo",
-    title: "Administrativo",
-    icon: Landmark,
-    subs: [
-      { title: "Contratos", url: "/administrativo/contratos", icon: FileSignature, perm: "adm_contratos" },
     ],
   },
 ];
@@ -227,7 +227,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* ===== Icon Sidebar (modules) ===== */}
-      <aside className="hidden md:flex fixed top-20 bottom-0 left-0 w-[68px] z-40 flex-col items-stretch py-3 gap-1 bg-white border-r border-[#E2E8F0]">
+      <aside className="hidden md:flex fixed top-20 bottom-0 left-0 w-[108px] z-40 flex-col items-stretch py-3 gap-1 bg-white border-r border-[#E2E8F0]">
         {visibleGroups.map((g) => {
           const active = g.key === activeModule;
           return (
@@ -239,7 +239,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 const first = g.subs[0];
                 if (first) navigate(first.url);
               }}
-              className="relative flex flex-col items-center justify-center gap-1 py-3 mx-2 rounded-[10px] transition-colors"
+              className="relative flex flex-col items-center justify-center gap-1 py-3 mx-1.5 rounded-[10px] transition-colors"
               style={{
                 background: active ? "#EAF4FD" : "transparent",
                 color: active ? "#25598C" : "#94A3B8",
@@ -270,7 +270,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* ===== Secondary Sidebar (subitems) ===== */}
       {currentGroup && (
-        <aside className="hidden md:flex fixed top-20 bottom-0 left-[68px] w-[232px] z-30 flex-col bg-white border-r border-[#E2E8F0]">
+        <aside className="hidden md:flex fixed top-20 bottom-0 left-[108px] w-[232px] z-30 flex-col bg-white border-r border-[#E2E8F0]">
           <div className="px-4 pt-5 pb-3" translate="no">
             <div className="text-[10px] uppercase tracking-wider font-semibold text-[#94A3B8]">
               Módulo
@@ -319,7 +319,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       )}
 
       {/* ===== Main content ===== */}
-      <main className="pb-24 md:pb-6 md:pl-[300px] md:pt-20">
+      <main className="pb-24 md:pb-6 md:pl-[340px] md:pt-20">
         <div className="max-w-[1400px] mx-auto px-4 py-5 md:px-6 md:py-6">
           {children}
         </div>
