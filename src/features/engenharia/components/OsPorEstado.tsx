@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { ListChecks } from "lucide-react";
 import type { OSOperacaoRow } from "../hooks/useClienteOperacaoData";
 
@@ -40,14 +40,13 @@ export function OsPorEstado({ os }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
             <ResponsiveContainer width="100%" height={260}>
               <PieChart>
-                <Pie data={data} dataKey="value" nameKey="name" innerRadius={55} outerRadius={95} paddingAngle={2}>
+                <Pie data={data} dataKey="value" nameKey="name" innerRadius={60} outerRadius={100} paddingAngle={2} stroke="hsl(var(--card))" strokeWidth={2}>
                   {data.map((d, i) => <Cell key={d.name} fill={colorFor(d.name, i)} />)}
                 </Pie>
                 <Tooltip
                   contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
                   formatter={(v: number, n) => [`${v} (${((v / total) * 100).toFixed(1)}%)`, n]}
                 />
-                <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={{ fontSize: 11 }} />
               </PieChart>
             </ResponsiveContainer>
             <ul className="space-y-1.5 max-h-[260px] overflow-auto pr-1">
