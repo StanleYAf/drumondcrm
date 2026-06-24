@@ -1,11 +1,10 @@
 import { forwardRef, createElement, type ElementType, type ReactNode } from "react";
 
-type NoTranslateProps = {
+interface NoTranslateProps {
   as?: ElementType;
   children: ReactNode;
   className?: string;
-  [key: string]: unknown;
-};
+}
 
 /**
  * Wraps text that must NEVER be translated by Google Translate, Chrome's
@@ -18,11 +17,12 @@ type NoTranslateProps = {
  *   <NoTranslate>DSH Hub</NoTranslate>
  *   <NoTranslate as="span" className="font-bold">Dashboard</NoTranslate>
  */
-export const NoTranslate = forwardRef<HTMLElement, NoTranslateProps>(
-  ({ as = "span", children, className, ...rest }, ref) => {
+export const NoTranslate = forwardRef<HTMLElement, NoTranslateProps & Record<string, unknown>>(
+  ({ as, children, className, ...rest }, ref) => {
+    const Tag: ElementType = as ?? "span";
     const composed = ["notranslate", className].filter(Boolean).join(" ");
     return createElement(
-      as,
+      Tag,
       { ref, translate: "no", lang: "pt-BR", className: composed, ...rest },
       children,
     );
