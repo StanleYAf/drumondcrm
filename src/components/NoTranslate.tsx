@@ -1,9 +1,8 @@
-import { forwardRef, createElement, type ElementType, type ReactNode } from "react";
+import { createElement, type ElementType, type ReactNode, type HTMLAttributes } from "react";
 
-interface NoTranslateProps {
+interface NoTranslateProps extends HTMLAttributes<HTMLElement> {
   as?: ElementType;
   children: ReactNode;
-  className?: string;
 }
 
 /**
@@ -15,20 +14,20 @@ interface NoTranslateProps {
  *
  * Usage:
  *   <NoTranslate>DSH Hub</NoTranslate>
- *   <NoTranslate as="span" className="font-bold">Dashboard</NoTranslate>
+ *   <NoTranslate as="h1" className="font-bold">Dashboard</NoTranslate>
  */
-export const NoTranslate = forwardRef<HTMLElement, NoTranslateProps & Record<string, unknown>>(
-  ({ as, children, className, ...rest }, ref) => {
-    const Tag: ElementType = as ?? "span";
-    const composed = ["notranslate", className].filter(Boolean).join(" ");
-    return createElement(
-      Tag,
-      { ref, translate: "no", lang: "pt-BR", className: composed, ...rest },
-      children,
-    );
-  }
-);
-
-NoTranslate.displayName = "NoTranslate";
+export function NoTranslate({
+  as = "span",
+  children,
+  className,
+  ...rest
+}: NoTranslateProps) {
+  const composed = ["notranslate", className].filter(Boolean).join(" ");
+  return createElement(
+    as,
+    { translate: "no", lang: "pt-BR", className: composed, ...rest },
+    children,
+  );
+}
 
 export default NoTranslate;
