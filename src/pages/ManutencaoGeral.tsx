@@ -8,15 +8,10 @@ import { ErrorState } from "@/components/ErrorState";
 import { useAuth } from "@/lib/authContext";
 
 import { useEngenhariaData, type Filtros } from "@/features/engenharia/hooks/useEngenhariaData";
-import { useDashboardConfig } from "@/features/engenharia/hooks/useDashboardConfig";
 import { FiltrosGlobais } from "@/features/engenharia/components/FiltrosGlobais";
-import { MetaMensalPanel } from "@/features/engenharia/components/MetaMensalPanel";
-import { PainelExecutivo } from "@/features/engenharia/components/PainelExecutivo";
 import { ClienteCard } from "@/features/engenharia/components/ClienteCard";
 import { ProdutividadeTecnicos } from "@/features/engenharia/components/ProdutividadeTecnicos";
 import { PendenciasTecnicoBar } from "@/features/engenharia/components/PendenciasTecnicoBar";
-
-const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : s);
 
 export default function ManutencaoGeral() {
   const navigate = useNavigate();
@@ -55,25 +50,20 @@ export default function ManutencaoGeral() {
   // ---------- Dados
   const {
     loading, error,
-    clientes, periodos, periodoAtivo, tecnicosUnicos,
-    clientesAgg, totais, metaMensal, tecnicosAgg,
+    clientes, periodos, tecnicosUnicos,
+    clientesAgg, tecnicosAgg,
   } = useEngenhariaData(filtros);
-
-  // ---------- Configuração dos indicadores (preparada para personalização futura)
-  const { indicadores } = useDashboardConfig();
 
   if (loading) return <DashboardSkeleton />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
-
-  const periodoLabel = periodoAtivo ? `${cap(periodoAtivo.mes)} / ${periodoAtivo.ano}` : undefined;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Central de Gestão de Engenharia</h1>
+          <h1 className="text-2xl font-bold text-foreground">Visão Geral — Manutenção</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Indicadores configuráveis, status dos clientes e produtividade da equipe
+            Indicadores consolidados de todos os clientes
           </p>
         </div>
         {isAdmin && (
@@ -108,22 +98,15 @@ export default function ManutencaoGeral() {
             </Card>
           )}
 
-          <MetaMensalPanel meta={metaMensal} periodoLabel={periodoLabel} />
-
-          <PainelExecutivo indicadores={indicadores} totais={totais} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {clientesAgg.map((agg) => (
+              <ClienteCard key={agg.cliente.id} agg={agg} />
+            ))}
+          </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <ProdutividadeTecnicos tecnicos={tecnicosAgg} />
             <PendenciasTecnicoBar tecnicos={tecnicosAgg} />
-          </div>
-
-          <div>
-            <h2 className="text-lg font-semibold text-foreground mb-3">Clientes</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {clientesAgg.map((agg) => (
-                <ClienteCard key={agg.cliente.id} agg={agg} />
-              ))}
-            </div>
           </div>
         </>
       )}
