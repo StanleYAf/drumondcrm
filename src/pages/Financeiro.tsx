@@ -559,8 +559,8 @@ export default function Financeiro() {
 
 /* ---------- Dialog: Lançar valores ---------- */
 function LancarDialog({
-  open, onClose, onSaved, anoPadrao, empresaPadrao,
-}: { open: boolean; onClose: () => void; onSaved: () => void; anoPadrao: number; empresaPadrao: Empresa }) {
+  open, onClose, onSaved, anoPadrao, empresaPadrao, mesPadrao,
+}: { open: boolean; onClose: () => void; onSaved: () => void; anoPadrao: number; empresaPadrao: Empresa; mesPadrao?: string | null }) {
   const [mes, setMes] = useState(MESES[0]);
   const [ano, setAno] = useState(anoPadrao);
   const [empresa, setEmpresa] = useState<Empresa>(empresaPadrao);
@@ -577,7 +577,12 @@ function LancarDialog({
   const [loadingExisting, setLoadingExisting] = useState(false);
   const [existing, setExisting] = useState(false);
 
-  useEffect(() => { setAno(anoPadrao); setEmpresa(empresaPadrao); }, [anoPadrao, empresaPadrao, open]);
+  useEffect(() => {
+    if (!open) return;
+    setAno(anoPadrao);
+    setEmpresa(empresaPadrao);
+    if (mesPadrao) setMes(mesPadrao);
+  }, [anoPadrao, empresaPadrao, mesPadrao, open]);
 
   // Pré-carrega valores existentes para nunca sobrescrever com zeros
   useEffect(() => {
