@@ -6,7 +6,7 @@ export const CATEGORIAS_CLIENTE = [
   "Clínica",
   "Consultório",
   "Hospital",
-  "Veterinária",
+  "Veterinário",
 ] as const;
 
 export type CategoriaCliente = (typeof CATEGORIAS_CLIENTE)[number];
