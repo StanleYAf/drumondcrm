@@ -228,6 +228,7 @@ export default function Contratos() {
     resetForm();
     const num = await generateNextContractNumber();
     setFNumero(num);
+    if (clientes.length === 0) setClienteMode("new");
     setShowForm(true);
   }
 
@@ -683,14 +684,20 @@ export default function Contratos() {
 
                 {clienteMode === "existing" ? (
                   <Field label="Cliente">
-                    <select value={fClienteId} onChange={e => setFClienteId(e.target.value)} className="form-input">
-                      <option value="">Selecione...</option>
-                      {clientes.map(c => (
-                        <option key={c.id} value={c.id}>
-                          {c.nome}{c.cnpj ? ` — ${c.cnpj}` : ""}
-                        </option>
-                      ))}
-                    </select>
+                    {clientes.length === 0 ? (
+                      <div className="text-[12px] text-[#64748B] bg-[#F8FAFC] border border-dashed border-[#CBD5E1] rounded-md px-3 py-2">
+                        Nenhum cliente cadastrado ainda. Clique em <strong>+ Novo</strong> acima para cadastrar o primeiro.
+                      </div>
+                    ) : (
+                      <select value={fClienteId} onChange={e => setFClienteId(e.target.value)} className="form-input">
+                        <option value="">Selecione...</option>
+                        {clientes.map(c => (
+                          <option key={c.id} value={c.id}>
+                            {c.nome}{c.cnpj ? ` — ${c.cnpj}` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </Field>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
