@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
+
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -24,7 +24,7 @@ import { TableSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { EmptyState } from "@/components/EmptyState";
 import {
-  ClipboardList, Search, X, Activity, AlertTriangle, CheckCircle2, Inbox, Repeat, Zap, Plus,
+  ClipboardList, Search, X, Activity, AlertTriangle, CheckCircle2, Inbox, Repeat, Zap,
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from "recharts";
 
@@ -387,7 +387,7 @@ export default function ManutencaoOS() {
             </h1>
             <p className="text-sm text-muted-foreground">Acompanhe e analise as OS de manutenção</p>
           </div>
-          {isAdmin && <NovaOSDialog clientes={clientes} onCreated={fetchAll} />}
+          
         </header>
 
         {/* Filtros */}
@@ -766,160 +766,5 @@ function Field({ label, value }: { label: string; value: string | null | undefin
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className="text-sm font-medium">{value || "—"}</div>
     </div>
-  );
-}
-
-function NovaOSDialog({ clientes, onCreated }: { clientes: Cliente[]; onCreated: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    cliente_id: "",
-    tipo_servico: "",
-    estado: "Aberta",
-    prioridade: "",
-    tipo_equipamento: "",
-    tag: "",
-    solicitante: "",
-    responsavel: "",
-    problema_relatado: "",
-    quadro_trabalho: "",
-  });
-
-  const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
-
-  const submit = async () => {
-    if (!form.cliente_id) { toast.error("Selecione o cliente"); return; }
-    if (!form.tipo_servico) { toast.error("Informe o tipo de serviço"); return; }
-    setSaving(true);
-    try {
-      const hoje = new Date();
-      const iso = hoje.toISOString().slice(0, 10);
-      const mes = MESES[hoje.getMonth()];
-      const ano = hoje.getFullYear();
-      const numero = `M-${Date.now().toString().slice(-6)}`;
-      const { error } = await supabase.from("ordens_servico").insert({
-        cliente_id: form.cliente_id,
-        mes, ano,
-        numero,
-        tipo_servico: form.tipo_servico,
-        estado: form.estado,
-        prioridade: form.prioridade || null,
-        tipo_equipamento: form.tipo_equipamento || null,
-        tag: form.tag || null,
-        solicitante: form.solicitante || null,
-        responsavel: form.responsavel || null,
-        problema_relatado: form.problema_relatado || null,
-        quadro_trabalho: form.quadro_trabalho || null,
-        data_criacao: iso,
-      });
-      if (error) throw error;
-      toast.success(`OS ${numero} criada`);
-      setOpen(false);
-      setForm({
-        cliente_id: "", tipo_servico: "", estado: "Aberta", prioridade: "",
-        tipo_equipamento: "", tag: "", solicitante: "", responsavel: "",
-        problema_relatado: "", quadro_trabalho: "",
-      });
-      onCreated();
-    } catch (e: any) {
-      toast.error(e?.message || "Erro ao criar OS");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button><Plus className="h-4 w-4 mr-1" /> Nova OS</Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Cadastrar nova OS</DialogTitle></DialogHeader>
-        <div className="grid gap-3 md:grid-cols-2">
-          <div className="md:col-span-2">
-            <Label>Cliente *</Label>
-            <Select value={form.cliente_id} onValueChange={set("cliente_id")}>
-              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-              <SelectContent>
-                {clientes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Tipo de Serviço *</Label>
-            <Select value={form.tipo_servico} onValueChange={set("tipo_servico")}>
-              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Manutenção Corretiva">Corretiva</SelectItem>
-                <SelectItem value="Manutenção Preventiva">Preventiva</SelectItem>
-                <SelectItem value="Busca Ativa">Busca Ativa</SelectItem>
-                <SelectItem value="Instalação">Instalação</SelectItem>
-                <SelectItem value="Vistoria Diária">Vistoria Diária</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Estado</Label>
-            <Select value={form.estado} onValueChange={set("estado")}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Aberta">Aberta</SelectItem>
-                <SelectItem value="Fechada">Fechada</SelectItem>
-                <SelectItem value="Cancelada">Cancelada</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Prioridade</Label>
-            <Select value={form.prioridade} onValueChange={set("prioridade")}>
-              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Emergente">Emergente</SelectItem>
-                <SelectItem value="Urgente">Urgente</SelectItem>
-                <SelectItem value="Pouco urgente">Pouco Urgente</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Setor</Label>
-            <Select value={form.quadro_trabalho} onValueChange={set("quadro_trabalho")}>
-              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Engenharia Clínica">Engenharia Clínica</SelectItem>
-                <SelectItem value="Predial">Predial</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Tipo de Equipamento</Label>
-            <Input value={form.tipo_equipamento} onChange={(e) => set("tipo_equipamento")(e.target.value)} />
-          </div>
-          <div>
-            <Label>Tag</Label>
-            <Input value={form.tag} onChange={(e) => set("tag")(e.target.value)} />
-          </div>
-          <div>
-            <Label>Solicitante</Label>
-            <Input value={form.solicitante} onChange={(e) => set("solicitante")(e.target.value)} />
-          </div>
-          <div>
-            <Label>Responsável</Label>
-            <Input value={form.responsavel} onChange={(e) => set("responsavel")(e.target.value)} />
-          </div>
-          <div className="md:col-span-2">
-            <Label>Problema Relatado</Label>
-            <Textarea
-              value={form.problema_relatado}
-              onChange={(e) => set("problema_relatado")(e.target.value)}
-              rows={3}
-            />
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={submit} disabled={saving}>{saving ? "Salvando..." : "Salvar OS"}</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
