@@ -78,7 +78,7 @@ const App = () => (
                         <Layout>
                           <ErrorBoundary fallbackTitle="Erro ao carregar a página">
                             <Routes>
-                              <Route path="/" element={<RoleGuard perm="com_dashboard"><Index /></RoleGuard>} />
+                              <Route path="/" element={<SmartRedirect />} />
                               <Route path="/lancamentos" element={<RoleGuard perm="com_lancamentos"><Lancamentos /></RoleGuard>} />
                               <Route path="/indicadores" element={<RoleGuard perm="com_indicadores"><Indicadores /></RoleGuard>} />
                               <Route path="/pos-venda" element={<RoleGuard perm="com_posvenda"><PosVenda /></RoleGuard>} />
