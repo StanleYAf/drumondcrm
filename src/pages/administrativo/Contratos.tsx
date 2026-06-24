@@ -100,7 +100,7 @@ const STATUS_STYLE: Record<StatusContrato, { bg: string; color: string; label: s
 };
 
 export default function Contratos() {
-  const { user, profile } = useAuth() as any;
+  const { user, displayName } = useAuth();
   const [contratos, setContratos] = useState<Contrato[]>([]);
   const [clientes, setClientes] = useState<ContratoCliente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -396,7 +396,7 @@ export default function Contratos() {
 
     if (!editItem) {
       payload.created_by = user?.id || null;
-      payload.created_by_name = profile?.display_name || user?.email || null;
+      payload.created_by_name = displayName || user?.email || null;
     }
 
     let savedRow: any = null;
