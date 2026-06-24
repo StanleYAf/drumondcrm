@@ -15,7 +15,7 @@ import {
 } from "@/lib/currencyMask";
 import { abrirComprovantePDF } from "@/lib/contratoComprovante";
 
-type TipoContrato = "preventivo" | "corretivo" | "full-risk" | "locacao";
+type TipoContrato = "Clínica" | "Consultório" | "Hospital" | "Veterinário";
 type StatusContrato = "ativo" | "a_vencer" | "vencido";
 
 interface Contrato {
@@ -54,10 +54,10 @@ interface ContratoCliente {
 }
 
 const TIPO_LABEL: Record<TipoContrato, string> = {
-  preventivo: "Preventivo",
-  corretivo: "Corretivo",
-  "full-risk": "Full-risk",
-  locacao: "Locação",
+  "Clínica": "Clínica",
+  "Consultório": "Consultório",
+  "Hospital": "Hospital",
+  "Veterinário": "Veterinário",
 };
 
 function parseDate(s: string): Date {
@@ -121,11 +121,10 @@ export default function Contratos() {
   const [fClienteId, setFClienteId] = useState<string>("");
   const [fClienteNome, setFClienteNome] = useState("");
   const [fClienteCNPJ, setFClienteCNPJ] = useState("");
-  const [fClienteCategoria, setFClienteCategoria] = useState<string>(CATEGORIAS_CLIENTE[0]);
   const [fClienteResp, setFClienteResp] = useState("");
   const [fClienteEmail, setFClienteEmail] = useState("");
 
-  const [fTipo, setFTipo] = useState<TipoContrato>("preventivo");
+  const [fTipo, setFTipo] = useState<TipoContrato>("Clínica");
   const [fEquip, setFEquip] = useState("");
   const [fIni, setFIni] = useState("");
   const [fFim, setFFim] = useState("");
