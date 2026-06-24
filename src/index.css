@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Prevent Google Translate / Chrome translator from altering brand and
+   institutional terms anywhere in the app. */
+.notranslate,
+[translate="no"] {
+  /* Hint to translation engines to skip subtree */
+  unicode-bidi: isolate;
+}
+
 @layer base {
   :root {
     /* DSH Hub — Drumond Soluções Hospitalares */
