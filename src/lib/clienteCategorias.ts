@@ -3,13 +3,10 @@
  * Usada no módulo Contratos (e disponível para outros módulos).
  */
 export const CATEGORIAS_CLIENTE = [
-  "Hospital",
   "Clínica",
+  "Consultório",
+  "Hospital",
   "Veterinária",
-  "Indústria",
-  "Condomínio",
-  "Residencial",
-  "Outros",
 ] as const;
 
 export type CategoriaCliente = (typeof CATEGORIAS_CLIENTE)[number];
