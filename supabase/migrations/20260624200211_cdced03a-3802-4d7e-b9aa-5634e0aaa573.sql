@@ -1,0 +1,1 @@
+ALTER TABLE public.contratos ADD COLUMN IF NOT EXISTS segmento text NOT NULL DEFAULT 'Humano';
