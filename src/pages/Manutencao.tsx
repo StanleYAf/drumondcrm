@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button";
 import { DashboardSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { useManutencaoData } from "@/hooks/useManutencaoData";
+import { useClienteOperacaoData } from "@/features/engenharia/hooks/useClienteOperacaoData";
+import { DisponibilidadeEquipamentos } from "@/features/engenharia/components/DisponibilidadeEquipamentos";
+import { OsPorEstado } from "@/features/engenharia/components/OsPorEstado";
+import { OsPorSetor } from "@/features/engenharia/components/OsPorSetor";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +62,7 @@ export default function Manutencao() {
 
   // Subscribe to filtered tecnicos via hook (separate instance)
   const { tecnicosMes } = useManutencaoData(clienteId, mesSel, anoSel);
+  const { osPeriodo, equipamentosTotais } = useClienteOperacaoData(clienteId, mesSel, anoSel);
 
   if (!clienteId) {
     return (
@@ -140,8 +145,9 @@ export default function Manutencao() {
 
       <Tabs defaultValue="visao" className="w-full">
         <div className="w-full overflow-x-auto">
-          <TabsList className="inline-flex sm:grid sm:grid-cols-5 w-full min-w-max sm:min-w-0">
+          <TabsList className="inline-flex sm:grid sm:grid-cols-6 w-full min-w-max sm:min-w-0">
             <TabsTrigger value="visao" className="whitespace-nowrap">Visão Geral</TabsTrigger>
+            <TabsTrigger value="oper" className="whitespace-nowrap">Operação</TabsTrigger>
             <TabsTrigger value="eng" className="whitespace-nowrap">Engenharia Clínica</TabsTrigger>
             <TabsTrigger value="pred" className="whitespace-nowrap">Manutenção Predial</TabsTrigger>
             <TabsTrigger value="sla" className="whitespace-nowrap">Análise de SLA</TabsTrigger>
@@ -157,6 +163,14 @@ export default function Manutencao() {
 
         <TabsContent value="tec" className="mt-4">
           <DesempenhoTecnico tecnicos={tecnicosMes} num={num} />
+        </TabsContent>
+
+        <TabsContent value="oper" className="mt-4 space-y-4">
+          <DisponibilidadeEquipamentos osPeriodo={osPeriodo} equipamentosTotais={equipamentosTotais} />
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <OsPorEstado os={osPeriodo} />
+            <OsPorSetor os={osPeriodo} />
+          </div>
         </TabsContent>
 
         <TabsContent value="sla" className="mt-4 space-y-6">
