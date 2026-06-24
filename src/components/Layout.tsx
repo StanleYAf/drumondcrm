@@ -107,7 +107,7 @@ function pageInfo(pathname: string) {
 function isGroupActive(group: Group, pathname: string): boolean {
   if (group.key === "comercial") {
     if (pathname === "/demandas/comercial") return true;
-    return comercialRoutes.some(r => r === "/" ? pathname === "/" : pathname.startsWith(r));
+    return comercialRoutes.some(r => pathname.startsWith(r));
   }
   if (group.key === "engenharia") return pathname.startsWith("/manutencao") || pathname === "/demandas/engenharia";
   if (group.key === "estoque") return pathname.startsWith("/estoque");
