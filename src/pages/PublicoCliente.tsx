@@ -135,17 +135,43 @@ export default function PublicoCliente() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card/40 backdrop-blur">
-        <div className="container mx-auto max-w-7xl px-4 py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Painel de Manutenção</p>
-            <h1 className="text-2xl font-bold">{cliente.nome}</h1>
-            {cliente.responsavel && <p className="text-sm text-muted-foreground">{cliente.responsavel}</p>}
+    <div className="min-h-screen w-full bg-[#F4F8FB]">
+      {/* DSH Hub branded header */}
+      <header
+        className="relative flex items-center justify-between px-4 sm:px-8 py-5 text-white overflow-hidden"
+        style={{ background: "linear-gradient(90deg, #1F4E79 0%, #25598C 100%)" }}
+      >
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1600 80" preserveAspectRatio="none" aria-hidden>
+          <path
+            d="M0 40 L200 40 L230 20 L260 60 L290 10 L320 70 L350 40 L800 40 L830 25 L860 55 L890 15 L920 65 L950 40 L1600 40"
+            stroke="white" strokeOpacity="0.12" strokeWidth="1.5" fill="none"
+          />
+        </svg>
+        <div className="relative flex items-center gap-3 min-w-0">
+          <svg width="42" height="42" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 33C19 33 5 23.5 5 13.5C5 9.36 8.36 6 12.5 6C15.1 6 17.4 7.3 19 9.3C20.6 7.3 22.9 6 25.5 6C29.64 6 33 9.36 33 13.5C33 23.5 19 33 19 33Z" stroke="#50B9EC" strokeWidth="1.8" fill="none" />
+            <path d="M9 17h4l2-4 3 8 2-5 2 3h7" stroke="#50B9EC" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+          </svg>
+          <div className="leading-tight" translate="no">
+            <div className="text-xl font-bold tracking-tight">
+              <span className="text-white">DSH</span>
+              <span style={{ color: "#50B9EC" }}>Hub</span>
+            </div>
+            <div className="text-[11px] text-white/70">Painel de Manutenção · Acesso do Cliente</div>
           </div>
+        </div>
+        <div className="relative hidden md:flex flex-col items-center text-center min-w-0 px-4">
+          <div className="text-[18px] font-bold truncate">{cliente.nome}</div>
+          <div className="text-[12px]" style={{ color: "#BCD7EC" }}>
+            {cliente.responsavel || "Relatório de Manutenção"}
+          </div>
+        </div>
+        <div className="relative flex items-center gap-3">
           {periodos.length > 0 && (
             <Select value={periodo} onValueChange={setPeriodo}>
-              <SelectTrigger className="w-[200px]"><SelectValue placeholder="Selecione o mês" /></SelectTrigger>
+              <SelectTrigger className="w-[180px] bg-white/10 border-white/20 text-white hover:bg-white/15">
+                <SelectValue placeholder="Selecione o mês" />
+              </SelectTrigger>
               <SelectContent>
                 {periodos.map(p => (
                   <SelectItem key={`${p.ano}-${p.mes}`} value={`${p.ano}-${p.mes}`}>{cap(p.mes)} / {p.ano}</SelectItem>
@@ -155,6 +181,10 @@ export default function PublicoCliente() {
           )}
         </div>
       </header>
+      <div className="md:hidden px-4 py-3 bg-white border-b border-[#E2E8F0]">
+        <div className="text-base font-bold text-[#1F4E79]">{cliente.nome}</div>
+        {cliente.responsavel && <div className="text-xs text-muted-foreground">{cliente.responsavel}</div>}
+      </div>
 
       <main className="container mx-auto max-w-7xl px-4 py-6 space-y-6">
         {indicadores.length === 0 && (
@@ -271,8 +301,11 @@ export default function PublicoCliente() {
           </>
         )}
 
-        <footer className="text-center text-xs text-muted-foreground pt-6 pb-2">
-          Atualizado em tempo real • Acesso somente leitura
+        <footer className="flex items-center justify-center gap-2 text-center text-xs text-muted-foreground pt-6 pb-4">
+          <span className="font-semibold" style={{ color: "#1F4E79" }}>DSH</span>
+          <span style={{ color: "#50B9EC" }} className="font-semibold">Hub</span>
+          <span className="opacity-60">·</span>
+          <span>Atualizado em tempo real • Acesso somente leitura</span>
         </footer>
       </main>
     </div>
