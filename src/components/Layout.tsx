@@ -34,7 +34,7 @@ const groups: ModuleDef[] = [
     title: "Comercial",
     icon: Briefcase,
     subs: [
-      { title: "Dashboard", url: "/", icon: LayoutDashboard, perm: "com_dashboard" },
+      { title: "Dashboard", url: "/comercial", icon: LayoutDashboard, perm: "com_dashboard" },
       { title: "Demandas", url: "/demandas/comercial", icon: KanbanSquare, perm: "com_dashboard" },
       { title: "Indicadores", url: "/indicadores", icon: BarChart2, perm: "com_indicadores" },
       { title: "Lançamentos", url: "/lancamentos", icon: BookOpen, perm: "com_lancamentos" },
@@ -75,10 +75,10 @@ const groups: ModuleDef[] = [
   },
 ];
 
-const comercialRoutes = ["/", "/lancamentos", "/indicadores", "/vendas", "/pos-venda", "/relatorios"];
+const comercialRoutes = ["/comercial", "/lancamentos", "/indicadores", "/vendas", "/pos-venda", "/relatorios"];
 
 const ROUTE_TITLES: Record<string, { title: string; module: string }> = {
-  "/": { title: "Dashboard Comercial", module: "Comercial" },
+  "/comercial": { title: "Dashboard Comercial", module: "Comercial" },
   "/lancamentos": { title: "Lançamentos", module: "Comercial" },
   "/indicadores": { title: "Indicadores", module: "Comercial" },
   "/vendas": { title: "Vendas", module: "Comercial" },
