@@ -180,6 +180,55 @@ export default function Financeiro() {
   const lucroAno = totalAno.g - totalCustosAno;
   const margemAno = totalAno.g > 0 ? (lucroAno / totalAno.g) * 100 : 0;
 
+  // -------- Spotlight do mês atual --------
+  const hoje = new Date();
+  const isAnoAtual = ano === hoje.getFullYear();
+  const mesAtualIdx = isAnoAtual ? hoje.getMonth() : 11;
+  const mesAtualLabel = MESES[mesAtualIdx];
+  const diasNoMes = new Date(hoje.getFullYear(), mesAtualIdx + 1, 0).getDate();
+  const diaAtual = isAnoAtual ? hoje.getDate() : diasNoMes;
+  const pctMesDecorrido = (diaAtual / diasNoMes) * 100;
+  const rowMesAtual = rowsAno.find((r) => r.mes === mesAtualLabel);
+  const rowMesAnterior = mesAtualIdx > 0 ? rowsAno.find((r) => r.mes === MESES[mesAtualIdx - 1]) : undefined;
+
+  // Geral parcial do mês atual
+  const geralMesAtual = rowMesAtual
+    ? (rowMesAtual.geral || (rowMesAtual.servicos_avulsos + rowMesAtual.vendas + rowMesAtual.contratos))
+    : 0;
+  const metaMesAtual = (rowMesAtual?.meta_geral) || META_DEFAULTS.meta_geral;
+
+  // Histórico de meses já lançados (com geral > 0) DESTE ano, excluindo o mês atual
+  const mesesComDados = rowsAno.filter((r) => {
+    const g = r.geral || r.servicos_avulsos + r.vendas + r.contratos;
+    return g > 0 && r.mes !== mesAtualLabel;
+  });
+  const mediaHistorica = mesesComDados.length > 0
+    ? mesesComDados.reduce((s, r) => s + (r.geral || r.servicos_avulsos + r.vendas + r.contratos), 0) / mesesComDados.length
+    : 0;
+
+  // Projeção de fechamento do mês atual
+  const projecaoMesAtual = rowMesAtual && geralMesAtual > 0
+    ? (geralMesAtual / Math.max(diaAtual, 1)) * diasNoMes
+    : mediaHistorica;
+
+  const geralMesAnterior = rowMesAnterior
+    ? (rowMesAnterior.geral || rowMesAnterior.servicos_avulsos + rowMesAnterior.vendas + rowMesAnterior.contratos)
+    : 0;
+
+  const varVsAnterior = geralMesAnterior > 0
+    ? ((projecaoMesAtual - geralMesAnterior) / geralMesAnterior) * 100
+    : null;
+
+  const gapMeta = metaMesAtual - projecaoMesAtual;
+  const pctMeta = metaMesAtual > 0 ? (geralMesAtual / metaMesAtual) * 100 : 0;
+  const pctProjMeta = metaMesAtual > 0 ? (projecaoMesAtual / metaMesAtual) * 100 : 0;
+
+  const ritmoNecessarioDiario = gapMeta > 0 && (diasNoMes - diaAtual) > 0
+    ? gapMeta / (diasNoMes - diaAtual)
+    : 0;
+
+  const temLancamento = !!rowMesAtual && geralMesAtual > 0;
+
   // KPIs de custo do último mês
   const ultimoCustoProd = ultimo?.custo_produtos || 0;
   const ultimoCustoGer = ultimo?.custos_gerais || 0;
