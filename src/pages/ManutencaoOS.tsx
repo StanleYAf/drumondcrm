@@ -387,7 +387,7 @@ export default function ManutencaoOS() {
             </h1>
             <p className="text-sm text-muted-foreground">Acompanhe e analise as OS de manutenção</p>
           </div>
-          {isAdmin && <NovaOSDialog clientes={clientes} onCreated={fetchAll} />}
+          
         </header>
 
         {/* Filtros */}
