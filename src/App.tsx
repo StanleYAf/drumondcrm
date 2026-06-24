@@ -39,7 +39,7 @@ const queryClient = new QueryClient();
 
 const MODULE_FALLBACKS = [
   { perm: "eng_dashboard", path: "/manutencao" },
-  { perm: "com_dashboard", path: "/" },
+  { perm: "com_dashboard", path: "/comercial" },
   { perm: "fin_dashboard", path: "/financeiro" },
   { perm: "est_estoque", path: "/estoque" },
   { perm: "adm_contratos", path: "/administrativo/contratos" },
@@ -49,7 +49,6 @@ function SmartRedirect() {
   const { canAccess } = useAuth();
   for (const { perm, path } of MODULE_FALLBACKS) {
     if (canAccess(perm)) {
-      if (path === "/") return <Index />;
       return <Navigate to={path} replace />;
     }
   }
@@ -79,6 +78,7 @@ const App = () => (
                           <ErrorBoundary fallbackTitle="Erro ao carregar a página">
                             <Routes>
                               <Route path="/" element={<SmartRedirect />} />
+                              <Route path="/comercial" element={<RoleGuard perm="com_dashboard"><Index /></RoleGuard>} />
                               <Route path="/lancamentos" element={<RoleGuard perm="com_lancamentos"><Lancamentos /></RoleGuard>} />
                               <Route path="/indicadores" element={<RoleGuard perm="com_indicadores"><Indicadores /></RoleGuard>} />
                               <Route path="/pos-venda" element={<RoleGuard perm="com_posvenda"><PosVenda /></RoleGuard>} />
