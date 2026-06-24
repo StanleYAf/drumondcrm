@@ -210,14 +210,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <div className="relative flex items-center gap-3">
           <button
-            onClick={() => navigate("/manutencao/os")}
-            translate="no"
-            className="notranslate hidden md:inline-flex items-center gap-2 h-9 px-4 rounded-[10px] text-sm font-medium text-white transition hover:brightness-110"
-            style={{ background: "#50B9EC" }}
-          >
-            <Plus className="h-4 w-4" /> Nova OS
-          </button>
-          <button
             onClick={signOut}
             className="h-9 w-9 grid place-items-center rounded-full text-white/80 hover:text-white hover:bg-white/10 transition"
             title="Sair"
