@@ -50,7 +50,7 @@ export default function ManutencaoGeral() {
   // ---------- Dados
   const {
     loading, error,
-    clientes, periodos, periodoAtivo, tecnicosUnicos,
+    clientes, periodos, tecnicosUnicos,
     clientesAgg, tecnicosAgg,
   } = useEngenhariaData(filtros);
 
