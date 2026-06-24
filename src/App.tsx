@@ -37,6 +37,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 const App = () => (
+  <div translate="no" className="notranslate" lang="pt-BR">
   <ErrorBoundary fallbackTitle="Erro crítico na aplicação">
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
@@ -92,6 +93,7 @@ const App = () => (
       </ThemeProvider>
     </QueryClientProvider>
   </ErrorBoundary>
+  </div>
 );
 
 export default App;
