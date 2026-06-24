@@ -1,0 +1,15 @@
+ALTER TABLE public.indicadores_manutencao
+  ADD COLUMN IF NOT EXISTS eng_os_muito_urgentes              int     DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS eng_pct_sla_triagem_muitourgente   float   DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS eng_pct_sla_fechamento_muitourgente float  DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS eng_os_nao_urgentes                int     DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS eng_pct_sla_triagem_naourgente     float   DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS eng_pct_sla_fechamento_naourgente  float   DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS eng_pct_muitourgentes              float   DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS eng_pct_naourgentes                float   DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS pred_os_muito_urgentes             int     DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS pred_pct_sla_triagem_muitourgente  float   DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS pred_pct_sla_fechamento_muitourgente float DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS pred_os_nao_urgentes               int     DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS pred_pct_sla_triagem_naourgente    float   DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS pred_pct_sla_fechamento_naourgente float   DEFAULT 0;

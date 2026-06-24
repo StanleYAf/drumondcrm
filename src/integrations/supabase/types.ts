@@ -314,17 +314,25 @@ export type Database = {
           eng_corretivas_atendidas_prazo: number | null
           eng_corretivas_fechadas: number | null
           eng_os_emergentes: number | null
+          eng_os_muito_urgentes: number | null
+          eng_os_nao_urgentes: number | null
           eng_os_pouco_urgentes: number | null
           eng_os_urgentes: number | null
           eng_pct_corretivas_atendidas_prazo: number | null
           eng_pct_corretivas_fechadas: number | null
           eng_pct_emergentes: number | null
+          eng_pct_muitourgentes: number | null
+          eng_pct_naourgentes: number | null
           eng_pct_poucourgentes: number | null
           eng_pct_preventivas_fechadas: number | null
           eng_pct_sla_fechamento_emergente: number | null
+          eng_pct_sla_fechamento_muitourgente: number | null
+          eng_pct_sla_fechamento_naourgente: number | null
           eng_pct_sla_fechamento_poucourgente: number | null
           eng_pct_sla_fechamento_urgente: number | null
           eng_pct_sla_triagem_emergente: number | null
+          eng_pct_sla_triagem_muitourgente: number | null
+          eng_pct_sla_triagem_naourgente: number | null
           eng_pct_sla_triagem_poucourgente: number | null
           eng_pct_sla_triagem_urgente: number | null
           eng_pct_urgentes: number | null
@@ -341,14 +349,20 @@ export type Database = {
           pred_demais_abertas: number | null
           pred_demais_fechadas: number | null
           pred_os_emergentes: number | null
+          pred_os_muito_urgentes: number | null
+          pred_os_nao_urgentes: number | null
           pred_os_pouco_urgentes: number | null
           pred_os_urgentes: number | null
           pred_pct_corretivas_fechadas: number | null
           pred_pct_preventivas_fechadas: number | null
           pred_pct_sla_fechamento_emergente: number | null
+          pred_pct_sla_fechamento_muitourgente: number | null
+          pred_pct_sla_fechamento_naourgente: number | null
           pred_pct_sla_fechamento_poucourgente: number | null
           pred_pct_sla_fechamento_urgente: number | null
           pred_pct_sla_triagem_emergente: number | null
+          pred_pct_sla_triagem_muitourgente: number | null
+          pred_pct_sla_triagem_naourgente: number | null
           pred_pct_sla_triagem_poucourgente: number | null
           pred_pct_sla_triagem_urgente: number | null
           pred_preventivas_abertas: number | null
@@ -366,17 +380,25 @@ export type Database = {
           eng_corretivas_atendidas_prazo?: number | null
           eng_corretivas_fechadas?: number | null
           eng_os_emergentes?: number | null
+          eng_os_muito_urgentes?: number | null
+          eng_os_nao_urgentes?: number | null
           eng_os_pouco_urgentes?: number | null
           eng_os_urgentes?: number | null
           eng_pct_corretivas_atendidas_prazo?: number | null
           eng_pct_corretivas_fechadas?: number | null
           eng_pct_emergentes?: number | null
+          eng_pct_muitourgentes?: number | null
+          eng_pct_naourgentes?: number | null
           eng_pct_poucourgentes?: number | null
           eng_pct_preventivas_fechadas?: number | null
           eng_pct_sla_fechamento_emergente?: number | null
+          eng_pct_sla_fechamento_muitourgente?: number | null
+          eng_pct_sla_fechamento_naourgente?: number | null
           eng_pct_sla_fechamento_poucourgente?: number | null
           eng_pct_sla_fechamento_urgente?: number | null
           eng_pct_sla_triagem_emergente?: number | null
+          eng_pct_sla_triagem_muitourgente?: number | null
+          eng_pct_sla_triagem_naourgente?: number | null
           eng_pct_sla_triagem_poucourgente?: number | null
           eng_pct_sla_triagem_urgente?: number | null
           eng_pct_urgentes?: number | null
@@ -393,14 +415,20 @@ export type Database = {
           pred_demais_abertas?: number | null
           pred_demais_fechadas?: number | null
           pred_os_emergentes?: number | null
+          pred_os_muito_urgentes?: number | null
+          pred_os_nao_urgentes?: number | null
           pred_os_pouco_urgentes?: number | null
           pred_os_urgentes?: number | null
           pred_pct_corretivas_fechadas?: number | null
           pred_pct_preventivas_fechadas?: number | null
           pred_pct_sla_fechamento_emergente?: number | null
+          pred_pct_sla_fechamento_muitourgente?: number | null
+          pred_pct_sla_fechamento_naourgente?: number | null
           pred_pct_sla_fechamento_poucourgente?: number | null
           pred_pct_sla_fechamento_urgente?: number | null
           pred_pct_sla_triagem_emergente?: number | null
+          pred_pct_sla_triagem_muitourgente?: number | null
+          pred_pct_sla_triagem_naourgente?: number | null
           pred_pct_sla_triagem_poucourgente?: number | null
           pred_pct_sla_triagem_urgente?: number | null
           pred_preventivas_abertas?: number | null
@@ -418,17 +446,25 @@ export type Database = {
           eng_corretivas_atendidas_prazo?: number | null
           eng_corretivas_fechadas?: number | null
           eng_os_emergentes?: number | null
+          eng_os_muito_urgentes?: number | null
+          eng_os_nao_urgentes?: number | null
           eng_os_pouco_urgentes?: number | null
           eng_os_urgentes?: number | null
           eng_pct_corretivas_atendidas_prazo?: number | null
           eng_pct_corretivas_fechadas?: number | null
           eng_pct_emergentes?: number | null
+          eng_pct_muitourgentes?: number | null
+          eng_pct_naourgentes?: number | null
           eng_pct_poucourgentes?: number | null
           eng_pct_preventivas_fechadas?: number | null
           eng_pct_sla_fechamento_emergente?: number | null
+          eng_pct_sla_fechamento_muitourgente?: number | null
+          eng_pct_sla_fechamento_naourgente?: number | null
           eng_pct_sla_fechamento_poucourgente?: number | null
           eng_pct_sla_fechamento_urgente?: number | null
           eng_pct_sla_triagem_emergente?: number | null
+          eng_pct_sla_triagem_muitourgente?: number | null
+          eng_pct_sla_triagem_naourgente?: number | null
           eng_pct_sla_triagem_poucourgente?: number | null
           eng_pct_sla_triagem_urgente?: number | null
           eng_pct_urgentes?: number | null
@@ -445,14 +481,20 @@ export type Database = {
           pred_demais_abertas?: number | null
           pred_demais_fechadas?: number | null
           pred_os_emergentes?: number | null
+          pred_os_muito_urgentes?: number | null
+          pred_os_nao_urgentes?: number | null
           pred_os_pouco_urgentes?: number | null
           pred_os_urgentes?: number | null
           pred_pct_corretivas_fechadas?: number | null
           pred_pct_preventivas_fechadas?: number | null
           pred_pct_sla_fechamento_emergente?: number | null
+          pred_pct_sla_fechamento_muitourgente?: number | null
+          pred_pct_sla_fechamento_naourgente?: number | null
           pred_pct_sla_fechamento_poucourgente?: number | null
           pred_pct_sla_fechamento_urgente?: number | null
           pred_pct_sla_triagem_emergente?: number | null
+          pred_pct_sla_triagem_muitourgente?: number | null
+          pred_pct_sla_triagem_naourgente?: number | null
           pred_pct_sla_triagem_poucourgente?: number | null
           pred_pct_sla_triagem_urgente?: number | null
           pred_preventivas_abertas?: number | null
