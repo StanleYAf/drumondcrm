@@ -201,7 +201,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </Link>
         </div>
 
-        <div className="relative hidden lg:flex flex-col items-center text-center min-w-0 px-4">
+        <div translate="no" className="notranslate relative hidden lg:flex flex-col items-center text-center min-w-0 px-4">
           <div className="text-[18px] font-bold truncate">{info.title}</div>
           <div className="text-[12px]" style={{ color: "#BCD7EC" }}>
             {info.module} <span className="opacity-50 mx-1">/</span> {info.title}
@@ -211,7 +211,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="relative flex items-center gap-3">
           <button
             onClick={() => navigate("/manutencao/os")}
-            className="hidden md:inline-flex items-center gap-2 h-9 px-4 rounded-[10px] text-sm font-medium text-white transition hover:brightness-110"
+            translate="no"
+            className="notranslate hidden md:inline-flex items-center gap-2 h-9 px-4 rounded-[10px] text-sm font-medium text-white transition hover:brightness-110"
             style={{ background: "#50B9EC" }}
           >
             <Plus className="h-4 w-4" /> Nova OS
