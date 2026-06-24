@@ -191,7 +191,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 fill="none"
               />
             </svg>
-            <div className="leading-tight">
+            <div className="leading-tight" translate="no">
               <div className="text-xl font-bold tracking-tight">
                 <span className="text-white">DSH</span>
                 <span style={{ color: "#50B9EC" }}>Hub</span>
@@ -253,6 +253,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 boxShadow: active ? "inset 3px 0 0 #50B9EC" : undefined,
               }}
               title={g.title}
+              translate="no"
             >
               <g.icon className="h-5 w-5" />
               <span className="text-[10px] font-medium">{g.title}</span>
@@ -267,6 +268,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           end
           className="flex flex-col items-center justify-center gap-1 py-3 mx-2 rounded-[10px] text-[#94A3B8] hover:text-[#25598C] hover:bg-[#EAF4FD] transition-colors"
           activeClassName="!bg-[#EAF4FD] !text-[#25598C]"
+          translate="no"
         >
           <Settings className="h-5 w-5" />
           <span className="text-[10px] font-medium">Config</span>
@@ -276,13 +278,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* ===== Secondary Sidebar (subitems) ===== */}
       {currentGroup && (
         <aside className="hidden md:flex fixed top-20 bottom-0 left-[68px] w-[188px] z-30 flex-col bg-white border-r border-[#E2E8F0]">
-          <div className="px-4 pt-5 pb-3">
+          <div className="px-4 pt-5 pb-3" translate="no">
             <div className="text-[10px] uppercase tracking-wider font-semibold text-[#94A3B8]">
               Módulo
             </div>
             <div className="text-[14px] font-semibold text-[#0F172A]">{currentGroup.title}</div>
           </div>
-          <nav className="flex-1 overflow-y-auto px-2 pb-3 space-y-0.5">
+          <nav translate="no" className="flex-1 overflow-y-auto px-2 pb-3 space-y-0.5">
             {currentGroup.subs.map((subItem) => {
               const isSubActive = subItem.url === "/"
                 ? location.pathname === "/"
@@ -331,7 +333,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* Mobile Bottom Tab Bar */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 glass-nav safe-area-bottom">
+      <nav translate="no" className="md:hidden fixed bottom-0 inset-x-0 z-50 glass-nav safe-area-bottom">
         <div className="flex items-center justify-around px-2 py-1.5">
           {mobileItems.map((item) => {
             const isActive = item.url === '/' ? location.pathname === '/' : location.pathname.startsWith(item.url);
