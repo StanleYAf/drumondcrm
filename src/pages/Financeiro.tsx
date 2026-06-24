@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Upload, PlusCircle, DollarSign, TrendingUp, FileSpreadsheet, X, Building2 } from "lucide-react";
+import { Upload, PlusCircle, DollarSign, TrendingUp, FileSpreadsheet, X, Building2, Pencil, Trash2 } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import {
@@ -10,6 +10,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
@@ -19,6 +23,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DashboardSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { applyCurrencyMask, parseCurrencyMask, numberToCurrencyMask } from "@/lib/currencyMask";
+import { useAuth } from "@/lib/authContext";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -90,6 +95,11 @@ export default function Financeiro() {
   const [empresa, setEmpresa] = useState<Empresa>("dsh");
   const [openLanc, setOpenLanc] = useState(false);
   const [openImport, setOpenImport] = useState(false);
+  const [editMes, setEditMes] = useState<string | null>(null);
+  const [deleteRow, setDeleteRow] = useState<FinanceiroRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const { hasCargo } = useAuth();
+  const isAdmin = hasCargo("admin");
 
   const fetchData = async () => {
     setLoading(true);
@@ -382,6 +392,7 @@ export default function Financeiro() {
                     <TableHead className="text-right">Meta Geral</TableHead>
                     <TableHead className="text-right">% Atingido</TableHead>
                     <TableHead>Status</TableHead>
+                    {isAdmin && <TableHead className="text-right w-24">Ações</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -401,6 +412,18 @@ export default function Financeiro() {
                           <TableCell className="text-right text-muted-foreground">—</TableCell>
                           <TableCell className="text-right text-muted-foreground">—</TableCell>
                           <TableCell className="text-muted-foreground">—</TableCell>
+                          {isAdmin && (
+                            <TableCell className="text-right">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2 text-xs"
+                                onClick={() => { setEditMes(m); setOpenLanc(true); }}
+                              >
+                                <PlusCircle className="h-3.5 w-3.5 mr-1" /> Lançar
+                              </Button>
+                            </TableCell>
+                          )}
                         </TableRow>
                       );
                     }
@@ -422,6 +445,30 @@ export default function Financeiro() {
                         <TableCell className="text-right text-muted-foreground">{brl(meta)}</TableCell>
                         <TableCell className={`text-right font-medium ${corPct(pct)}`}>{pct.toFixed(1)}%</TableCell>
                         <TableCell>{statusBadge(pct)}</TableCell>
+                        {isAdmin && (
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7"
+                                title="Editar"
+                                onClick={() => { setEditMes(m); setOpenLanc(true); }}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 text-red-500 hover:text-red-600"
+                                title="Excluir"
+                                onClick={() => setDeleteRow(r)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     );
                   })}
@@ -441,6 +488,7 @@ export default function Financeiro() {
                       {totalAno.m ? ((totalAno.g / totalAno.m) * 100).toFixed(1) : "0.0"}%
                     </TableCell>
                     <TableCell />
+                    {isAdmin && <TableCell />}
                   </TableRow>
                   <TableRow className="text-muted-foreground">
                     <TableCell>Média mensal</TableCell>
@@ -454,6 +502,7 @@ export default function Financeiro() {
                     <TableCell className="text-right">{brl(totalAno.m / nMeses)}</TableCell>
                     <TableCell />
                     <TableCell />
+                    {isAdmin && <TableCell />}
                   </TableRow>
                 </tfoot>
               </Table>
@@ -462,16 +511,56 @@ export default function Financeiro() {
         </>
       )}
 
-      <LancarDialog open={openLanc} onClose={() => setOpenLanc(false)} onSaved={fetchData} anoPadrao={ano} empresaPadrao={empresa} />
+      <LancarDialog
+        open={openLanc}
+        onClose={() => { setOpenLanc(false); setEditMes(null); }}
+        onSaved={fetchData}
+        anoPadrao={ano}
+        empresaPadrao={empresa}
+        mesPadrao={editMes}
+      />
       <ImportarDialog open={openImport} onClose={() => setOpenImport(false)} onSaved={fetchData} empresaPadrao={empresa} />
+
+      <AlertDialog open={!!deleteRow} onOpenChange={(o) => !o && setDeleteRow(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir lançamento</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir os dados financeiros de{" "}
+              <strong>{deleteRow?.mes}/{deleteRow?.ano}</strong> da empresa{" "}
+              <strong>{deleteRow ? EMPRESAS.find((e) => e.key === deleteRow.empresa)?.label : ""}</strong>?
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              className="bg-red-500 hover:bg-red-600"
+              onClick={async () => {
+                if (!deleteRow?.id) return;
+                setDeleting(true);
+                const { error } = await supabase.from("financeiro").delete().eq("id", deleteRow.id);
+                setDeleting(false);
+                if (error) { toast.error("Erro ao excluir: " + error.message); return; }
+                toast.success(`Lançamento de ${deleteRow.mes}/${deleteRow.ano} excluído.`);
+                setDeleteRow(null);
+                fetchData();
+              }}
+            >
+              {deleting ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
 /* ---------- Dialog: Lançar valores ---------- */
 function LancarDialog({
-  open, onClose, onSaved, anoPadrao, empresaPadrao,
-}: { open: boolean; onClose: () => void; onSaved: () => void; anoPadrao: number; empresaPadrao: Empresa }) {
+  open, onClose, onSaved, anoPadrao, empresaPadrao, mesPadrao,
+}: { open: boolean; onClose: () => void; onSaved: () => void; anoPadrao: number; empresaPadrao: Empresa; mesPadrao?: string | null }) {
   const [mes, setMes] = useState(MESES[0]);
   const [ano, setAno] = useState(anoPadrao);
   const [empresa, setEmpresa] = useState<Empresa>(empresaPadrao);
@@ -488,7 +577,12 @@ function LancarDialog({
   const [loadingExisting, setLoadingExisting] = useState(false);
   const [existing, setExisting] = useState(false);
 
-  useEffect(() => { setAno(anoPadrao); setEmpresa(empresaPadrao); }, [anoPadrao, empresaPadrao, open]);
+  useEffect(() => {
+    if (!open) return;
+    setAno(anoPadrao);
+    setEmpresa(empresaPadrao);
+    if (mesPadrao) setMes(mesPadrao);
+  }, [anoPadrao, empresaPadrao, mesPadrao, open]);
 
   // Pré-carrega valores existentes para nunca sobrescrever com zeros
   useEffect(() => {
