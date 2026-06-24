@@ -482,6 +482,11 @@ export default function Financeiro() {
       ) : (
         <>
           {/* KPIs */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium text-muted-foreground">
+              KPIs do último mês com lançamento — <span className="text-foreground font-semibold">{ultimoMesLabel}</span>
+            </h2>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {kpis.map((k) => {
               const pct = k.meta > 0 ? (k.valor / k.meta) * 100 : 0;
@@ -511,7 +516,7 @@ export default function Financeiro() {
               </CardHeader>
               <CardContent>
                 <div className="text-xl font-semibold text-amber-500">{brl(ultimoCustoProd)}</div>
-                <p className="text-[11px] text-muted-foreground mt-1">Último mês</p>
+                <p className="text-[11px] text-muted-foreground mt-1">{ultimoMesLabel}</p>
               </CardContent>
             </Card>
             <Card>
@@ -520,7 +525,7 @@ export default function Financeiro() {
               </CardHeader>
               <CardContent>
                 <div className="text-xl font-semibold text-amber-500">{brl(ultimoCustoGer)}</div>
-                <p className="text-[11px] text-muted-foreground mt-1">Último mês</p>
+                <p className="text-[11px] text-muted-foreground mt-1">{ultimoMesLabel}</p>
               </CardContent>
             </Card>
             <Card>
