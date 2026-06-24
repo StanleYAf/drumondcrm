@@ -1,6 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import { useAuth } from "@/lib/authContext";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -37,25 +36,6 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const MODULE_FALLBACKS = [
-  { perm: "eng_dashboard", path: "/manutencao" },
-  { perm: "com_dashboard", path: "/" },
-  { perm: "fin_dashboard", path: "/financeiro" },
-  { perm: "est_estoque", path: "/estoque" },
-  { perm: "adm_contratos", path: "/administrativo/contratos" },
-];
-
-function SmartRedirect() {
-  const { canAccess } = useAuth();
-  for (const { perm, path } of MODULE_FALLBACKS) {
-    if (canAccess(perm)) {
-      if (path === "/") return <Index />;
-      return <Navigate to={path} replace />;
-    }
-  }
-  return <Index />;
-}
-
 const App = () => (
   <div translate="no" className="notranslate" lang="pt-BR">
   <ErrorBoundary fallbackTitle="Erro crítico na aplicação">
@@ -78,7 +58,7 @@ const App = () => (
                         <Layout>
                           <ErrorBoundary fallbackTitle="Erro ao carregar a página">
                             <Routes>
-                              <Route path="/" element={<SmartRedirect />} />
+                              <Route path="/" element={<RoleGuard perm="com_dashboard"><Index /></RoleGuard>} />
                               <Route path="/lancamentos" element={<RoleGuard perm="com_lancamentos"><Lancamentos /></RoleGuard>} />
                               <Route path="/indicadores" element={<RoleGuard perm="com_indicadores"><Indicadores /></RoleGuard>} />
                               <Route path="/pos-venda" element={<RoleGuard perm="com_posvenda"><PosVenda /></RoleGuard>} />

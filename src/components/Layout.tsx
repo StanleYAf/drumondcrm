@@ -174,7 +174,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </svg>
 
         <div className="relative flex items-center gap-3 min-w-0">
-          <Link to="/manutencao" className="flex items-center gap-3">
+          <Link to="/" className="flex items-center gap-3">
             <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
                 d="M19 33C19 33 5 23.5 5 13.5C5 9.36 8.36 6 12.5 6C15.1 6 17.4 7.3 19 9.3C20.6 7.3 22.9 6 25.5 6C29.64 6 33 9.36 33 13.5C33 23.5 19 33 19 33Z"
