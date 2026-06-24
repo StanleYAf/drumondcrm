@@ -485,8 +485,48 @@ function LancarDialog({
   const [mContratos, setMContratos] = useState(numberToCurrencyMask(META_DEFAULTS.meta_contratos));
   const [mGeral, setMGeral] = useState(numberToCurrencyMask(META_DEFAULTS.meta_geral));
   const [saving, setSaving] = useState(false);
+  const [loadingExisting, setLoadingExisting] = useState(false);
+  const [existing, setExisting] = useState(false);
 
   useEffect(() => { setAno(anoPadrao); setEmpresa(empresaPadrao); }, [anoPadrao, empresaPadrao, open]);
+
+  // Pré-carrega valores existentes para nunca sobrescrever com zeros
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    (async () => {
+      setLoadingExisting(true);
+      const { data } = await supabase
+        .from("financeiro")
+        .select("*")
+        .eq("mes", mes)
+        .eq("ano", ano)
+        .eq("empresa", empresa)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data) {
+        setExisting(true);
+        setServ(numberToCurrencyMask(Number(data.servicos_avulsos) || 0));
+        setVendas(numberToCurrencyMask(Number(data.vendas) || 0));
+        setContratos(numberToCurrencyMask(Number(data.contratos) || 0));
+        setCustoProd(numberToCurrencyMask(Number(data.custo_produtos) || 0));
+        setCustosGer(numberToCurrencyMask(Number(data.custos_gerais) || 0));
+        setMServ(numberToCurrencyMask(Number(data.meta_servicos) || META_DEFAULTS.meta_servicos));
+        setMVendas(numberToCurrencyMask(Number(data.meta_vendas) || META_DEFAULTS.meta_vendas));
+        setMContratos(numberToCurrencyMask(Number(data.meta_contratos) || META_DEFAULTS.meta_contratos));
+        setMGeral(numberToCurrencyMask(Number(data.meta_geral) || META_DEFAULTS.meta_geral));
+      } else {
+        setExisting(false);
+        setServ(""); setVendas(""); setContratos(""); setCustoProd(""); setCustosGer("");
+        setMServ(numberToCurrencyMask(META_DEFAULTS.meta_servicos));
+        setMVendas(numberToCurrencyMask(META_DEFAULTS.meta_vendas));
+        setMContratos(numberToCurrencyMask(META_DEFAULTS.meta_contratos));
+        setMGeral(numberToCurrencyMask(META_DEFAULTS.meta_geral));
+      }
+      setLoadingExisting(false);
+    })();
+    return () => { cancelled = true; };
+  }, [open, mes, ano, empresa]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -509,7 +549,7 @@ function LancarDialog({
     const { error } = await supabase.from("financeiro").upsert(payload, { onConflict: "mes,ano,empresa" });
     setSaving(false);
     if (error) { toast.error("Erro ao salvar: " + error.message); return; }
-    toast.success("Valores lançados com sucesso!");
+    toast.success(existing ? "Valores atualizados com sucesso!" : "Valores lançados com sucesso!");
     onSaved();
     onClose();
     setServ(""); setVendas(""); setContratos(""); setCustoProd(""); setCustosGer("");
@@ -518,7 +558,17 @@ function LancarDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>Lançar valores</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{existing ? "Editar valores" : "Lançar valores"}</DialogTitle>
+          {existing && (
+            <p className="text-xs text-amber-500 mt-1">
+              Já existem dados para {mes}/{ano} — os campos abaixo foram preenchidos com os valores atuais. Edite apenas o necessário; salvar sem alterar os outros campos preservará os valores existentes.
+            </p>
+          )}
+          {loadingExisting && (
+            <p className="text-xs text-muted-foreground mt-1">Carregando dados existentes…</p>
+          )}
+        </DialogHeader>
         <div className="grid grid-cols-2 gap-3 py-2">
           <div className="space-y-1.5 col-span-2">
             <Label>Empresa</Label>
