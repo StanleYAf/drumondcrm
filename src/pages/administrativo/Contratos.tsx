@@ -197,8 +197,8 @@ export default function Contratos() {
     setFNumero("");
     setClienteMode("existing");
     setFClienteId(""); setFClienteNome(""); setFClienteCNPJ("");
-    setFClienteCategoria(CATEGORIAS_CLIENTE[0]); setFClienteResp(""); setFClienteEmail("");
-    setFTipo("preventivo"); setFEquip("");
+    setFClienteResp(""); setFClienteEmail("");
+    setFTipo("Clínica"); setFEquip("");
     setFIni(""); setFFim(""); setFMensal(""); setFAnual(""); setFAnualTouched(false);
     setFValorContrato(""); setFParcelas(""); setFDataFat(""); setFDataVenc("");
     setFRetemISS(false); setFServico(""); setFStatus("");
@@ -355,7 +355,6 @@ export default function Contratos() {
         .insert({
           nome: fClienteNome.trim(),
           cnpj: fClienteCNPJ ? maskCNPJ(fClienteCNPJ) : null,
-          categoria: fClienteCategoria,
           responsavel_financeiro: fClienteResp || null,
           email: fClienteEmail || null,
           created_by: user?.id || null,
@@ -710,11 +709,6 @@ export default function Contratos() {
                         placeholder="00.000.000/0000-00"
                         className="form-input"
                       />
-                    </Field>
-                    <Field label="Categoria">
-                      <select value={fClienteCategoria} onChange={e => setFClienteCategoria(e.target.value)} className="form-input">
-                        {CATEGORIAS_CLIENTE.map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
                     </Field>
                     <Field label="Responsável Financeiro">
                       <input value={fClienteResp} onChange={e => setFClienteResp(e.target.value)} className="form-input" />
