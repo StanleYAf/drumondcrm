@@ -310,7 +310,7 @@ export default function Contratos() {
       cliente_categoria: cli?.categoria,
       cliente_email: cli?.email,
       cliente_responsavel_financeiro: cli?.responsavel_financeiro,
-      tipo_label: TIPO_LABEL[c.tipo],
+      tipo_label: TIPO_LABEL[c.tipo] || (c.tipo as string),
       status_label: c.status_manual || STATUS_STYLE[statusFromVigencia(c.vigencia_fim)].label,
       servico_contratado: c.servico_contratado,
       equipamentos_cobertos: c.equipamentos_cobertos,
@@ -575,7 +575,7 @@ export default function Contratos() {
                     <tr key={c.id} className="border-t border-[#F1F5F9] hover:bg-[#F8FAFC]">
                       <td className="px-4 py-3 font-medium text-[#0F172A]">{c.numero_contrato}</td>
                       <td className="px-4 py-3 text-[#0F172A]">{c.cliente_nome}</td>
-                      <td className="px-4 py-3 text-[#475569]">{TIPO_LABEL[c.tipo]}</td>
+                      <td className="px-4 py-3 text-[#475569]">{TIPO_LABEL[c.tipo] || (c.tipo as string) || "—"}</td>
                       <td className="px-4 py-3 text-[#475569] max-w-[260px] truncate" title={c.equipamentos_cobertos || ""}>
                         {c.equipamentos_cobertos || "—"}
                       </td>
