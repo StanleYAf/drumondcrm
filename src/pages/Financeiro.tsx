@@ -132,7 +132,14 @@ export default function Financeiro() {
   // KPI: mês mais recente disponível no ano
   const ultimo = useMemo(() => {
     if (rowsAno.length === 0) return null;
-    return rowsAno[rowsAno.length - 1];
+    // Último mês COM dados reais (faturamento ou custos > 0).
+    // Evita pegar meses futuros pré-criados com zeros.
+    const comDados = rowsAno.filter((r) => {
+      const g = r.geral || r.servicos_avulsos + r.vendas + r.contratos;
+      return g > 0 || (r.custo_produtos || 0) > 0 || (r.custos_gerais || 0) > 0;
+    });
+    if (comDados.length === 0) return null;
+    return comDados[comDados.length - 1];
   }, [rowsAno]);
 
   if (loading) return <DashboardSkeleton />;
@@ -146,6 +153,7 @@ export default function Financeiro() {
         { label: "Faturamento Geral", valor: ultimo.geral || (ultimo.servicos_avulsos + ultimo.vendas + ultimo.contratos), meta: ultimo.meta_geral || META_DEFAULTS.meta_geral },
       ]
     : [];
+  const ultimoMesLabel = ultimo ? `${ultimo.mes}/${ultimo.ano}` : "—";
 
   const chartData = MESES.map((m) => {
     const r = rowsAno.find((x) => x.mes === m);
@@ -474,6 +482,11 @@ export default function Financeiro() {
       ) : (
         <>
           {/* KPIs */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-medium text-muted-foreground">
+              KPIs do último mês com lançamento — <span className="text-foreground font-semibold">{ultimoMesLabel}</span>
+            </h2>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {kpis.map((k) => {
               const pct = k.meta > 0 ? (k.valor / k.meta) * 100 : 0;
@@ -503,7 +516,7 @@ export default function Financeiro() {
               </CardHeader>
               <CardContent>
                 <div className="text-xl font-semibold text-amber-500">{brl(ultimoCustoProd)}</div>
-                <p className="text-[11px] text-muted-foreground mt-1">Último mês</p>
+                <p className="text-[11px] text-muted-foreground mt-1">{ultimoMesLabel}</p>
               </CardContent>
             </Card>
             <Card>
@@ -512,7 +525,7 @@ export default function Financeiro() {
               </CardHeader>
               <CardContent>
                 <div className="text-xl font-semibold text-amber-500">{brl(ultimoCustoGer)}</div>
-                <p className="text-[11px] text-muted-foreground mt-1">Último mês</p>
+                <p className="text-[11px] text-muted-foreground mt-1">{ultimoMesLabel}</p>
               </CardContent>
             </Card>
             <Card>
