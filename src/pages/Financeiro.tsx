@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Upload, PlusCircle, DollarSign, TrendingUp, FileSpreadsheet, X, Building2, Pencil, Trash2 } from "lucide-react";
+import { Upload, PlusCircle, DollarSign, TrendingUp, TrendingDown, FileSpreadsheet, X, Building2, Pencil, Trash2, Sparkles, AlertCircle, Calendar, Target } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import {
@@ -180,6 +180,55 @@ export default function Financeiro() {
   const lucroAno = totalAno.g - totalCustosAno;
   const margemAno = totalAno.g > 0 ? (lucroAno / totalAno.g) * 100 : 0;
 
+  // -------- Spotlight do mês atual --------
+  const hoje = new Date();
+  const isAnoAtual = ano === hoje.getFullYear();
+  const mesAtualIdx = isAnoAtual ? hoje.getMonth() : 11;
+  const mesAtualLabel = MESES[mesAtualIdx];
+  const diasNoMes = new Date(hoje.getFullYear(), mesAtualIdx + 1, 0).getDate();
+  const diaAtual = isAnoAtual ? hoje.getDate() : diasNoMes;
+  const pctMesDecorrido = (diaAtual / diasNoMes) * 100;
+  const rowMesAtual = rowsAno.find((r) => r.mes === mesAtualLabel);
+  const rowMesAnterior = mesAtualIdx > 0 ? rowsAno.find((r) => r.mes === MESES[mesAtualIdx - 1]) : undefined;
+
+  // Geral parcial do mês atual
+  const geralMesAtual = rowMesAtual
+    ? (rowMesAtual.geral || (rowMesAtual.servicos_avulsos + rowMesAtual.vendas + rowMesAtual.contratos))
+    : 0;
+  const metaMesAtual = (rowMesAtual?.meta_geral) || META_DEFAULTS.meta_geral;
+
+  // Histórico de meses já lançados (com geral > 0) DESTE ano, excluindo o mês atual
+  const mesesComDados = rowsAno.filter((r) => {
+    const g = r.geral || r.servicos_avulsos + r.vendas + r.contratos;
+    return g > 0 && r.mes !== mesAtualLabel;
+  });
+  const mediaHistorica = mesesComDados.length > 0
+    ? mesesComDados.reduce((s, r) => s + (r.geral || r.servicos_avulsos + r.vendas + r.contratos), 0) / mesesComDados.length
+    : 0;
+
+  // Projeção de fechamento do mês atual
+  const projecaoMesAtual = rowMesAtual && geralMesAtual > 0
+    ? (geralMesAtual / Math.max(diaAtual, 1)) * diasNoMes
+    : mediaHistorica;
+
+  const geralMesAnterior = rowMesAnterior
+    ? (rowMesAnterior.geral || rowMesAnterior.servicos_avulsos + rowMesAnterior.vendas + rowMesAnterior.contratos)
+    : 0;
+
+  const varVsAnterior = geralMesAnterior > 0
+    ? ((projecaoMesAtual - geralMesAnterior) / geralMesAnterior) * 100
+    : null;
+
+  const gapMeta = metaMesAtual - projecaoMesAtual;
+  const pctMeta = metaMesAtual > 0 ? (geralMesAtual / metaMesAtual) * 100 : 0;
+  const pctProjMeta = metaMesAtual > 0 ? (projecaoMesAtual / metaMesAtual) * 100 : 0;
+
+  const ritmoNecessarioDiario = gapMeta > 0 && (diasNoMes - diaAtual) > 0
+    ? gapMeta / (diasNoMes - diaAtual)
+    : 0;
+
+  const temLancamento = !!rowMesAtual && geralMesAtual > 0;
+
   // KPIs de custo do último mês
   const ultimoCustoProd = ultimo?.custo_produtos || 0;
   const ultimoCustoGer = ultimo?.custos_gerais || 0;
@@ -228,6 +277,190 @@ export default function Financeiro() {
           </Button>
         </div>
       </div>
+
+      {/* ====== Spotlight: Mês Atual ====== */}
+      <Card className="overflow-hidden border-primary/20 bg-gradient-to-br from-primary/[0.03] via-card to-card">
+        <CardContent className="p-0">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr_1fr] divide-y lg:divide-y-0 lg:divide-x divide-border/60">
+            {/* Coluna 1: identificação + valor parcial */}
+            <div className="p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Mês atual em destaque</p>
+                  <h3 className="text-base font-semibold leading-tight">{mesAtualLabel} {ano}</h3>
+                </div>
+                {isAnoAtual && (
+                  <Badge variant="outline" className="ml-auto text-[10px] gap-1">
+                    <Calendar className="h-3 w-3" /> Dia {diaAtual} de {diasNoMes}
+                  </Badge>
+                )}
+              </div>
+
+              {temLancamento ? (
+                <>
+                  <div>
+                    <p className="text-[11px] text-muted-foreground">Faturamento parcial</p>
+                    <p className="text-3xl font-semibold tracking-tight">{brl(geralMesAtual)}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      <span className={corPct(pctMeta)}>{pctMeta.toFixed(1)}%</span> da meta de {brl(metaMesAtual)}
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                      <span>Progresso do mês</span>
+                      <span>{pctMesDecorrido.toFixed(0)}% decorrido</span>
+                    </div>
+                    <div className="relative h-2 w-full bg-muted rounded-full overflow-hidden">
+                      <div className={`absolute inset-y-0 left-0 ${bgPct(pctMeta)} transition-all`} style={{ width: `${Math.min(pctMeta, 100)}%` }} />
+                      <div className="absolute inset-y-0 w-0.5 bg-foreground/40" style={{ left: `${Math.min(pctMesDecorrido, 100)}%` }} title="Hoje" />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2.5">
+                  <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <div className="space-y-2 flex-1">
+                    <div>
+                      <p className="text-sm font-medium text-amber-600 dark:text-amber-400">Sem lançamentos em {mesAtualLabel}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Nada foi registrado ainda este mês. Lance os valores para acompanhar a meta em tempo real.
+                      </p>
+                    </div>
+                    <Button size="sm" className="h-7 text-xs" onClick={() => setOpenLanc(true)}>
+                      <PlusCircle className="h-3 w-3 mr-1" /> Lançar {mesAtualLabel}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Coluna 2: Projeção de fechamento */}
+            <div className="p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <Target className="h-3.5 w-3.5 text-muted-foreground" />
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                  Projeção de fechamento
+                </p>
+              </div>
+              {projecaoMesAtual > 0 ? (
+                <>
+                  <div>
+                    <p className="text-2xl font-semibold tracking-tight">{brl(projecaoMesAtual)}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {temLancamento
+                        ? `Estimado a partir do ritmo dos primeiros ${diaAtual} dias`
+                        : `Estimado pela média dos últimos ${mesesComDados.length} ${mesesComDados.length === 1 ? "mês" : "meses"}`}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <span className="text-muted-foreground">vs meta:</span>
+                    <span className={`font-medium ${corPct(pctProjMeta)}`}>{pctProjMeta.toFixed(0)}%</span>
+                    {gapMeta > 0 ? (
+                      <span className="text-muted-foreground">— faltam {brl(gapMeta)}</span>
+                    ) : (
+                      <span className="text-emerald-500">— meta superada em {brl(Math.abs(gapMeta))}</span>
+                    )}
+                  </div>
+                  {varVsAnterior !== null && (
+                    <div className="flex items-center gap-1.5 text-xs">
+                      <span className="text-muted-foreground">vs {MESES[mesAtualIdx - 1]}:</span>
+                      {varVsAnterior >= 0 ? (
+                        <span className="flex items-center gap-0.5 text-emerald-500 font-medium">
+                          <TrendingUp className="h-3 w-3" /> +{varVsAnterior.toFixed(1)}%
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-0.5 text-red-500 font-medium">
+                          <TrendingDown className="h-3 w-3" /> {varVsAnterior.toFixed(1)}%
+                        </span>
+                      )}
+                      <span className="text-muted-foreground">({brl(geralMesAnterior)})</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Sem dados suficientes para projetar. Lance pelo menos um mês para calcular a projeção.
+                </p>
+              )}
+            </div>
+
+            {/* Coluna 3: Diagnóstico inteligente */}
+            <div className="p-5 space-y-3">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
+                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                  Diagnóstico
+                </p>
+              </div>
+              <div className="space-y-2.5">
+                {temLancamento && ritmoNecessarioDiario > 0 && (
+                  <div className="flex items-start gap-2 text-xs">
+                    <div className="h-1.5 w-1.5 rounded-full bg-amber-500 mt-1.5 flex-shrink-0" />
+                    <p>
+                      Para bater a meta, é preciso faturar{" "}
+                      <span className="font-semibold text-foreground">{brl(ritmoNecessarioDiario)}/dia</span>{" "}
+                      nos próximos {diasNoMes - diaAtual} dias.
+                    </p>
+                  </div>
+                )}
+                {temLancamento && ritmoNecessarioDiario === 0 && gapMeta <= 0 && (
+                  <div className="flex items-start gap-2 text-xs">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0" />
+                    <p className="text-emerald-600 dark:text-emerald-400 font-medium">Meta do mês já atingida — siga ampliando o resultado.</p>
+                  </div>
+                )}
+                {temLancamento && pctMeta < pctMesDecorrido - 5 && (
+                  <div className="flex items-start gap-2 text-xs">
+                    <div className="h-1.5 w-1.5 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
+                    <p>
+                      Faturamento <span className="font-semibold">abaixo do ritmo</span> esperado para esta altura do mês ({pctMeta.toFixed(0)}% da meta vs. {pctMesDecorrido.toFixed(0)}% do mês decorrido).
+                    </p>
+                  </div>
+                )}
+                {temLancamento && pctMeta >= pctMesDecorrido - 5 && pctMeta < 100 && gapMeta > 0 && (
+                  <div className="flex items-start gap-2 text-xs">
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0" />
+                    <p>Faturamento dentro do ritmo esperado para o mês.</p>
+                  </div>
+                )}
+                {!temLancamento && mediaHistorica > 0 && (
+                  <div className="flex items-start gap-2 text-xs">
+                    <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground mt-1.5 flex-shrink-0" />
+                    <p>
+                      Média dos meses anteriores: <span className="font-semibold text-foreground">{brl(mediaHistorica)}</span>.
+                    </p>
+                  </div>
+                )}
+                {!temLancamento && mediaHistorica === 0 && (
+                  <div className="flex items-start gap-2 text-xs">
+                    <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground mt-1.5 flex-shrink-0" />
+                    <p>Sem histórico para gerar diagnóstico ainda.</p>
+                  </div>
+                )}
+                {rowMesAtual && (
+                  <div className="grid grid-cols-3 gap-2 pt-2 border-t">
+                    <div>
+                      <p className="text-[10px] text-muted-foreground">Serviços</p>
+                      <p className="text-xs font-semibold">{brl(rowMesAtual.servicos_avulsos)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground">Vendas</p>
+                      <p className="text-xs font-semibold">{brl(rowMesAtual.vendas)}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground">Contratos</p>
+                      <p className="text-xs font-semibold">{brl(rowMesAtual.contratos)}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {rowsAno.length === 0 ? (
         <Card>
