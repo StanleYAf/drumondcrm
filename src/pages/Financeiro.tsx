@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Upload, PlusCircle, DollarSign, TrendingUp, FileSpreadsheet, X, Building2, Pencil, Trash2 } from "lucide-react";
+import { Upload, PlusCircle, DollarSign, TrendingUp, TrendingDown, FileSpreadsheet, X, Building2, Pencil, Trash2, Sparkles, AlertCircle, Calendar, Target } from "lucide-react";
 import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import {
