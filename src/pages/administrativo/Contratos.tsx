@@ -15,7 +15,8 @@ import {
 } from "@/lib/currencyMask";
 import { abrirComprovantePDF } from "@/lib/contratoComprovante";
 
-type TipoContrato = "Clínica" | "Consultório" | "Hospital" | "Veterinário";
+type TipoContrato = "Clínica" | "Consultório" | "Hospital";
+type SegmentoContrato = "Humano" | "Veterinário";
 type StatusContrato = "ativo" | "a_vencer" | "vencido";
 
 interface Contrato {
@@ -24,6 +25,7 @@ interface Contrato {
   cliente_id: string | null;
   contratos_cliente_id: string | null;
   tipo: TipoContrato;
+  segmento: SegmentoContrato | null;
   equipamentos_cobertos: string | null;
   vigencia_inicio: string;
   vigencia_fim: string;
@@ -57,6 +59,10 @@ const TIPO_LABEL: Record<TipoContrato, string> = {
   "Clínica": "Clínica",
   "Consultório": "Consultório",
   "Hospital": "Hospital",
+};
+
+const SEGMENTO_LABEL: Record<SegmentoContrato, string> = {
+  "Humano": "Humano",
   "Veterinário": "Veterinário",
 };
 
@@ -125,6 +131,7 @@ export default function Contratos() {
   const [fClienteEmail, setFClienteEmail] = useState("");
 
   const [fTipo, setFTipo] = useState<TipoContrato>("Clínica");
+  const [fSegmento, setFSegmento] = useState<SegmentoContrato>("Humano");
   const [fEquip, setFEquip] = useState("");
   const [fIni, setFIni] = useState("");
   const [fFim, setFFim] = useState("");
@@ -199,6 +206,7 @@ export default function Contratos() {
     setFClienteId(""); setFClienteNome(""); setFClienteCNPJ("");
     setFClienteResp(""); setFClienteEmail("");
     setFTipo("Clínica"); setFEquip("");
+    setFSegmento("Humano");
     setFIni(""); setFFim(""); setFMensal(""); setFAnual(""); setFAnualTouched(false);
     setFValorContrato(""); setFParcelas(""); setFDataFat(""); setFDataVenc("");
     setFRetemISS(false); setFServico(""); setFStatus("");
@@ -236,7 +244,8 @@ export default function Contratos() {
     setFNumero(c.numero_contrato);
     setClienteMode("existing");
     setFClienteId(c.contratos_cliente_id || "");
-    setFTipo(c.tipo);
+    setFTipo((["Clínica","Consultório","Hospital"].includes(c.tipo as string) ? c.tipo : "Clínica") as TipoContrato);
+    setFSegmento(((c as any).segmento === "Veterinário" || (c.tipo as string) === "Veterinário") ? "Veterinário" : "Humano");
     setFEquip(c.equipamentos_cobertos || "");
     setFIni(c.vigencia_inicio);
     setFFim(c.vigencia_fim);
@@ -262,7 +271,8 @@ export default function Contratos() {
     setFNumero(num);
     setClienteMode("existing");
     setFClienteId(c.contratos_cliente_id || "");
-    setFTipo(c.tipo);
+    setFTipo((["Clínica","Consultório","Hospital"].includes(c.tipo as string) ? c.tipo : "Clínica") as TipoContrato);
+    setFSegmento(((c as any).segmento === "Veterinário" || (c.tipo as string) === "Veterinário") ? "Veterinário" : "Humano");
     setFEquip(c.equipamentos_cobertos || "");
     const novoIni = addDaysISO(c.vigencia_fim, 1);
     setFIni(novoIni);
@@ -376,6 +386,7 @@ export default function Contratos() {
       numero_contrato: fNumero.trim(),
       contratos_cliente_id: clienteId || null,
       tipo: fTipo,
+      segmento: fSegmento,
       equipamentos_cobertos: fEquip || null,
       servico_contratado: fServico || null,
       vigencia_inicio: fIni,
@@ -725,6 +736,11 @@ export default function Contratos() {
                   {Object.entries(TIPO_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                 </select>
               </Field>
+              <Field label="Segmento">
+                <select value={fSegmento} onChange={e => setFSegmento(e.target.value as SegmentoContrato)} className="form-input">
+                  {Object.entries(SEGMENTO_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              </Field>
               <Field label="Responsável comercial">
                 <input value={fResp} onChange={e => setFResp(e.target.value)} className="form-input" />
               </Field>
@@ -792,7 +808,7 @@ export default function Contratos() {
                   <span className="text-sm text-[#475569]">Sim, retém ISS sobre a nota fiscal</span>
                 </label>
               </Field>
-              <Field label="Link do Drive" className="md:col-span-2">
+              <Field label="Link do Contrato" className="md:col-span-2">
                 <div className="flex gap-2">
                   <input
                     type="url"
