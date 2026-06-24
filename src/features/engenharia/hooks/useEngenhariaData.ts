@@ -125,20 +125,34 @@ export function useEngenhariaData(filtros: Filtros) {
     (async () => {
       setLoading(true); setError(null);
       try {
-        const [c, i, o, t] = await Promise.all([
+        const fetchAllOs = async (): Promise<OSRow[]> => {
+          const pageSize = 1000;
+          const all: OSRow[] = [];
+          for (let from = 0; ; from += pageSize) {
+            const { data, error } = await supabase
+              .from("ordens_servico")
+              .select("id, cliente_id, mes, ano, estado, tipo_servico, responsavel, data_criacao, data_conclusao, created_at")
+              .range(from, from + pageSize - 1);
+            if (error) throw error;
+            const rows = (data || []) as OSRow[];
+            all.push(...rows);
+            if (rows.length < pageSize) break;
+          }
+          return all;
+        };
+        const [c, i, oAll, t] = await Promise.all([
           supabase.from("clientes").select("id, nome, responsavel, ativo").eq("ativo", true).order("nome"),
           supabase.from("indicadores_manutencao").select("*"),
-          supabase.from("ordens_servico").select("id, cliente_id, mes, ano, estado, tipo_servico, responsavel, data_criacao, data_conclusao, created_at"),
+          fetchAllOs(),
           supabase.from("tecnicos_manutencao").select("*"),
         ]);
         if (c.error) throw c.error;
         if (i.error) throw i.error;
-        if (o.error) throw o.error;
         if (t.error) throw t.error;
         if (cancelled) return;
         setClientes((c.data || []) as ClienteRow[]);
         setIndicadores((i.data || []) as IndicadorRow[]);
-        setOs((o.data || []) as OSRow[]);
+        setOs(oAll);
         setTecnicos((t.data || []) as TecnicoRow[]);
       } catch (e: any) {
         if (!cancelled) setError(e.message || "Erro ao carregar dados");
