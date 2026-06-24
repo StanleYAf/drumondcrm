@@ -37,6 +37,25 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const MODULE_FALLBACKS = [
+  { perm: "eng_dashboard", path: "/manutencao" },
+  { perm: "com_dashboard", path: "/" },
+  { perm: "fin_dashboard", path: "/financeiro" },
+  { perm: "est_estoque", path: "/estoque" },
+  { perm: "adm_contratos", path: "/administrativo/contratos" },
+];
+
+function SmartRedirect() {
+  const { canAccess } = useAuth();
+  for (const { perm, path } of MODULE_FALLBACKS) {
+    if (canAccess(perm)) {
+      if (path === "/") return <Index />;
+      return <Navigate to={path} replace />;
+    }
+  }
+  return <Index />;
+}
+
 const App = () => (
   <div translate="no" className="notranslate" lang="pt-BR">
   <ErrorBoundary fallbackTitle="Erro crítico na aplicação">
