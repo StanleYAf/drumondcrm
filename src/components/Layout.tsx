@@ -270,7 +270,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* ===== Secondary Sidebar (subitems) ===== */}
       {currentGroup && (
-        <aside className="hidden md:flex fixed top-20 bottom-0 left-[68px] w-[188px] z-30 flex-col bg-white border-r border-[#E2E8F0]">
+        <aside className="hidden md:flex fixed top-20 bottom-0 left-[68px] w-[232px] z-30 flex-col bg-white border-r border-[#E2E8F0]">
           <div className="px-4 pt-5 pb-3" translate="no">
             <div className="text-[10px] uppercase tracking-wider font-semibold text-[#94A3B8]">
               Módulo
@@ -278,7 +278,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="text-[14px] font-semibold text-[#0F172A]">{currentGroup.title}</div>
           </div>
           <nav translate="no" className="flex-1 overflow-y-auto px-2 pb-3 space-y-0.5">
-            {currentGroup.subs.map((subItem) => {
+            {[...currentGroup.subs].sort((a, b) => a.title.localeCompare(b.title, "pt-BR")).map((subItem) => {
               const isSubActive = subItem.url === "/"
                 ? location.pathname === "/"
                 : location.pathname === subItem.url;
@@ -319,7 +319,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       )}
 
       {/* ===== Main content ===== */}
-      <main className="pb-24 md:pb-6 md:pl-[256px] md:pt-20">
+      <main className="pb-24 md:pb-6 md:pl-[300px] md:pt-20">
         <div className="max-w-[1400px] mx-auto px-4 py-5 md:px-6 md:py-6">
           {children}
         </div>
