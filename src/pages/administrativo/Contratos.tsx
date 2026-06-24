@@ -4,9 +4,16 @@ import { useAuth } from "@/lib/authContext";
 import { toast } from "sonner";
 import {
   FileText, CircleCheck, ClockAlert, CircleX, DollarSign, AlertTriangle,
-  Plus, Pencil, RefreshCw, ExternalLink, X, FileX,
+  Plus, Pencil, RefreshCw, ExternalLink, X, FileX, FileDown, UserPlus,
 } from "lucide-react";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
+import {
+  CATEGORIAS_CLIENTE, isValidCNPJ, maskCNPJ, isValidEmail,
+} from "@/lib/clienteCategorias";
+import {
+  applyCurrencyMask, parseCurrencyMask, numberToCurrencyMask,
+} from "@/lib/currencyMask";
+import { abrirComprovantePDF } from "@/lib/contratoComprovante";
 
 type TipoContrato = "preventivo" | "corretivo" | "full-risk" | "locacao";
 type StatusContrato = "ativo" | "a_vencer" | "vencido";
@@ -15,18 +22,36 @@ interface Contrato {
   id: string;
   numero_contrato: string;
   cliente_id: string | null;
+  contratos_cliente_id: string | null;
   tipo: TipoContrato;
   equipamentos_cobertos: string | null;
   vigencia_inicio: string;
   vigencia_fim: string;
   valor_mensal: number | null;
   valor_anual: number | null;
+  valor_contrato: number | null;
+  parcelas: number | null;
+  data_faturamento: string | null;
+  data_vencimento: string | null;
+  retem_iss: boolean | null;
+  servico_contratado: string | null;
+  status_manual: string | null;
   responsavel_comercial: string | null;
   drive_url: string | null;
   observacoes: string | null;
+  created_at: string | null;
+  created_by: string | null;
+  created_by_name: string | null;
 }
 
-interface Cliente { id: string; nome: string }
+interface ContratoCliente {
+  id: string;
+  nome: string;
+  cnpj: string | null;
+  categoria: string | null;
+  responsavel_financeiro: string | null;
+  email: string | null;
+}
 
 const TIPO_LABEL: Record<TipoContrato, string> = {
   preventivo: "Preventivo",
@@ -75,9 +100,9 @@ const STATUS_STYLE: Record<StatusContrato, { bg: string; color: string; label: s
 };
 
 export default function Contratos() {
-  const { user } = useAuth();
+  const { user, displayName } = useAuth();
   const [contratos, setContratos] = useState<Contrato[]>([]);
-  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [clientes, setClientes] = useState<ContratoCliente[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [filterCliente, setFilterCliente] = useState("");
@@ -92,14 +117,28 @@ export default function Contratos() {
 
   // form state
   const [fNumero, setFNumero] = useState("");
-  const [fCliente, setFCliente] = useState<string>("");
+  const [clienteMode, setClienteMode] = useState<"existing" | "new">("existing");
+  const [fClienteId, setFClienteId] = useState<string>("");
+  const [fClienteNome, setFClienteNome] = useState("");
+  const [fClienteCNPJ, setFClienteCNPJ] = useState("");
+  const [fClienteCategoria, setFClienteCategoria] = useState<string>(CATEGORIAS_CLIENTE[0]);
+  const [fClienteResp, setFClienteResp] = useState("");
+  const [fClienteEmail, setFClienteEmail] = useState("");
+
   const [fTipo, setFTipo] = useState<TipoContrato>("preventivo");
   const [fEquip, setFEquip] = useState("");
   const [fIni, setFIni] = useState("");
   const [fFim, setFFim] = useState("");
-  const [fMensal, setFMensal] = useState<string>("");
-  const [fAnual, setFAnual] = useState<string>("");
+  const [fMensal, setFMensal] = useState<string>("");      // masked
+  const [fAnual, setFAnual] = useState<string>("");        // masked
   const [fAnualTouched, setFAnualTouched] = useState(false);
+  const [fValorContrato, setFValorContrato] = useState(""); // masked
+  const [fParcelas, setFParcelas] = useState<string>("");
+  const [fDataFat, setFDataFat] = useState("");
+  const [fDataVenc, setFDataVenc] = useState("");
+  const [fRetemISS, setFRetemISS] = useState(false);
+  const [fServico, setFServico] = useState("");
+  const [fStatus, setFStatus] = useState("");
   const [fResp, setFResp] = useState("");
   const [fDrive, setFDrive] = useState("");
   const [fObs, setFObs] = useState("");
@@ -108,31 +147,35 @@ export default function Contratos() {
     if (!user) return;
     setLoading(true);
     const [cRes, clRes] = await Promise.all([
-      supabase.from("contratos").select("*").order("vigencia_fim", { ascending: true }),
-      supabase.from("clientes").select("id, nome").order("nome"),
+      supabase.from("contratos").select("*").order("created_at", { ascending: false }),
+      supabase.from("contratos_clientes" as any).select("*").order("nome"),
     ]);
     if (cRes.error) toast.error("Erro ao carregar contratos");
-    else setContratos((cRes.data || []) as Contrato[]);
-    if (!clRes.error) setClientes((clRes.data || []) as Cliente[]);
+    else setContratos((cRes.data || []) as any);
+    if (!clRes.error) setClientes((clRes.data || []) as any);
     setLoading(false);
   }, [user]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const clienteMap = useMemo(() => {
-    const m = new Map<string, string>();
-    clientes.forEach(c => m.set(c.id, c.nome));
+    const m = new Map<string, ContratoCliente>();
+    clientes.forEach(c => m.set(c.id, c));
     return m;
   }, [clientes]);
 
-  const enriched = useMemo(() => contratos.map(c => ({
-    ...c,
-    status: statusFromVigencia(c.vigencia_fim),
-    cliente_nome: c.cliente_id ? (clienteMap.get(c.cliente_id) || "—") : "—",
-  })), [contratos, clienteMap]);
+  const enriched = useMemo(() => contratos.map(c => {
+    const cli = c.contratos_cliente_id ? clienteMap.get(c.contratos_cliente_id) : null;
+    return {
+      ...c,
+      status: statusFromVigencia(c.vigencia_fim),
+      cliente_nome: cli?.nome || "—",
+      cliente_obj: cli || null,
+    };
+  }), [contratos, clienteMap]);
 
   const filtered = useMemo(() => enriched.filter(c => {
-    if (filterCliente && c.cliente_id !== filterCliente) return false;
+    if (filterCliente && c.contratos_cliente_id !== filterCliente) return false;
     if (filterTipo && c.tipo !== filterTipo) return false;
     if (filterStatus && c.status !== filterStatus) return false;
     if (filterResp && !(c.responsavel_comercial || "").toLowerCase().includes(filterResp.toLowerCase())) return false;
@@ -152,45 +195,85 @@ export default function Contratos() {
 
   function resetForm() {
     setShowForm(false); setEditItem(null); setRenewItem(null);
-    setFNumero(""); setFCliente(""); setFTipo("preventivo"); setFEquip("");
+    setFNumero("");
+    setClienteMode("existing");
+    setFClienteId(""); setFClienteNome(""); setFClienteCNPJ("");
+    setFClienteCategoria(CATEGORIAS_CLIENTE[0]); setFClienteResp(""); setFClienteEmail("");
+    setFTipo("preventivo"); setFEquip("");
     setFIni(""); setFFim(""); setFMensal(""); setFAnual(""); setFAnualTouched(false);
+    setFValorContrato(""); setFParcelas(""); setFDataFat(""); setFDataVenc("");
+    setFRetemISS(false); setFServico(""); setFStatus("");
     setFResp(""); setFDrive(""); setFObs("");
   }
 
-  function openNew() {
+  async function generateNextContractNumber(): Promise<string> {
+    const ano = new Date().getFullYear();
+    const prefix = `CTR-${ano}-`;
+    const { data } = await supabase
+      .from("contratos")
+      .select("numero_contrato")
+      .ilike("numero_contrato", `${prefix}%`)
+      .order("numero_contrato", { ascending: false })
+      .limit(1);
+    let next = 1;
+    if (data && data.length > 0) {
+      const last = data[0].numero_contrato as string;
+      const seq = parseInt(last.slice(prefix.length), 10);
+      if (Number.isFinite(seq)) next = seq + 1;
+    }
+    return `${prefix}${String(next).padStart(4, "0")}`;
+  }
+
+  async function openNew() {
     resetForm();
+    const num = await generateNextContractNumber();
+    setFNumero(num);
     setShowForm(true);
   }
 
   function openEdit(c: Contrato) {
     setEditItem(c); setRenewItem(null);
     setFNumero(c.numero_contrato);
-    setFCliente(c.cliente_id || "");
+    setClienteMode("existing");
+    setFClienteId(c.contratos_cliente_id || "");
     setFTipo(c.tipo);
     setFEquip(c.equipamentos_cobertos || "");
     setFIni(c.vigencia_inicio);
     setFFim(c.vigencia_fim);
-    setFMensal(c.valor_mensal != null ? String(c.valor_mensal) : "");
-    setFAnual(c.valor_anual != null ? String(c.valor_anual) : "");
+    setFMensal(c.valor_mensal != null ? numberToCurrencyMask(c.valor_mensal) : "");
+    setFAnual(c.valor_anual != null ? numberToCurrencyMask(c.valor_anual) : "");
     setFAnualTouched(true);
+    setFValorContrato(c.valor_contrato != null ? numberToCurrencyMask(c.valor_contrato) : "");
+    setFParcelas(c.parcelas != null ? String(c.parcelas) : "");
+    setFDataFat(c.data_faturamento || "");
+    setFDataVenc(c.data_vencimento || "");
+    setFRetemISS(!!c.retem_iss);
+    setFServico(c.servico_contratado || "");
+    setFStatus(c.status_manual || "");
     setFResp(c.responsavel_comercial || "");
     setFDrive(c.drive_url || "");
     setFObs(c.observacoes || "");
     setShowForm(true);
   }
 
-  function openRenew(c: Contrato) {
+  async function openRenew(c: Contrato) {
     setEditItem(null); setRenewItem(c);
-    setFNumero(c.numero_contrato);
-    setFCliente(c.cliente_id || "");
+    const num = await generateNextContractNumber();
+    setFNumero(num);
+    setClienteMode("existing");
+    setFClienteId(c.contratos_cliente_id || "");
     setFTipo(c.tipo);
     setFEquip(c.equipamentos_cobertos || "");
     const novoIni = addDaysISO(c.vigencia_fim, 1);
     setFIni(novoIni);
     setFFim(addDaysISO(novoIni, 365));
-    setFMensal(c.valor_mensal != null ? String(c.valor_mensal) : "");
-    setFAnual(c.valor_anual != null ? String(c.valor_anual) : "");
+    setFMensal(c.valor_mensal != null ? numberToCurrencyMask(c.valor_mensal) : "");
+    setFAnual(c.valor_anual != null ? numberToCurrencyMask(c.valor_anual) : "");
     setFAnualTouched(true);
+    setFValorContrato(c.valor_contrato != null ? numberToCurrencyMask(c.valor_contrato) : "");
+    setFParcelas(c.parcelas != null ? String(c.parcelas) : "");
+    setFRetemISS(!!c.retem_iss);
+    setFServico(c.servico_contratado || "");
     setFResp(c.responsavel_comercial || "");
     setFDrive(c.drive_url || "");
     setFObs(c.observacoes || "");
@@ -198,38 +281,132 @@ export default function Contratos() {
   }
 
   function onMensalChange(v: string) {
-    setFMensal(v);
+    const masked = applyCurrencyMask(v);
+    setFMensal(masked);
     if (!fAnualTouched) {
-      const n = Number(v);
-      setFAnual(Number.isFinite(n) && v !== "" ? String(n * 12) : "");
+      const n = parseCurrencyMask(masked);
+      setFAnual(n ? numberToCurrencyMask(n * 12) : "");
     }
+  }
+
+  function buildComprovanteFrom(c: Contrato) {
+    const cli = c.contratos_cliente_id ? clienteMap.get(c.contratos_cliente_id) : null;
+    const valor = c.valor_contrato ?? null;
+    const parc = c.parcelas ?? null;
+    abrirComprovantePDF({
+      numero_contrato: c.numero_contrato,
+      cliente_nome: cli?.nome || "—",
+      cliente_cnpj: cli?.cnpj,
+      cliente_categoria: cli?.categoria,
+      cliente_email: cli?.email,
+      cliente_responsavel_financeiro: cli?.responsavel_financeiro,
+      tipo_label: TIPO_LABEL[c.tipo],
+      status_label: c.status_manual || STATUS_STYLE[statusFromVigencia(c.vigencia_fim)].label,
+      servico_contratado: c.servico_contratado,
+      equipamentos_cobertos: c.equipamentos_cobertos,
+      data_faturamento: c.data_faturamento,
+      data_vencimento: c.data_vencimento,
+      vigencia_inicio: c.vigencia_inicio,
+      vigencia_fim: c.vigencia_fim,
+      valor_contrato: valor,
+      parcelas: parc,
+      valor_parcela: valor && parc ? valor / parc : null,
+      valor_mensal: c.valor_mensal,
+      valor_anual: c.valor_anual,
+      retem_iss: c.retem_iss,
+      responsavel_comercial: c.responsavel_comercial,
+      observacoes: c.observacoes,
+      drive_url: c.drive_url,
+      created_at: c.created_at,
+      created_by_name: c.created_by_name,
+    });
   }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
+
+    // Validations
     if (!fNumero.trim() || !fIni || !fFim) {
       toast.error("Preencha número e vigência");
       return;
     }
+    if (parseDate(fFim) <= parseDate(fIni)) {
+      toast.error("Data Fim deve ser maior que Data Início");
+      return;
+    }
+
+    let clienteId = fClienteId;
+
+    if (clienteMode === "new") {
+      if (!fClienteNome.trim()) { toast.error("Informe o nome do cliente"); return; }
+      if (fClienteCNPJ && !isValidCNPJ(fClienteCNPJ)) { toast.error("CNPJ inválido"); return; }
+      if (fClienteEmail && !isValidEmail(fClienteEmail)) { toast.error("E-mail inválido"); return; }
+    } else if (!clienteId) {
+      toast.error("Selecione um cliente ou cadastre um novo");
+      return;
+    }
+
     setSaving(true);
-    const payload = {
+
+    // Create cliente if needed
+    if (clienteMode === "new") {
+      const { data: novoCli, error: cliErr } = await (supabase
+        .from("contratos_clientes" as any) as any)
+        .insert({
+          nome: fClienteNome.trim(),
+          cnpj: fClienteCNPJ ? maskCNPJ(fClienteCNPJ) : null,
+          categoria: fClienteCategoria,
+          responsavel_financeiro: fClienteResp || null,
+          email: fClienteEmail || null,
+          created_by: user?.id || null,
+        })
+        .select("*")
+        .single();
+      if (cliErr || !novoCli) {
+        setSaving(false);
+        toast.error("Erro ao cadastrar cliente: " + (cliErr?.message || ""));
+        return;
+      }
+      clienteId = (novoCli as any).id;
+    }
+
+    const valorContrato = fValorContrato ? parseCurrencyMask(fValorContrato) : null;
+    const parcelasNum = fParcelas ? parseInt(fParcelas, 10) : null;
+
+    const payload: any = {
       numero_contrato: fNumero.trim(),
-      cliente_id: fCliente || null,
+      contratos_cliente_id: clienteId || null,
       tipo: fTipo,
       equipamentos_cobertos: fEquip || null,
+      servico_contratado: fServico || null,
       vigencia_inicio: fIni,
       vigencia_fim: fFim,
-      valor_mensal: fMensal === "" ? null : Number(fMensal),
-      valor_anual: fAnual === "" ? null : Number(fAnual),
+      data_faturamento: fDataFat || null,
+      data_vencimento: fDataVenc || null,
+      valor_contrato: valorContrato,
+      parcelas: parcelasNum,
+      valor_mensal: fMensal ? parseCurrencyMask(fMensal) : null,
+      valor_anual: fAnual ? parseCurrencyMask(fAnual) : null,
+      retem_iss: fRetemISS,
+      status_manual: fStatus || null,
       responsavel_comercial: fResp || null,
       drive_url: fDrive || null,
       observacoes: fObs || null,
     };
-    let error;
+
+    if (!editItem) {
+      payload.created_by = user?.id || null;
+      payload.created_by_name = displayName || user?.email || null;
+    }
+
+    let savedRow: any = null;
+    let error: any = null;
     if (editItem) {
-      ({ error } = await supabase.from("contratos").update(payload).eq("id", editItem.id));
+      const r = await supabase.from("contratos").update(payload).eq("id", editItem.id).select("*").single();
+      error = r.error; savedRow = r.data;
     } else {
-      ({ error } = await supabase.from("contratos").insert(payload));
+      const r = await supabase.from("contratos").insert(payload).select("*").single();
+      error = r.error; savedRow = r.data;
     }
     setSaving(false);
     if (error) {
@@ -238,7 +415,12 @@ export default function Contratos() {
     }
     toast.success(editItem ? "Contrato atualizado" : renewItem ? "Contrato renovado" : "Contrato cadastrado");
     resetForm();
-    fetchData();
+    await fetchData();
+
+    // Offer comprovante for new/renewed contracts
+    if (!editItem && savedRow) {
+      setTimeout(() => buildComprovanteFrom(savedRow as Contrato), 200);
+    }
   }
 
   if (loading) return <ListSkeleton />;
@@ -402,6 +584,13 @@ export default function Contratos() {
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
                           <button
+                            onClick={() => buildComprovanteFrom(c)}
+                            title="Visualizar PDF"
+                            className="h-8 w-8 grid place-items-center rounded-md text-[#64748B] hover:bg-[#EAF4FD] hover:text-[#1F4E79]"
+                          >
+                            <FileDown className="h-4 w-4" />
+                          </button>
+                          <button
                             onClick={() => c.drive_url && window.open(c.drive_url, "_blank")}
                             disabled={!c.drive_url}
                             title={c.drive_url ? "Abrir Drive" : "Sem link"}
@@ -452,21 +641,85 @@ export default function Contratos() {
             </div>
 
             <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Field label="Número do contrato">
+              <Field label="Número do contrato (automático)">
                 <input
                   value={fNumero}
-                  onChange={e => setFNumero(e.target.value)}
-                  disabled={!!renewItem ? false : false}
-                  required
+                  readOnly
                   className="form-input"
+                  style={{ background: "#F1F5F9", cursor: "not-allowed", fontWeight: 600 }}
                 />
               </Field>
-              <Field label="Cliente">
-                <select value={fCliente} onChange={e => setFCliente(e.target.value)} className="form-input">
-                  <option value="">Selecione...</option>
-                  {clientes.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+              <Field label="Status">
+                <select value={fStatus} onChange={e => setFStatus(e.target.value)} className="form-input">
+                  <option value="">Automático (vigência)</option>
+                  <option value="Ativo">Ativo</option>
+                  <option value="Suspenso">Suspenso</option>
+                  <option value="Cancelado">Cancelado</option>
+                  <option value="Renegociação">Renegociação</option>
                 </select>
               </Field>
+
+              {/* Cliente block */}
+              <div className="md:col-span-2 rounded-xl border border-[#E2E8F0] p-3 bg-[#F8FAFC]">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[12px] font-semibold text-[#1F4E79] uppercase tracking-wide">Cliente</span>
+                  <div className="ml-auto inline-flex rounded-[10px] bg-white border border-[#E2E8F0] overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setClienteMode("existing")}
+                      className={`px-3 h-8 text-xs font-medium ${clienteMode === "existing" ? "bg-[#1F4E79] text-white" : "text-[#475569]"}`}
+                    >
+                      Selecionar existente
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setClienteMode("new")}
+                      className={`px-3 h-8 text-xs font-medium inline-flex items-center gap-1 ${clienteMode === "new" ? "bg-[#1F4E79] text-white" : "text-[#475569]"}`}
+                    >
+                      <UserPlus className="h-3.5 w-3.5" /> Cadastrar novo
+                    </button>
+                  </div>
+                </div>
+
+                {clienteMode === "existing" ? (
+                  <Field label="Cliente">
+                    <select value={fClienteId} onChange={e => setFClienteId(e.target.value)} className="form-input">
+                      <option value="">Selecione...</option>
+                      {clientes.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.nome}{c.cnpj ? ` — ${c.cnpj}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Field label="Nome do cliente *">
+                      <input value={fClienteNome} onChange={e => setFClienteNome(e.target.value)} className="form-input" required={clienteMode === "new"} />
+                    </Field>
+                    <Field label="CNPJ">
+                      <input
+                        value={fClienteCNPJ}
+                        onChange={e => setFClienteCNPJ(maskCNPJ(e.target.value))}
+                        placeholder="00.000.000/0000-00"
+                        className="form-input"
+                      />
+                    </Field>
+                    <Field label="Categoria">
+                      <select value={fClienteCategoria} onChange={e => setFClienteCategoria(e.target.value)} className="form-input">
+                        {CATEGORIAS_CLIENTE.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </Field>
+                    <Field label="Responsável Financeiro">
+                      <input value={fClienteResp} onChange={e => setFClienteResp(e.target.value)} className="form-input" />
+                    </Field>
+                    <Field label="E-mail" className="md:col-span-2">
+                      <input type="email" value={fClienteEmail} onChange={e => setFClienteEmail(e.target.value)} className="form-input" />
+                    </Field>
+                  </div>
+                )}
+              </div>
+
               <Field label="Tipo">
                 <select value={fTipo} onChange={e => setFTipo(e.target.value as TipoContrato)} className="form-input">
                   {Object.entries(TIPO_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -474,6 +727,9 @@ export default function Contratos() {
               </Field>
               <Field label="Responsável comercial">
                 <input value={fResp} onChange={e => setFResp(e.target.value)} className="form-input" />
+              </Field>
+              <Field label="Serviço contratado" className="md:col-span-2">
+                <input value={fServico} onChange={e => setFServico(e.target.value)} className="form-input" placeholder="Ex: Manutenção preventiva mensal" />
               </Field>
               <Field label="Equipamentos cobertos" className="md:col-span-2">
                 <textarea value={fEquip} onChange={e => setFEquip(e.target.value)} rows={2} className="form-input" />
@@ -484,21 +740,57 @@ export default function Contratos() {
               <Field label="Vigência fim">
                 <input type="date" value={fFim} onChange={e => setFFim(e.target.value)} required className="form-input" />
               </Field>
-              <Field label="Valor mensal (R$)">
+              <Field label="Data de faturamento">
+                <input type="date" value={fDataFat} onChange={e => setFDataFat(e.target.value)} className="form-input" />
+              </Field>
+              <Field label="Data de vencimento">
+                <input type="date" value={fDataVenc} onChange={e => setFDataVenc(e.target.value)} className="form-input" />
+              </Field>
+              <Field label="Valor do contrato">
                 <input
-                  type="number" step="0.01" min="0"
-                  value={fMensal}
-                  onChange={e => onMensalChange(e.target.value)}
+                  inputMode="numeric"
+                  value={fValorContrato}
+                  onChange={e => setFValorContrato(applyCurrencyMask(e.target.value))}
+                  placeholder="R$ 0,00"
                   className="form-input"
                 />
               </Field>
-              <Field label="Valor anual (R$)">
+              <Field label="Parcelas">
                 <input
-                  type="number" step="0.01" min="0"
-                  value={fAnual}
-                  onChange={e => { setFAnual(e.target.value); setFAnualTouched(true); }}
+                  type="number" min="1" step="1"
+                  value={fParcelas}
+                  onChange={e => setFParcelas(e.target.value)}
                   className="form-input"
                 />
+                {fValorContrato && fParcelas && parseInt(fParcelas) > 0 && (
+                  <div className="text-[11px] text-[#64748B] mt-1">
+                    Valor por parcela: <strong>{fmtBRL(parseCurrencyMask(fValorContrato) / parseInt(fParcelas))}</strong>
+                  </div>
+                )}
+              </Field>
+              <Field label="Valor mensal">
+                <input
+                  inputMode="numeric"
+                  value={fMensal}
+                  onChange={e => onMensalChange(e.target.value)}
+                  placeholder="R$ 0,00"
+                  className="form-input"
+                />
+              </Field>
+              <Field label="Valor anual">
+                <input
+                  inputMode="numeric"
+                  value={fAnual}
+                  onChange={e => { setFAnual(applyCurrencyMask(e.target.value)); setFAnualTouched(true); }}
+                  placeholder="R$ 0,00"
+                  className="form-input"
+                />
+              </Field>
+              <Field label="Retém ISS?" className="md:col-span-2">
+                <label className="inline-flex items-center gap-2 cursor-pointer h-10">
+                  <input type="checkbox" checked={fRetemISS} onChange={e => setFRetemISS(e.target.checked)} className="h-4 w-4" />
+                  <span className="text-sm text-[#475569]">Sim, retém ISS sobre a nota fiscal</span>
+                </label>
               </Field>
               <Field label="Link do Drive" className="md:col-span-2">
                 <div className="flex gap-2">

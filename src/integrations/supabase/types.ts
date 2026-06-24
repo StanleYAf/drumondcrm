@@ -44,48 +44,78 @@ export type Database = {
       contratos: {
         Row: {
           cliente_id: string | null
+          contratos_cliente_id: string | null
           created_at: string
+          created_by: string | null
+          created_by_name: string | null
+          data_faturamento: string | null
+          data_vencimento: string | null
           drive_url: string | null
           equipamentos_cobertos: string | null
           id: string
           numero_contrato: string
           observacoes: string | null
+          parcelas: number | null
           responsavel_comercial: string | null
+          retem_iss: boolean | null
+          servico_contratado: string | null
+          status_manual: string | null
           tipo: string
           updated_at: string
           valor_anual: number | null
+          valor_contrato: number | null
           valor_mensal: number | null
           vigencia_fim: string
           vigencia_inicio: string
         }
         Insert: {
           cliente_id?: string | null
+          contratos_cliente_id?: string | null
           created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          data_faturamento?: string | null
+          data_vencimento?: string | null
           drive_url?: string | null
           equipamentos_cobertos?: string | null
           id?: string
           numero_contrato: string
           observacoes?: string | null
+          parcelas?: number | null
           responsavel_comercial?: string | null
+          retem_iss?: boolean | null
+          servico_contratado?: string | null
+          status_manual?: string | null
           tipo: string
           updated_at?: string
           valor_anual?: number | null
+          valor_contrato?: number | null
           valor_mensal?: number | null
           vigencia_fim: string
           vigencia_inicio: string
         }
         Update: {
           cliente_id?: string | null
+          contratos_cliente_id?: string | null
           created_at?: string
+          created_by?: string | null
+          created_by_name?: string | null
+          data_faturamento?: string | null
+          data_vencimento?: string | null
           drive_url?: string | null
           equipamentos_cobertos?: string | null
           id?: string
           numero_contrato?: string
           observacoes?: string | null
+          parcelas?: number | null
           responsavel_comercial?: string | null
+          retem_iss?: boolean | null
+          servico_contratado?: string | null
+          status_manual?: string | null
           tipo?: string
           updated_at?: string
           valor_anual?: number | null
+          valor_contrato?: number | null
           valor_mensal?: number | null
           vigencia_fim?: string
           vigencia_inicio?: string
@@ -98,7 +128,50 @@ export type Database = {
             referencedRelation: "clientes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "contratos_contratos_cliente_id_fkey"
+            columns: ["contratos_cliente_id"]
+            isOneToOne: false
+            referencedRelation: "contratos_clientes"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      contratos_clientes: {
+        Row: {
+          categoria: string | null
+          cnpj: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          nome: string
+          responsavel_financeiro: string | null
+          updated_at: string
+        }
+        Insert: {
+          categoria?: string | null
+          cnpj?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          nome: string
+          responsavel_financeiro?: string | null
+          updated_at?: string
+        }
+        Update: {
+          categoria?: string | null
+          cnpj?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          nome?: string
+          responsavel_financeiro?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       demandas: {
         Row: {
