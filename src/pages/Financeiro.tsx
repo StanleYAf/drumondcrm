@@ -95,6 +95,11 @@ export default function Financeiro() {
   const [empresa, setEmpresa] = useState<Empresa>("dsh");
   const [openLanc, setOpenLanc] = useState(false);
   const [openImport, setOpenImport] = useState(false);
+  const [editMes, setEditMes] = useState<string | null>(null);
+  const [deleteRow, setDeleteRow] = useState<FinanceiroRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const { hasCargo } = useAuth();
+  const isAdmin = hasCargo("admin");
 
   const fetchData = async () => {
     setLoading(true);
