@@ -264,6 +264,9 @@ export default function Demandas() {
         supabase.functions.invoke("send-demanda-email", {
           body: { responsavel_id: form.responsavel_id, titulo: payload.titulo, status: editItem.status, kind: "assigned" },
         }).catch(() => {});
+        supabase.functions.invoke("send-onesignal-push", {
+          body: { user_id: form.responsavel_id, title: "Nova demanda atribuída", message: payload.titulo, url: window.location.href },
+        }).catch(() => {});
       }
     } else {
       const { error } = await supabase.from("demandas").insert({ ...payload, criado_por: user!.id, status: "pendente" });
@@ -271,6 +274,9 @@ export default function Demandas() {
       toast.success("Demanda criada");
       supabase.functions.invoke("send-demanda-email", {
         body: { responsavel_id: form.responsavel_id, titulo: payload.titulo, status: "pendente", kind: "assigned" },
+      }).catch(() => {});
+      supabase.functions.invoke("send-onesignal-push", {
+        body: { user_id: form.responsavel_id, title: "Nova demanda atribuída", message: payload.titulo, url: window.location.href },
       }).catch(() => {});
     }
     setShowModal(false); setEditItem(null); setForm({ ...emptyForm, responsavel_id: user?.id || "" });
@@ -320,6 +326,9 @@ export default function Demandas() {
       else if (item.responsavel_id) {
         supabase.functions.invoke("send-demanda-email", {
           body: { responsavel_id: item.responsavel_id, titulo: item.titulo, status: target, kind: "status_changed" },
+        }).catch(() => {});
+        supabase.functions.invoke("send-onesignal-push", {
+          body: { user_id: item.responsavel_id, title: "Status alterado", message: `${item.titulo} → ${target}`, url: window.location.href },
         }).catch(() => {});
       }
     }

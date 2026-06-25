@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Trash2, Plus, Download, Upload, AlertTriangle, Sun, Moon, Check, User, Shield, Users, Search, Clock, CheckCircle, XCircle } from "lucide-react";
 import { ConfigSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
+import { PushNotificationsCard } from "@/components/PushNotificationsCard";
 import { toast } from "sonner";
 import { PERM_GROUPS } from "@/lib/permissions";
 
@@ -529,6 +530,8 @@ export default function Configuracoes() {
           </div>
         </div>
       </div>
+
+      <PushNotificationsCard />
 
       {/* Metas Mensais - Admin only */}
       {isAdmin && (

@@ -9,6 +9,7 @@ import {
 import { useAuth } from "@/lib/authContext";
 import type { PermCode } from "@/lib/permissions";
 import { NotificationsBell } from "@/components/NotificationsBell";
+import { OneSignalInit } from "@/components/OneSignalInit";
 
 
 type SubItem = { title: string; url: string; icon: any; perm?: PermCode | string; adminOnly?: boolean };
@@ -212,6 +213,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="relative flex items-center gap-3">
+          <OneSignalInit />
           <NotificationsBell />
           <button
             onClick={signOut}
