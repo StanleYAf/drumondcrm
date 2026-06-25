@@ -260,10 +260,18 @@ export default function Demandas() {
       const { error } = await supabase.from("demandas").update(payload).eq("id", editItem.id);
       if (error) { toast.error("Erro ao atualizar"); return; }
       toast.success("Demanda atualizada");
+      if (editItem.responsavel_id !== form.responsavel_id) {
+        supabase.functions.invoke("send-demanda-email", {
+          body: { responsavel_id: form.responsavel_id, titulo: payload.titulo, status: editItem.status, kind: "assigned" },
+        }).catch(() => {});
+      }
     } else {
       const { error } = await supabase.from("demandas").insert({ ...payload, criado_por: user!.id, status: "pendente" });
       if (error) { toast.error("Erro ao criar demanda"); return; }
       toast.success("Demanda criada");
+      supabase.functions.invoke("send-demanda-email", {
+        body: { responsavel_id: form.responsavel_id, titulo: payload.titulo, status: "pendente", kind: "assigned" },
+      }).catch(() => {});
     }
     setShowModal(false); setEditItem(null); setForm({ ...emptyForm, responsavel_id: user?.id || "" });
   };
@@ -309,6 +317,11 @@ export default function Demandas() {
       setDemandas((prev) => prev.map((d) => (d.id === id ? { ...d, status: target! } : d)));
       const { error } = await supabase.from("demandas").update({ status: target }).eq("id", id);
       if (error) { toast.error("Erro ao mover"); fetchData(); }
+      else if (item.responsavel_id) {
+        supabase.functions.invoke("send-demanda-email", {
+          body: { responsavel_id: item.responsavel_id, titulo: item.titulo, status: target, kind: "status_changed" },
+        }).catch(() => {});
+      }
     }
   };
 
