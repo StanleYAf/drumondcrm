@@ -213,6 +213,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="relative flex items-center gap-3">
+          <OneSignalInit />
           <NotificationsBell />
           <button
             onClick={signOut}
