@@ -670,7 +670,6 @@ export default function Contratos() {
               </Field>
               <Field label="Status">
                 <select value={fStatus} onChange={e => setFStatus(e.target.value)} className="form-input">
-                  <option value="">Automático (vigência)</option>
                   <option value="Ativo">Ativo</option>
                   <option value="Suspenso">Suspenso</option>
                   <option value="Cancelado">Cancelado</option>
