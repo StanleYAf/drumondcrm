@@ -28,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 type Setor = "engenharia" | "comercial" | "financeiro";
 type Status = "pendente" | "execucao" | "feita";
+type Prioridade = "alta" | "media" | "normal" | "baixa";
 
 interface Demanda {
   id: string;
@@ -35,6 +36,7 @@ interface Demanda {
   titulo: string;
   descricao: string | null;
   status: Status;
+  prioridade: Prioridade;
   responsavel_id: string;
   criado_por: string;
   data_entrega: string | null;
@@ -58,6 +60,14 @@ const SETOR_LABEL: Record<Setor, string> = {
   comercial: "Comercial",
   financeiro: "Financeiro",
 };
+
+const PRIORIDADES: { key: Prioridade; label: string; badge: string; order: number }[] = [
+  { key: "alta", label: "Alta", badge: "bg-red-500/20 border-red-500/40 text-red-300", order: 0 },
+  { key: "media", label: "Média", badge: "bg-orange-500/20 border-orange-500/40 text-orange-300", order: 1 },
+  { key: "normal", label: "Normal", badge: "bg-sky-500/20 border-sky-500/40 text-sky-300", order: 2 },
+  { key: "baixa", label: "Baixa", badge: "bg-slate-500/20 border-slate-500/40 text-slate-300", order: 3 },
+];
+const PRIORIDADE_MAP = Object.fromEntries(PRIORIDADES.map((p) => [p.key, p])) as Record<Prioridade, typeof PRIORIDADES[number]>;
 
 const formatDate = (d: string) => {
   const [y, m, day] = d.split("-");
@@ -126,6 +136,7 @@ function SortableCard({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: demanda.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
   const atrasada = demanda.status !== "feita" && demanda.data_entrega && demanda.data_entrega < todayIso();
+  const prio = PRIORIDADE_MAP[demanda.prioridade] || PRIORIDADE_MAP.normal;
 
   return (
     <Card ref={setNodeRef} style={style} className="p-3 hover:shadow-md transition group">
@@ -145,6 +156,7 @@ function SortableCard({
             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{demanda.descricao}</p>
           )}
           <div className="flex items-center flex-wrap gap-2 mt-2">
+            <Badge variant="outline" className={`text-[10px] py-0 ${prio.badge}`}>{prio.label}</Badge>
             <Badge variant="outline" className="text-[10px] py-0">{responsavelNome}</Badge>
             {demanda.data_entrega && (
               <span className={`text-[10px] flex items-center gap-1 ${atrasada ? "text-destructive font-medium" : "text-muted-foreground"}`}>
@@ -173,7 +185,7 @@ export default function Demandas() {
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<Demanda | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const emptyForm = { titulo: "", descricao: "", responsavel_id: user?.id || "", data_entrega: "" };
+  const emptyForm = { titulo: "", descricao: "", responsavel_id: user?.id || "", data_entrega: "", prioridade: "normal" as Prioridade };
   const [form, setForm] = useState(emptyForm);
 
   const setorTyped = setor as Setor;
@@ -221,9 +233,14 @@ export default function Demandas() {
   }, [colaboradores]);
 
   const filtered = useMemo(() => {
-    if (!canViewAll) return demandas.filter((d) => d.responsavel_id === user?.id);
-    if (filterResp === "all") return demandas;
-    return demandas.filter((d) => d.responsavel_id === filterResp);
+    const base = !canViewAll
+      ? demandas.filter((d) => d.responsavel_id === user?.id)
+      : filterResp === "all"
+      ? demandas
+      : demandas.filter((d) => d.responsavel_id === filterResp);
+    return [...base].sort(
+      (a, b) => (PRIORIDADE_MAP[a.prioridade]?.order ?? 99) - (PRIORIDADE_MAP[b.prioridade]?.order ?? 99),
+    );
   }, [demandas, filterResp, canViewAll, user?.id]);
 
   const handleSave = async () => {
@@ -236,6 +253,7 @@ export default function Demandas() {
       descricao: form.descricao.trim() || null,
       responsavel_id: form.responsavel_id,
       data_entrega: form.data_entrega || null,
+      prioridade: form.prioridade,
     };
 
     if (editItem) {
@@ -264,6 +282,7 @@ export default function Demandas() {
       descricao: d.descricao || "",
       responsavel_id: d.responsavel_id,
       data_entrega: d.data_entrega || "",
+      prioridade: d.prioridade || "normal",
     });
     setShowModal(true);
   };
@@ -397,6 +416,17 @@ export default function Demandas() {
             <div>
               <Label>Data de entrega</Label>
               <Input type="date" value={form.data_entrega} onChange={(e) => setForm({ ...form, data_entrega: e.target.value })} />
+            </div>
+            <div>
+              <Label>Prioridade *</Label>
+              <Select value={form.prioridade} onValueChange={(v) => setForm({ ...form, prioridade: v as Prioridade })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PRIORIDADES.map((p) => (
+                    <SelectItem key={p.key} value={p.key}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="ghost" onClick={() => setShowModal(false)}>Cancelar</Button>
