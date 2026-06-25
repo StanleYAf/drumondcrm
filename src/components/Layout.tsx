@@ -9,6 +9,7 @@ import {
 import { useAuth } from "@/lib/authContext";
 import type { PermCode } from "@/lib/permissions";
 import { NotificationsBell } from "@/components/NotificationsBell";
+import { OneSignalInit } from "@/components/OneSignalInit";
 
 
 type SubItem = { title: string; url: string; icon: any; perm?: PermCode | string; adminOnly?: boolean };
