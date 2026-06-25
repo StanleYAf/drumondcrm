@@ -30,6 +30,7 @@ import SyncLogs from "./pages/SyncLogs";
 import Financeiro from "./pages/Financeiro";
 import Demandas from "./pages/Demandas";
 import Contratos from "./pages/administrativo/Contratos";
+import ControleART from "./pages/administrativo/ControleART";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import PublicoCliente from "./pages/PublicoCliente";
@@ -96,6 +97,7 @@ const App = () => (
                               <Route path="/manutencao/cliente/:clienteId" element={<RoleGuard perm="eng_dashboard"><Manutencao /></RoleGuard>} />
                               <Route path="/financeiro" element={<RoleGuard perm="fin_dashboard"><Financeiro /></RoleGuard>} />
                               <Route path="/administrativo/contratos" element={<RoleGuard perm="adm_contratos"><Contratos /></RoleGuard>} />
+                              <Route path="/administrativo/art" element={<RoleGuard perm="adm_art"><ControleART /></RoleGuard>} />
                               <Route path="/demandas/:setor" element={<Demandas />} />
                               <Route path="*" element={<NotFound />} />
                             </Routes>
