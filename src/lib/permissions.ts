@@ -16,7 +16,8 @@ export type PermCode =
   | "eng_synclogs"
   | "est_estoque"
   | "fin_dashboard"
-  | "adm_contratos";
+  | "adm_contratos"
+  | "adm_art";
 
 export type PermGroupKey = "comercial" | "engenharia" | "estoque" | "financeiro" | "administrativo";
 
@@ -75,6 +76,7 @@ export const PERM_GROUPS: PermGroup[] = [
     title: "Administrativo",
     items: [
       { code: "adm_contratos", label: "Contratos", desc: "Gestão de contratos" },
+      { code: "adm_art", label: "ART", desc: "Controle de vencimento de ART" },
     ],
   },
 ];
