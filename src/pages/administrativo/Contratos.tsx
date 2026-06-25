@@ -151,7 +151,7 @@ export default function Contratos() {
   const [fDataVenc, setFDataVenc] = useState("");
   const [fRetemISS, setFRetemISS] = useState(false);
   const [fServico, setFServico] = useState("");
-  const [fStatus, setFStatus] = useState("");
+  const [fStatus, setFStatus] = useState("Ativo");
   const [fResp, setFResp] = useState("");
   const [fDrive, setFDrive] = useState("");
   const [fObs, setFObs] = useState("");
