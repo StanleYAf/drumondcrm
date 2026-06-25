@@ -4,7 +4,7 @@ import { NavLink } from "@/components/NavLink";
 import {
   LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings,
   Boxes, LogOut, Briefcase, Building2, ClipboardList, DollarSign, RefreshCw, KanbanSquare,
-  Stethoscope, Plus, Landmark, FileSignature,
+  Stethoscope, Plus, Landmark, FileSignature, FileBadge,
 } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 import type { PermCode } from "@/lib/permissions";
@@ -27,6 +27,7 @@ const groups: ModuleDef[] = [
     icon: Landmark,
     subs: [
       { title: "Contratos", url: "/administrativo/contratos", icon: FileSignature, perm: "adm_contratos" },
+      { title: "ART", url: "/administrativo/art", icon: FileBadge, perm: "adm_art" },
     ],
   },
   {
@@ -95,6 +96,7 @@ const ROUTE_TITLES: Record<string, { title: string; module: string }> = {
   "/financeiro": { title: "Dashboard Financeiro", module: "Financeiro" },
   "/demandas/financeiro": { title: "Demandas", module: "Financeiro" },
   "/administrativo/contratos": { title: "Contratos", module: "Administrativo" },
+  "/administrativo/art": { title: "Controle de ART", module: "Administrativo" },
   "/configuracoes": { title: "Configurações", module: "Sistema" },
 };
 

@@ -176,6 +176,57 @@ export type Database = {
         }
         Relationships: []
       }
+      controle_art: {
+        Row: {
+          cliente: string | null
+          crea_cau: string | null
+          created_at: string | null
+          created_by: string | null
+          created_by_name: string | null
+          data_emissao: string
+          data_vencimento: string
+          descricao_servico: string | null
+          drive_url: string | null
+          id: string
+          numero_art: string
+          observacoes: string | null
+          responsavel_tecnico: string
+          valor: number | null
+        }
+        Insert: {
+          cliente?: string | null
+          crea_cau?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          created_by_name?: string | null
+          data_emissao: string
+          data_vencimento: string
+          descricao_servico?: string | null
+          drive_url?: string | null
+          id?: string
+          numero_art: string
+          observacoes?: string | null
+          responsavel_tecnico: string
+          valor?: number | null
+        }
+        Update: {
+          cliente?: string | null
+          crea_cau?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          created_by_name?: string | null
+          data_emissao?: string
+          data_vencimento?: string
+          descricao_servico?: string | null
+          drive_url?: string | null
+          id?: string
+          numero_art?: string
+          observacoes?: string | null
+          responsavel_tecnico?: string
+          valor?: number | null
+        }
+        Relationships: []
+      }
       demandas: {
         Row: {
           created_at: string
