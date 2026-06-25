@@ -234,6 +234,7 @@ export type Database = {
           data_entrega: string | null
           descricao: string | null
           id: string
+          prioridade: Database["public"]["Enums"]["demanda_prioridade"]
           responsavel_id: string
           setor: Database["public"]["Enums"]["demanda_setor"]
           status: Database["public"]["Enums"]["demanda_status"]
@@ -246,6 +247,7 @@ export type Database = {
           data_entrega?: string | null
           descricao?: string | null
           id?: string
+          prioridade?: Database["public"]["Enums"]["demanda_prioridade"]
           responsavel_id: string
           setor: Database["public"]["Enums"]["demanda_setor"]
           status?: Database["public"]["Enums"]["demanda_status"]
@@ -258,6 +260,7 @@ export type Database = {
           data_entrega?: string | null
           descricao?: string | null
           id?: string
+          prioridade?: Database["public"]["Enums"]["demanda_prioridade"]
           responsavel_id?: string
           setor?: Database["public"]["Enums"]["demanda_setor"]
           status?: Database["public"]["Enums"]["demanda_status"]
@@ -1516,6 +1519,7 @@ export type Database = {
     }
     Enums: {
       categoria_lancamento: "produto" | "servico" | "contrato" | "acessorio"
+      demanda_prioridade: "alta" | "media" | "normal" | "baixa"
       demanda_setor: "engenharia" | "comercial" | "financeiro"
       demanda_status: "pendente" | "execucao" | "feita"
       etapa_lead:
@@ -1663,6 +1667,7 @@ export const Constants = {
   public: {
     Enums: {
       categoria_lancamento: ["produto", "servico", "contrato", "acessorio"],
+      demanda_prioridade: ["alta", "media", "normal", "baixa"],
       demanda_setor: ["engenharia", "comercial", "financeiro"],
       demanda_status: ["pendente", "execucao", "feita"],
       etapa_lead: [
