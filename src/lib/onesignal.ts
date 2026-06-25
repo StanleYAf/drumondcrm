@@ -29,7 +29,6 @@ export async function ensureOneSignal(): Promise<boolean> {
       allowLocalhostAsSecureOrigin: true,
       serviceWorkerPath: "/OneSignalSDKWorker.js",
       serviceWorkerParam: { scope: "/" },
-      notifyButton: { enable: false },
     })
       .then(() => {
         initialized = true;
