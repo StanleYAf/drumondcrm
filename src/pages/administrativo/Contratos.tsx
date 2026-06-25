@@ -216,7 +216,7 @@ export default function Contratos() {
     setFSegmento("Humano");
     setFIni(""); setFFim(""); setFMensal(""); setFAnual(""); setFAnualTouched(false);
     setFValorContrato(""); setFParcelas(""); setFDataFat(""); setFDataVenc("");
-    setFRetemISS(false); setFServico(""); setFStatus("");
+    setFRetemISS(false); setFServico(""); setFStatus("Ativo");
     setFResp(""); setFDrive(""); setFObs("");
   }
 
@@ -265,7 +265,7 @@ export default function Contratos() {
     setFDataVenc(c.data_vencimento || "");
     setFRetemISS(!!c.retem_iss);
     setFServico(c.servico_contratado || "");
-    setFStatus(c.status_manual || "");
+    setFStatus(c.status_manual || "Ativo");
     setFResp(c.responsavel_comercial || "");
     setFDrive(c.drive_url || "");
     setFObs(c.observacoes || "");
