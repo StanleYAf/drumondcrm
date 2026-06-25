@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 import type { PermCode } from "@/lib/permissions";
+import { NotificationsBell } from "@/components/NotificationsBell";
 
 
 type SubItem = { title: string; url: string; icon: any; perm?: PermCode | string; adminOnly?: boolean };
@@ -211,6 +212,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="relative flex items-center gap-3">
+          <NotificationsBell />
           <button
             onClick={signOut}
             className="h-9 w-9 grid place-items-center rounded-full text-white/80 hover:text-white hover:bg-white/10 transition"
