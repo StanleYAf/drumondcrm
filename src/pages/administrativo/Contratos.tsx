@@ -151,7 +151,7 @@ export default function Contratos() {
   const [fDataVenc, setFDataVenc] = useState("");
   const [fRetemISS, setFRetemISS] = useState(false);
   const [fServico, setFServico] = useState("");
-  const [fStatus, setFStatus] = useState("");
+  const [fStatus, setFStatus] = useState("Ativo");
   const [fResp, setFResp] = useState("");
   const [fDrive, setFDrive] = useState("");
   const [fObs, setFObs] = useState("");
@@ -216,7 +216,7 @@ export default function Contratos() {
     setFSegmento("Humano");
     setFIni(""); setFFim(""); setFMensal(""); setFAnual(""); setFAnualTouched(false);
     setFValorContrato(""); setFParcelas(""); setFDataFat(""); setFDataVenc("");
-    setFRetemISS(false); setFServico(""); setFStatus("");
+    setFRetemISS(false); setFServico(""); setFStatus("Ativo");
     setFResp(""); setFDrive(""); setFObs("");
   }
 
@@ -265,7 +265,7 @@ export default function Contratos() {
     setFDataVenc(c.data_vencimento || "");
     setFRetemISS(!!c.retem_iss);
     setFServico(c.servico_contratado || "");
-    setFStatus(c.status_manual || "");
+    setFStatus(c.status_manual || "Ativo");
     setFResp(c.responsavel_comercial || "");
     setFDrive(c.drive_url || "");
     setFObs(c.observacoes || "");
@@ -670,7 +670,6 @@ export default function Contratos() {
               </Field>
               <Field label="Status">
                 <select value={fStatus} onChange={e => setFStatus(e.target.value)} className="form-input">
-                  <option value="">Automático (vigência)</option>
                   <option value="Ativo">Ativo</option>
                   <option value="Suspenso">Suspenso</option>
                   <option value="Cancelado">Cancelado</option>
