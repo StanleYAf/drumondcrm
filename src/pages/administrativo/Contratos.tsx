@@ -105,6 +105,13 @@ const STATUS_STYLE: Record<StatusContrato, { bg: string; color: string; label: s
   vencido: { bg: "#FEE2E2", color: "#B91C1C", label: "Vencido" },
 };
 
+const MANUAL_STATUS_STYLE: Record<string, { bg: string; color: string; label: string }> = {
+  Ativo: { bg: "#DCFCE7", color: "#15803D", label: "Ativo" },
+  Suspenso: { bg: "#E0E7FF", color: "#3730A3", label: "Suspenso" },
+  Cancelado: { bg: "#FEE2E2", color: "#B91C1C", label: "Cancelado" },
+  "Renegociação": { bg: "#FEF3C7", color: "#B45309", label: "Renegociação" },
+};
+
 export default function Contratos() {
   const { user, displayName } = useAuth();
   const [contratos, setContratos] = useState<Contrato[]>([]);
@@ -570,7 +577,9 @@ export default function Contratos() {
               </thead>
               <tbody>
                 {filtered.map(c => {
-                  const st = STATUS_STYLE[c.status];
+                  const st = c.status_manual && MANUAL_STATUS_STYLE[c.status_manual]
+                    ? MANUAL_STATUS_STYLE[c.status_manual]
+                    : STATUS_STYLE[c.status];
                   return (
                     <tr key={c.id} className="border-t border-[#F1F5F9] hover:bg-[#F8FAFC]">
                       <td className="px-4 py-3 font-medium text-[#0F172A]">{c.numero_contrato}</td>
