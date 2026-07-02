@@ -255,6 +255,39 @@ export default function Lancamentos() {
     }));
   }
 
+  async function togglePaid(entry: Lancamento & { cat: Categoria }) {
+    if (!user) return;
+    const arrKey = CATEGORIA_ARRAY[entry.cat];
+    const nextPaid = !entry.paid;
+    const patch = nextPaid
+      ? { paid: true, paid_at: new Date().toISOString(), paid_by: user.id }
+      : { paid: false, paid_at: null as string | null, paid_by: null as string | null };
+
+    // Optimistic update
+    setData((prev) => ({
+      ...prev,
+      lancamentos: {
+        ...prev.lancamentos,
+        [arrKey]: prev.lancamentos[arrKey].map((l) => (l.id === entry.id ? { ...l, ...patch } : l)),
+      },
+    }));
+
+    const { error: dbError } = await supabase.from("lancamentos").update(patch).eq("id", entry.id);
+    if (dbError) {
+      // Revert
+      setData((prev) => ({
+        ...prev,
+        lancamentos: {
+          ...prev.lancamentos,
+          [arrKey]: prev.lancamentos[arrKey].map((l) => (l.id === entry.id ? entry : l)),
+        },
+      }));
+      toast.error("Não foi possível atualizar o pagamento.");
+      return;
+    }
+    toast.success(nextPaid ? "Comissão marcada como paga." : "Pagamento cancelado.");
+  }
+
   const allEntries = useMemo(() => {
     const entries: (Lancamento & { cat: Categoria })[] = [];
     const catsToShow = categoria === "todos" ? (["produto", "servico", "contrato", "acessorio"] as Categoria[]) : [categoria as Categoria];
