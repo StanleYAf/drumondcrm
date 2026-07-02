@@ -13,7 +13,6 @@ import { UndoToast } from "@/components/UndoToast";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Index from "./pages/Index";
 import Lancamentos from "./pages/Lancamentos";
-import Comissoes from "./pages/Comissoes";
 import Indicadores from "./pages/Indicadores";
 import PosVenda from "./pages/PosVenda";
 import Configuracoes from "./pages/Configuracoes";
@@ -82,7 +81,6 @@ const App = () => (
                               <Route path="/" element={<SmartRedirect />} />
                               <Route path="/comercial" element={<RoleGuard perm="com_dashboard"><Index /></RoleGuard>} />
                               <Route path="/lancamentos" element={<RoleGuard perm="com_lancamentos"><Lancamentos /></RoleGuard>} />
-                              <Route path="/comissoes" element={<RoleGuard perm="com_comissoes"><Comissoes /></RoleGuard>} />
                               <Route path="/indicadores" element={<RoleGuard perm="com_indicadores"><Indicadores /></RoleGuard>} />
                               <Route path="/pos-venda" element={<RoleGuard perm="com_posvenda"><PosVenda /></RoleGuard>} />
                               <Route path="/configuracoes" element={<Configuracoes />} />
