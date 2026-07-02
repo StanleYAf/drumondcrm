@@ -42,12 +42,19 @@ import {
 type Origem = "Instagram" | "Facebook" | "Indicação" | "Site" | "Google" | "WhatsApp" | "Outro";
 type Tipo = "Clínica" | "Hospital" | "Veterinário" | "Consultório";
 type Etapa = "novo_lead" | "primeiro_contato" | "em_qualificacao" | "convertido" | "perdido";
+type EmpresaInterna = "DSH" | "Dmedical";
+const EMPRESAS_INTERNAS: EmpresaInterna[] = ["DSH", "Dmedical"];
+const EMPRESA_INTERNA_COLORS: Record<EmpresaInterna, string> = {
+  DSH: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
+  Dmedical: "bg-amber-500/20 text-amber-300 border-amber-500/30",
+};
 
 interface Lead {
   id: string;
   user_id: string;
   nome_cliente: string;
   empresa: string | null;
+  empresa_interna: EmpresaInterna;
   telefone: string;
   email: string | null;
   origem: Origem;
@@ -210,6 +217,9 @@ function LeadCard({
           <div className="min-w-0">
             <p className="font-semibold text-sm truncate">{lead.nome_cliente}</p>
             {lead.empresa && <p className="text-xs text-muted-foreground truncate">{lead.empresa}</p>}
+            <Badge variant="outline" className={`mt-1 text-[10px] px-1.5 py-0 ${EMPRESA_INTERNA_COLORS[lead.empresa_interna || "DSH"]}`}>
+              {lead.empresa_interna || "DSH"}
+            </Badge>
           </div>
         </div>
         <DropdownMenu>
@@ -274,7 +284,7 @@ export default function Vendas() {
 
   // Form state
   const emptyForm = {
-    nome_cliente: "", empresa: "", telefone: "", email: "",
+    nome_cliente: "", empresa: "", empresa_interna: "DSH" as EmpresaInterna, telefone: "", email: "",
     origem: "Outro" as Origem, tipo: "" as Tipo | "", valor_estimado: "", responsavel: "", observacoes: "",
   };
   const [form, setForm] = useState(emptyForm);
@@ -343,6 +353,7 @@ export default function Vendas() {
     const payload = {
       nome_cliente: form.nome_cliente.trim(),
       empresa: form.empresa.trim() || null,
+      empresa_interna: form.empresa_interna,
       telefone: form.telefone.trim(),
       email: form.email.trim() || null,
       origem: form.origem as any,
@@ -381,6 +392,7 @@ export default function Vendas() {
     setForm({
       nome_cliente: lead.nome_cliente,
       empresa: lead.empresa || "",
+      empresa_interna: (lead.empresa_interna || "DSH") as EmpresaInterna,
       telefone: lead.telefone,
       email: lead.email || "",
       origem: lead.origem,
@@ -536,8 +548,17 @@ export default function Vendas() {
               <Input value={form.nome_cliente} onChange={(e) => setForm({ ...form, nome_cliente: e.target.value })} />
             </div>
             <div>
-              <Label>Empresa</Label>
+              <Label>Cliente</Label>
               <Input value={form.empresa} onChange={(e) => setForm({ ...form, empresa: e.target.value })} />
+            </div>
+            <div>
+              <Label>Empresa *</Label>
+              <Select value={form.empresa_interna} onValueChange={(v) => setForm({ ...form, empresa_interna: v as EmpresaInterna })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {EMPRESAS_INTERNAS.map((e) => <SelectItem key={e} value={e}>{e}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>Telefone *</Label>
@@ -615,6 +636,9 @@ export default function Vendas() {
                 </div>
                 <div className="flex gap-2 flex-wrap">
                   <Badge variant="outline" className={ORIGEM_COLORS[detailLead.origem]}>{detailLead.origem}</Badge>
+                  <Badge variant="outline" className={EMPRESA_INTERNA_COLORS[detailLead.empresa_interna || "DSH"]}>
+                    {detailLead.empresa_interna || "DSH"}
+                  </Badge>
                   {detailLead.tipo && (
                     <Badge variant="outline" className={TIPO_COLORS[detailLead.tipo]}>{detailLead.tipo}</Badge>
                   )}
