@@ -1,0 +1,1 @@
+ALTER TYPE public.categoria_lancamento ADD VALUE IF NOT EXISTS 'dmedical';
