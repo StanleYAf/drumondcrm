@@ -7,6 +7,7 @@ const CATEGORIA_MAP: Record<string, keyof AppData["lancamentos"]> = {
   servico: "servicos",
   contrato: "contratos",
   acessorio: "acessorios",
+  dmedical: "dmedical",
 };
 
 export async function loadFromSupabase(userId: string): Promise<AppData> {
@@ -20,7 +21,7 @@ export async function loadFromSupabase(userId: string): Promise<AppData> {
   ]);
 
   // Build lancamentos by category
-  const lancamentos: AppData["lancamentos"] = { produtos: [], servicos: [], contratos: [], acessorios: [] };
+  const lancamentos: AppData["lancamentos"] = { produtos: [], servicos: [], contratos: [], acessorios: [], dmedical: [] };
   for (const row of lancRes.data ?? []) {
     const key = CATEGORIA_MAP[row.categoria];
     if (key) {
@@ -185,7 +186,7 @@ export async function syncToSupabase(userId: string, oldData: AppData, newData: 
   const promises: PromiseLike<any>[] = [];
 
   // Sync lancamentos
-  for (const key of Object.keys(CATEGORIA_MAP) as Categoria[]) {
+  for (const key of Object.keys(CATEGORIA_MAP) as (Categoria | "dmedical")[]) {
     const arrayKey = CATEGORIA_MAP[key] as keyof AppData["lancamentos"];
     const categoria = key;
     const { added, removed, updated } = diffArrays(oldData.lancamentos[arrayKey], newData.lancamentos[arrayKey]);
