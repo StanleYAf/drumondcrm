@@ -9,6 +9,7 @@ export type PermCode =
   | "com_vendas"
   | "com_posvenda"
   | "com_relatorios"
+  | "com_comissoes"
   | "eng_dashboard"
   | "eng_clientes"
   | "eng_os"
@@ -40,6 +41,7 @@ export const PERM_GROUPS: PermGroup[] = [
     items: [
       { code: "com_dashboard",   label: "Dashboard",    desc: "Painel principal de vendas" },
       { code: "com_lancamentos", label: "Lançamentos",  desc: "Registro de faturamento" },
+      { code: "com_comissoes",   label: "Comissões",    desc: "Controle de pagamento de comissões" },
       { code: "com_indicadores", label: "Indicadores",  desc: "Metas e desempenho" },
       { code: "com_vendas",      label: "Vendas",       desc: "Pipeline e leads" },
       { code: "com_posvenda",    label: "Pós-venda",    desc: "Contatos pós-venda" },
@@ -82,7 +84,7 @@ export const PERM_GROUPS: PermGroup[] = [
 ];
 
 const COMERCIAL_PERMS: PermCode[] = [
-  "com_dashboard", "com_lancamentos", "com_indicadores", "com_vendas", "com_posvenda", "com_relatorios",
+  "com_dashboard", "com_lancamentos", "com_indicadores", "com_vendas", "com_posvenda", "com_relatorios", "com_comissoes",
 ];
 const ENGENHARIA_PERMS: PermCode[] = [
   "eng_dashboard", "eng_os", "eng_boletim",
