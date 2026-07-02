@@ -129,13 +129,14 @@ export default function Lancamentos() {
     const newItem: Lancamento = {
       id: newId, cliente: cliente.trim(), valor: parseCurrencyMask(valor), data: dataLanc,
       custos: parseCurrencyMask(custos),
-      [CATEGORIA_FIELD[formCat]]: descricao.trim(),
+      [fieldKeyFor(formCat)]: descricao.trim(),
       tipo: tipo.trim() || undefined,
       vendedor: vendedor || undefined,
     };
+    const arrKey = arrKeyFor(formCat);
     setData((prev) => ({
       ...prev,
-      lancamentos: { ...prev.lancamentos, [CATEGORIA_ARRAY[formCat]]: [...prev.lancamentos[CATEGORIA_ARRAY[formCat]], newItem] },
+      lancamentos: { ...prev.lancamentos, [arrKey]: [...prev.lancamentos[arrKey], newItem] },
     }));
 
     // Save itens for produto/acessorio
