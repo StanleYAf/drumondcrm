@@ -454,7 +454,7 @@ export default function Lancamentos() {
       Data: formatDate(e.data),
       Cliente: e.cliente,
       Descrição: getDescricao(e),
-      Categoria: CATEGORIA_LABELS[e.cat],
+      Categoria: TAB_LABEL[e.cat],
       Valor: e.valor.toFixed(2),
     }));
     const header = "Data,Cliente,Descrição,Categoria,Valor";
@@ -512,15 +512,15 @@ export default function Lancamentos() {
           }}>
           Todos
         </button>
-        {(["produto", "servico", "contrato", "acessorio"] as Categoria[]).map(cat => (
+        {(["produto", "servico", "contrato", "acessorio", "dmedical"] as TabKey[]).map(cat => (
           <button key={cat} onClick={() => setCategoria(cat)}
             className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all"
             style={{
-              background: categoria === cat ? CAT_COLORS[cat] + '20' : 'rgba(255,255,255,0.05)',
-              color: categoria === cat ? CAT_COLORS[cat] : '#8E8E93',
-              border: `1px solid ${categoria === cat ? CAT_COLORS[cat] + '40' : 'transparent'}`,
+              background: categoria === cat ? tabColor(cat) + '20' : 'rgba(255,255,255,0.05)',
+              color: categoria === cat ? tabColor(cat) : '#8E8E93',
+              border: `1px solid ${categoria === cat ? tabColor(cat) + '40' : 'transparent'}`,
             }}>
-            {CATEGORIA_LABELS[cat]}
+            {TAB_LABEL[cat]}
           </button>
         ))}
       </div>
@@ -532,7 +532,7 @@ export default function Lancamentos() {
           <p className="text-lg font-bold text-foreground">{formatCurrency(totalMes)}</p>
         </div>
         <div>
-          <p className="text-[11px] font-medium text-muted-foreground">{categoria === "todos" ? "Total" : CATEGORIA_LABELS[categoria as Categoria]}</p>
+          <p className="text-[11px] font-medium text-muted-foreground">{categoria === "todos" ? "Total" : TAB_LABEL[categoria]}</p>
           <p className="text-lg font-bold text-foreground">{formatCurrency(totalCategoria)}</p>
         </div>
         <div>
@@ -777,8 +777,8 @@ export default function Lancamentos() {
               <button onClick={() => setEditItem(null)}><X className="h-5 w-5 text-muted-foreground" /></button>
             </div>
             <div className="px-1.5 py-1 rounded-full text-[10px] font-medium inline-block"
-              style={{ background: CAT_COLORS[editItem.cat] + '20', color: CAT_COLORS[editItem.cat] }}>
-              {CATEGORIA_LABELS[editItem.cat]}
+              style={{ background: tabColor(editItem.cat) + '20', color: tabColor(editItem.cat) }}>
+              {TAB_LABEL[editItem.cat]}
             </div>
             <div>
               <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Cliente</label>
