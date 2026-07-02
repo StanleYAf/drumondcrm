@@ -704,6 +704,9 @@ export type Database = {
           data: string
           id: string
           item: string | null
+          paid: boolean
+          paid_at: string | null
+          paid_by: string | null
           produto: string | null
           servico: string | null
           tipo: string | null
@@ -720,6 +723,9 @@ export type Database = {
           data: string
           id?: string
           item?: string | null
+          paid?: boolean
+          paid_at?: string | null
+          paid_by?: string | null
           produto?: string | null
           servico?: string | null
           tipo?: string | null
@@ -736,6 +742,9 @@ export type Database = {
           data?: string
           id?: string
           item?: string | null
+          paid?: boolean
+          paid_at?: string | null
+          paid_by?: string | null
           produto?: string | null
           servico?: string | null
           tipo?: string | null

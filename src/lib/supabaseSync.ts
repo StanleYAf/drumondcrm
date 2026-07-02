@@ -35,6 +35,9 @@ export async function loadFromSupabase(userId: string): Promise<AppData> {
         item: row.item ?? undefined,
         vendedor: row.vendedor ?? undefined,
         tipo: (row as any).tipo ?? undefined,
+        paid: Boolean((row as any).paid ?? false),
+        paid_at: (row as any).paid_at ?? null,
+        paid_by: (row as any).paid_by ?? null,
       });
     }
   }
@@ -196,6 +199,7 @@ export async function syncToSupabase(userId: string, oldData: AppData, newData: 
           id: l.id, user_id: userId, categoria, cliente: l.cliente, valor: l.valor, custos: l.custos ?? 0, data: l.data,
           produto: l.produto ?? null, servico: l.servico ?? null, item: l.item ?? null, vendedor: l.vendedor ?? null,
           tipo: l.tipo ?? null,
+          paid: l.paid ?? false, paid_at: l.paid_at ?? null, paid_by: l.paid_by ?? null,
         }))
       ).then());
     }
@@ -204,6 +208,7 @@ export async function syncToSupabase(userId: string, oldData: AppData, newData: 
         cliente: l.cliente, valor: l.valor, custos: l.custos ?? 0, data: l.data,
         produto: l.produto ?? null, servico: l.servico ?? null, item: l.item ?? null, vendedor: l.vendedor ?? null,
         tipo: l.tipo ?? null,
+        paid: l.paid ?? false, paid_at: l.paid_at ?? null, paid_by: l.paid_by ?? null,
       }).eq("id", l.id).then());
     }
   }

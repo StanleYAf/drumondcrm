@@ -21,6 +21,9 @@ export interface Lancamento {
   vendedor?: string;
   tipo?: string;
   itens?: LancamentoItem[];
+  paid?: boolean;
+  paid_at?: string | null;
+  paid_by?: string | null;
 }
 
 export interface IndicadorSemanal {

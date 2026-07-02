@@ -4,7 +4,7 @@ import { NavLink } from "@/components/NavLink";
 import {
   LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings,
   Boxes, LogOut, Briefcase, Building2, ClipboardList, DollarSign, RefreshCw, KanbanSquare,
-  Stethoscope, Plus, Landmark, FileSignature, FileBadge,
+  Stethoscope, Plus, Landmark, FileSignature, FileBadge, Wallet,
 } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 import type { PermCode } from "@/lib/permissions";
@@ -41,6 +41,7 @@ const groups: ModuleDef[] = [
       { title: "Demandas", url: "/demandas/comercial", icon: KanbanSquare, perm: "com_dashboard" },
       { title: "Indicadores", url: "/indicadores", icon: BarChart2, perm: "com_indicadores" },
       { title: "Lançamentos", url: "/lancamentos", icon: BookOpen, perm: "com_lancamentos" },
+      { title: "Comissões", url: "/comissoes", icon: Wallet, perm: "com_comissoes" },
       { title: "Pós-venda", url: "/pos-venda", icon: Headphones, perm: "com_posvenda" },
       { title: "Relatórios", url: "/relatorios", icon: FileText, perm: "com_relatorios" },
       { title: "Vendas", url: "/vendas", icon: ShoppingCart, perm: "com_vendas" },
@@ -83,6 +84,7 @@ const comercialRoutes = ["/comercial", "/lancamentos", "/indicadores", "/vendas"
 const ROUTE_TITLES: Record<string, { title: string; module: string }> = {
   "/comercial": { title: "Dashboard Comercial", module: "Comercial" },
   "/lancamentos": { title: "Lançamentos", module: "Comercial" },
+  "/comissoes": { title: "Comissões", module: "Comercial" },
   "/indicadores": { title: "Indicadores", module: "Comercial" },
   "/vendas": { title: "Vendas", module: "Comercial" },
   "/pos-venda": { title: "Pós-venda", module: "Comercial" },
