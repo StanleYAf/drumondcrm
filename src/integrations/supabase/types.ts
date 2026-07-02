@@ -760,6 +760,7 @@ export type Database = {
           created_at: string
           email: string | null
           empresa: string | null
+          empresa_interna: string
           etapa: Database["public"]["Enums"]["etapa_lead"]
           id: string
           nome_cliente: string
@@ -776,6 +777,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           empresa?: string | null
+          empresa_interna?: string
           etapa?: Database["public"]["Enums"]["etapa_lead"]
           id?: string
           nome_cliente: string
@@ -792,6 +794,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           empresa?: string | null
+          empresa_interna?: string
           etapa?: Database["public"]["Enums"]["etapa_lead"]
           id?: string
           nome_cliente?: string

@@ -1,0 +1,1 @@
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS empresa_interna text NOT NULL DEFAULT 'DSH' CHECK (empresa_interna IN ('DSH','Dmedical'));
