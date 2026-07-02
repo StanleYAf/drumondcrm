@@ -70,6 +70,7 @@ export interface AppData {
     servicos: Lancamento[];
     contratos: Lancamento[];
     acessorios: Lancamento[];
+    dmedical: Lancamento[];
   };
   indicadores_semanais: IndicadorSemanal[];
   pos_venda: PosVenda[];

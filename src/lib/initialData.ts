@@ -40,6 +40,7 @@ export const INITIAL_DATA: AppData = {
       { id: "a2", cliente: "Thamirys 7 Lagoas", item: "SPO²/ECG", valor: 745, data: "2026-02-02", vendedor: "Alice" },
       { id: "a3", cliente: "Barbara Anestesista", item: "Circuito Respiratório", valor: 330, data: "2026-02-09", vendedor: "Mateus" },
     ],
+    dmedical: [],
   },
   indicadores_semanais: [
     { id: "w1", data: "2026-01-08", semana: 2, mes: "Janeiro", vendedor: "Mateus", captacoes: 5, orcamentos: 4, visitas: 1, ano: 2026 },

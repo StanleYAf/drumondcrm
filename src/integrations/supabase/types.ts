@@ -1557,7 +1557,12 @@ export type Database = {
       pode_ver_todas_demandas: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      categoria_lancamento: "produto" | "servico" | "contrato" | "acessorio"
+      categoria_lancamento:
+        | "produto"
+        | "servico"
+        | "contrato"
+        | "acessorio"
+        | "dmedical"
       demanda_prioridade: "alta" | "media" | "normal" | "baixa"
       demanda_setor: "engenharia" | "comercial" | "financeiro"
       demanda_status: "pendente" | "execucao" | "feita"
@@ -1705,7 +1710,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      categoria_lancamento: ["produto", "servico", "contrato", "acessorio"],
+      categoria_lancamento: [
+        "produto",
+        "servico",
+        "contrato",
+        "acessorio",
+        "dmedical",
+      ],
       demanda_prioridade: ["alta", "media", "normal", "baixa"],
       demanda_setor: ["engenharia", "comercial", "financeiro"],
       demanda_status: ["pendente", "execucao", "feita"],

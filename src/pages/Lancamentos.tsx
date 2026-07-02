@@ -15,6 +15,19 @@ import { AnexosLancamento } from "@/components/AnexosLancamento";
 const CAT_COLORS: Record<Categoria, string> = {
   produto: "#0A84FF", servico: "#30D158", contrato: "#FFD60A", acessorio: "#BF5AF2",
 };
+const DMEDICAL_COLOR = "#FF9F0A";
+type TabKey = Categoria | "dmedical";
+const TAB_LABEL: Record<TabKey, string> = {
+  produto: "Produtos", servico: "Serviços", contrato: "Contratos", acessorio: "Acessórios", dmedical: "Dmedical",
+};
+const tabColor = (t: TabKey) => t === "dmedical" ? DMEDICAL_COLOR : CAT_COLORS[t as Categoria];
+const arrKeyFor = (t: TabKey): keyof import("@/lib/types").AppData["lancamentos"] =>
+  t === "dmedical" ? "dmedical" : CATEGORIA_ARRAY[t as Categoria];
+const fieldKeyFor = (t: TabKey): string => t === "dmedical" ? "item" : CATEGORIA_FIELD[t as Categoria];
+function comissaoFor(t: TabKey, valor: number, custos: number) {
+  if (t === "dmedical") return Math.max(0, valor - (custos || 0)) * 0.2;
+  return calcularComissao(t as Categoria, valor, custos);
+}
 
 const ITEMS_PER_PAGE = 10;
 type SortKey = "data" | "cliente" | "valor" | "descricao";
@@ -31,7 +44,7 @@ const emptyItem = (): Omit<LancamentoItem, "lancamento_id"> => ({
   observacao: "",
 });
 
-const supportsItens = (cat: Categoria | "todos") => cat === "produto" || cat === "acessorio";
+const supportsItens = (cat: TabKey | "todos") => cat === "produto" || cat === "acessorio" || cat === "dmedical";
 
 export default function Lancamentos() {
   const { data, setData, loading, error, undoDelete } = useAppData();
@@ -40,13 +53,13 @@ export default function Lancamentos() {
   const [searchParams, setSearchParams] = useSearchParams();
   const now = new Date();
 
-  const catParam = searchParams.get("categoria") as keyof typeof CATEGORIA_ARRAY | null;
+  const catParam = searchParams.get("categoria");
   const mesParam = parseInt(searchParams.get("mes") || "") - 1;
   const anoParam = parseInt(searchParams.get("ano") || "");
 
   const filterMonth = isNaN(mesParam) || mesParam < 0 || mesParam > 11 ? now.getMonth() : mesParam;
   const filterYear = isNaN(anoParam) ? now.getFullYear() : anoParam;
-  const categoria: Categoria | "todos" = catParam && ["produto", "servico", "contrato", "acessorio"].includes(catParam) ? catParam as Categoria : "todos";
+  const categoria: TabKey | "todos" = catParam && ["produto", "servico", "contrato", "acessorio", "dmedical"].includes(catParam) ? catParam as TabKey : "todos";
 
   function setFilterMonth(m: number) {
     setSearchParams(prev => { prev.set("mes", String(m + 1)); return prev; }, { replace: true });
@@ -54,7 +67,7 @@ export default function Lancamentos() {
   function setFilterYear(y: number) {
     setSearchParams(prev => { prev.set("ano", String(y)); return prev; }, { replace: true });
   }
-  function setCategoria(c: Categoria | "todos") {
+  function setCategoria(c: TabKey | "todos") {
     setSearchParams(prev => {
       if (c === "todos") prev.delete("categoria");
       else prev.set("categoria", c);
@@ -81,7 +94,7 @@ export default function Lancamentos() {
   const [stagedFiles, setStagedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [editItem, setEditItem] = useState<(Lancamento & { cat: Categoria }) | null>(null);
+  const [editItem, setEditItem] = useState<(Lancamento & { cat: TabKey }) | null>(null);
   const [editCliente, setEditCliente] = useState("");
   const [editDescricao, setEditDescricao] = useState("");
   const [editTipo, setEditTipo] = useState("");
@@ -93,9 +106,9 @@ export default function Lancamentos() {
   const [editItens, setEditItens] = useState<LancamentoItem[]>([]);
   const [editItensLoading, setEditItensLoading] = useState(false);
 
-  const formCat = categoria === "todos" ? "produto" : categoria as Categoria;
-  const fieldLabel = formCat === "acessorio" ? "Acessório" : formCat === "produto" ? "Produto" : "Serviço";
-  const tipoLabel = formCat === "acessorio" ? "Tipo de Acessório" : formCat === "produto" ? "Tipo de Produto" : formCat === "contrato" ? "Tipo de Contrato" : "Tipo de Serviço";
+  const formCat: TabKey = categoria === "todos" ? "produto" : categoria;
+  const fieldLabel = formCat === "dmedical" ? "Item" : formCat === "acessorio" ? "Acessório" : formCat === "produto" ? "Produto" : "Serviço";
+  const tipoLabel = formCat === "dmedical" ? "Tipo (Dmedical)" : formCat === "acessorio" ? "Tipo de Acessório" : formCat === "produto" ? "Tipo de Produto" : formCat === "contrato" ? "Tipo de Contrato" : "Tipo de Serviço";
 
   function validateForm(c: string, d: string, v: string, dt: string) {
     const result = lancamentoSchema.safeParse({ cliente: c, descricao: d, valor: parseFloat(v) || 0, data: dt });
@@ -116,13 +129,14 @@ export default function Lancamentos() {
     const newItem: Lancamento = {
       id: newId, cliente: cliente.trim(), valor: parseCurrencyMask(valor), data: dataLanc,
       custos: parseCurrencyMask(custos),
-      [CATEGORIA_FIELD[formCat]]: descricao.trim(),
+      [fieldKeyFor(formCat)]: descricao.trim(),
       tipo: tipo.trim() || undefined,
       vendedor: vendedor || undefined,
     };
+    const arrKey = arrKeyFor(formCat);
     setData((prev) => ({
       ...prev,
-      lancamentos: { ...prev.lancamentos, [CATEGORIA_ARRAY[formCat]]: [...prev.lancamentos[CATEGORIA_ARRAY[formCat]], newItem] },
+      lancamentos: { ...prev.lancamentos, [arrKey]: [...prev.lancamentos[arrKey], newItem] },
     }));
 
     // Save itens for produto/acessorio
@@ -169,7 +183,7 @@ export default function Lancamentos() {
     toast.success("Lançamento adicionado com sucesso");
   }
 
-  async function openEdit(entry: Lancamento & { cat: Categoria }) {
+  async function openEdit(entry: Lancamento & { cat: TabKey }) {
     setEditItem(entry);
     setEditCliente(entry.cliente);
     setEditDescricao(getDescricao(entry));
@@ -204,8 +218,8 @@ export default function Lancamentos() {
     const errs = validateForm(editCliente, editDescricao, String(parseCurrencyMask(editValor)), editData);
     if (errs) { setEditErrors(errs); toast.error("Corrija os campos inválidos"); return; }
     setEditErrors({});
-    const arrKey = CATEGORIA_ARRAY[editItem.cat];
-    const fieldKey = CATEGORIA_FIELD[editItem.cat];
+    const arrKey = arrKeyFor(editItem.cat);
+    const fieldKey = fieldKeyFor(editItem.cat);
     setData((prev) => ({
       ...prev,
       lancamentos: {
@@ -239,8 +253,8 @@ export default function Lancamentos() {
     toast.success("Lançamento atualizado");
   }
 
-  function handleDelete(cat: Categoria, id: string) {
-    const arrKey = CATEGORIA_ARRAY[cat];
+  function handleDelete(cat: TabKey, id: string) {
+    const arrKey = arrKeyFor(cat);
     const deletedItem = data.lancamentos[arrKey].find(l => l.id === id);
     if (!deletedItem) return;
 
@@ -255,9 +269,9 @@ export default function Lancamentos() {
     }));
   }
 
-  async function togglePaid(entry: Lancamento & { cat: Categoria }) {
+  async function togglePaid(entry: Lancamento & { cat: TabKey }) {
     if (!user) return;
-    const arrKey = CATEGORIA_ARRAY[entry.cat];
+    const arrKey = arrKeyFor(entry.cat);
     const nextPaid = !entry.paid;
     const patch = nextPaid
       ? { paid: true, paid_at: new Date().toISOString(), paid_by: user.id }
@@ -289,10 +303,10 @@ export default function Lancamentos() {
   }
 
   const allEntries = useMemo(() => {
-    const entries: (Lancamento & { cat: Categoria })[] = [];
-    const catsToShow = categoria === "todos" ? (["produto", "servico", "contrato", "acessorio"] as Categoria[]) : [categoria as Categoria];
+    const entries: (Lancamento & { cat: TabKey })[] = [];
+    const catsToShow: TabKey[] = categoria === "todos" ? ["produto", "servico", "contrato", "acessorio"] : [categoria];
     catsToShow.forEach((cat) => {
-      data.lancamentos[CATEGORIA_ARRAY[cat]]
+      data.lancamentos[arrKeyFor(cat)]
         .filter((l) => { const [y, m] = l.data.split("-").map(Number); return (m - 1) === filterMonth && y === filterYear; })
         .forEach((l) => entries.push({ ...l, cat }));
     });
@@ -316,11 +330,11 @@ export default function Lancamentos() {
   const paginatedEntries = allEntries.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
 
   const totalMes = allEntries.reduce((s, e) => s + e.valor, 0);
-  const totalComissao = allEntries.reduce((s, e) => s + calcularComissao(e.cat, e.valor, e.custos ?? 0), 0);
+  const totalComissao = allEntries.reduce((s, e) => s + comissaoFor(e.cat, e.valor, e.custos ?? 0), 0);
   const { metas: currentMetas } = getMetasForMonth(data.historico_metas, filterMonth, filterYear, data.metas, data.meta_semanal);
   const metaCategoria = categoria === "todos"
     ? Object.values(currentMetas).reduce((a, b) => a + b, 0)
-    : currentMetas[categoria as Categoria];
+    : categoria === "dmedical" ? 0 : currentMetas[categoria as Categoria];
   const totalCategoria = totalMes;
 
   function toggleSort(key: SortKey) {
@@ -334,8 +348,8 @@ export default function Lancamentos() {
     return sortAsc ? <ChevronUp className="h-3 w-3 inline ml-0.5" /> : <ChevronDown className="h-3 w-3 inline ml-0.5" />;
   };
 
-  const editFieldLabel = editItem ? (editItem.cat === "acessorio" ? "Acessório" : editItem.cat === "produto" ? "Produto" : "Serviço") : "";
-  const editTipoLabel = editItem ? (editItem.cat === "acessorio" ? "Tipo de Acessório" : editItem.cat === "produto" ? "Tipo de Produto" : editItem.cat === "contrato" ? "Tipo de Contrato" : "Tipo de Serviço") : "";
+  const editFieldLabel = editItem ? (editItem.cat === "dmedical" ? "Item" : editItem.cat === "acessorio" ? "Acessório" : editItem.cat === "produto" ? "Produto" : "Serviço") : "";
+  const editTipoLabel = editItem ? (editItem.cat === "dmedical" ? "Tipo (Dmedical)" : editItem.cat === "acessorio" ? "Tipo de Acessório" : editItem.cat === "produto" ? "Tipo de Produto" : editItem.cat === "contrato" ? "Tipo de Contrato" : "Tipo de Serviço") : "";
 
   function ErrorMsg({ msg }: { msg?: string }) {
     if (!msg) return null;
@@ -440,7 +454,7 @@ export default function Lancamentos() {
       Data: formatDate(e.data),
       Cliente: e.cliente,
       Descrição: getDescricao(e),
-      Categoria: CATEGORIA_LABELS[e.cat],
+      Categoria: TAB_LABEL[e.cat],
       Valor: e.valor.toFixed(2),
     }));
     const header = "Data,Cliente,Descrição,Categoria,Valor";
@@ -498,15 +512,15 @@ export default function Lancamentos() {
           }}>
           Todos
         </button>
-        {(["produto", "servico", "contrato", "acessorio"] as Categoria[]).map(cat => (
+        {(["produto", "servico", "contrato", "acessorio", "dmedical"] as TabKey[]).map(cat => (
           <button key={cat} onClick={() => setCategoria(cat)}
             className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all"
             style={{
-              background: categoria === cat ? CAT_COLORS[cat] + '20' : 'rgba(255,255,255,0.05)',
-              color: categoria === cat ? CAT_COLORS[cat] : '#8E8E93',
-              border: `1px solid ${categoria === cat ? CAT_COLORS[cat] + '40' : 'transparent'}`,
+              background: categoria === cat ? tabColor(cat) + '20' : 'rgba(255,255,255,0.05)',
+              color: categoria === cat ? tabColor(cat) : '#8E8E93',
+              border: `1px solid ${categoria === cat ? tabColor(cat) + '40' : 'transparent'}`,
             }}>
-            {CATEGORIA_LABELS[cat]}
+            {TAB_LABEL[cat]}
           </button>
         ))}
       </div>
@@ -518,7 +532,7 @@ export default function Lancamentos() {
           <p className="text-lg font-bold text-foreground">{formatCurrency(totalMes)}</p>
         </div>
         <div>
-          <p className="text-[11px] font-medium text-muted-foreground">{categoria === "todos" ? "Total" : CATEGORIA_LABELS[categoria as Categoria]}</p>
+          <p className="text-[11px] font-medium text-muted-foreground">{categoria === "todos" ? "Total" : TAB_LABEL[categoria]}</p>
           <p className="text-lg font-bold text-foreground">{formatCurrency(totalCategoria)}</p>
         </div>
         <div>
@@ -585,7 +599,7 @@ export default function Lancamentos() {
               <div>
                 <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Comissão prevista</label>
                 <div className="ios-input w-full flex items-center" style={{ color: '#0A84FF', fontWeight: 600 }}>
-                  {formatCurrency(calcularComissao(formCat, parseCurrencyMask(valor), parseCurrencyMask(custos)))}
+                  {formatCurrency(comissaoFor(formCat, parseCurrencyMask(valor), parseCurrencyMask(custos)))}
                 </div>
               </div>
             </div>
@@ -695,7 +709,7 @@ export default function Lancamentos() {
               <div key={e.id} className="ios-list-item">
                 <button className="flex-1 min-w-0 text-left" onClick={() => openEdit(e)}>
                   <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: CAT_COLORS[e.cat] }} />
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: tabColor(e.cat) }} />
                     <span className="text-sm font-medium text-foreground truncate">{e.cliente}</span>
                   </div>
                   <p className="text-xs mt-0.5 ml-3.5 truncate text-muted-foreground">
@@ -706,7 +720,7 @@ export default function Lancamentos() {
                   <div className="flex flex-col items-end">
                     <span className="text-sm font-semibold" style={{ color: '#30D158' }}>{formatCurrency(e.valor)}</span>
                     <span className="text-[10px] font-medium" style={{ color: '#0A84FF' }}>
-                      Com.: {formatCurrency(calcularComissao(e.cat, e.valor, e.custos ?? 0))}
+                      Com.: {formatCurrency(comissaoFor(e.cat, e.valor, e.custos ?? 0))}
                     </span>
                     <button
                       type="button"
@@ -763,8 +777,8 @@ export default function Lancamentos() {
               <button onClick={() => setEditItem(null)}><X className="h-5 w-5 text-muted-foreground" /></button>
             </div>
             <div className="px-1.5 py-1 rounded-full text-[10px] font-medium inline-block"
-              style={{ background: CAT_COLORS[editItem.cat] + '20', color: CAT_COLORS[editItem.cat] }}>
-              {CATEGORIA_LABELS[editItem.cat]}
+              style={{ background: tabColor(editItem.cat) + '20', color: tabColor(editItem.cat) }}>
+              {TAB_LABEL[editItem.cat]}
             </div>
             <div>
               <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Cliente</label>
@@ -807,7 +821,7 @@ export default function Lancamentos() {
               <div>
                 <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Comissão prevista</label>
                 <div className="ios-input w-full flex items-center" style={{ color: '#0A84FF', fontWeight: 600 }}>
-                  {formatCurrency(calcularComissao(editItem.cat, parseCurrencyMask(editValor), parseCurrencyMask(editCustos)))}
+                  {formatCurrency(comissaoFor(editItem.cat, parseCurrencyMask(editValor), parseCurrencyMask(editCustos)))}
                 </div>
               </div>
             </div>
