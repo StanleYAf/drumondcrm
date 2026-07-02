@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { CheckCircle2, XCircle, Search } from "lucide-react";
+import { CheckCircle2, XCircle, Search, Wallet } from "lucide-react";
 import { useAppData } from "@/lib/dataContext";
 import { useAuth } from "@/lib/authContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -237,7 +237,7 @@ export default function Comissoes() {
         <CardContent className="p-0">
           {rows.length === 0 ? (
             <div className="p-8">
-              <EmptyState title="Nenhuma comissão encontrada" description="Ajuste os filtros para visualizar comissões." />
+              <EmptyState icon={Wallet} title="Nenhuma comissão encontrada" description="Ajuste os filtros para visualizar comissões." />
             </div>
           ) : (
             <div className="overflow-x-auto">
