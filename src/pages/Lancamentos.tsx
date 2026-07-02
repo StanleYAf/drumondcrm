@@ -599,7 +599,7 @@ export default function Lancamentos() {
               <div>
                 <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Comissão prevista</label>
                 <div className="ios-input w-full flex items-center" style={{ color: '#0A84FF', fontWeight: 600 }}>
-                  {formatCurrency(calcularComissao(formCat, parseCurrencyMask(valor), parseCurrencyMask(custos)))}
+                  {formatCurrency(comissaoFor(formCat, parseCurrencyMask(valor), parseCurrencyMask(custos)))}
                 </div>
               </div>
             </div>
@@ -821,7 +821,7 @@ export default function Lancamentos() {
               <div>
                 <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Comissão prevista</label>
                 <div className="ios-input w-full flex items-center" style={{ color: '#0A84FF', fontWeight: 600 }}>
-                  {formatCurrency(calcularComissao(editItem.cat, parseCurrencyMask(editValor), parseCurrencyMask(editCustos)))}
+                  {formatCurrency(comissaoFor(editItem.cat, parseCurrencyMask(editValor), parseCurrencyMask(editCustos)))}
                 </div>
               </div>
             </div>
