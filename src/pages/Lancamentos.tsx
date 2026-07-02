@@ -15,6 +15,19 @@ import { AnexosLancamento } from "@/components/AnexosLancamento";
 const CAT_COLORS: Record<Categoria, string> = {
   produto: "#0A84FF", servico: "#30D158", contrato: "#FFD60A", acessorio: "#BF5AF2",
 };
+const DMEDICAL_COLOR = "#FF9F0A";
+type TabKey = Categoria | "dmedical";
+const TAB_LABEL: Record<TabKey, string> = {
+  produto: "Produtos", servico: "Serviços", contrato: "Contratos", acessorio: "Acessórios", dmedical: "Dmedical",
+};
+const tabColor = (t: TabKey) => t === "dmedical" ? DMEDICAL_COLOR : CAT_COLORS[t as Categoria];
+const arrKeyFor = (t: TabKey): keyof import("@/lib/types").AppData["lancamentos"] =>
+  t === "dmedical" ? "dmedical" : CATEGORIA_ARRAY[t as Categoria];
+const fieldKeyFor = (t: TabKey): string => t === "dmedical" ? "item" : CATEGORIA_FIELD[t as Categoria];
+function comissaoFor(t: TabKey, valor: number, custos: number) {
+  if (t === "dmedical") return Math.max(0, valor - (custos || 0)) * 0.2;
+  return calcularComissao(t as Categoria, valor, custos);
+}
 
 const ITEMS_PER_PAGE = 10;
 type SortKey = "data" | "cliente" | "valor" | "descricao";
@@ -31,7 +44,7 @@ const emptyItem = (): Omit<LancamentoItem, "lancamento_id"> => ({
   observacao: "",
 });
 
-const supportsItens = (cat: Categoria | "todos") => cat === "produto" || cat === "acessorio";
+const supportsItens = (cat: TabKey | "todos") => cat === "produto" || cat === "acessorio" || cat === "dmedical";
 
 export default function Lancamentos() {
   const { data, setData, loading, error, undoDelete } = useAppData();
