@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useAppData } from "@/lib/dataContext";
 import { CATEGORIA_LABELS, CATEGORIA_ARRAY, CATEGORIA_FIELD, MESES, formatCurrency, formatDate, lancamentoSchema, getMetasForMonth, calcularComissao, type Categoria, type Lancamento, type LancamentoItem } from "@/lib/types";
 import { applyCurrencyMask, parseCurrencyMask, numberToCurrencyMask } from "@/lib/currencyMask";
-import { Trash2, ChevronDown, Search, ChevronUp, Pencil, X, ChevronLeft, ChevronRight, FileX, Download, Plus, Paperclip, FileText } from "lucide-react";
+import { Trash2, ChevronDown, Search, ChevronUp, Pencil, X, ChevronLeft, ChevronRight, FileX, Download, Plus, Paperclip, FileText, CheckCircle2, XCircle } from "lucide-react";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { EmptyState } from "@/components/EmptyState";
@@ -35,7 +35,8 @@ const supportsItens = (cat: Categoria | "todos") => cat === "produto" || cat ===
 
 export default function Lancamentos() {
   const { data, setData, loading, error, undoDelete } = useAppData();
-  const { user } = useAuth();
+  const { user, canAccess, hasCargo } = useAuth();
+  const canManagePayment = hasCargo("admin") || canAccess("com_lancamentos");
   const [searchParams, setSearchParams] = useSearchParams();
   const now = new Date();
 
@@ -674,6 +675,24 @@ export default function Lancamentos() {
                     <span className="text-[10px] font-medium" style={{ color: '#0A84FF' }}>
                       Com.: {formatCurrency(calcularComissao(e.cat, e.valor, e.custos ?? 0))}
                     </span>
+                    <button
+                      type="button"
+                      onClick={(ev) => { ev.stopPropagation(); if (canManagePayment) togglePaid(e); }}
+                      disabled={!canManagePayment}
+                      title={
+                        e.paid
+                          ? `Pago${e.paid_at ? " em " + new Date(e.paid_at).toLocaleString("pt-BR") : ""}`
+                          : "Comissão pendente"
+                      }
+                      className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-semibold border transition-transform ${
+                        e.paid
+                          ? "bg-[#DCFCE7] text-[#166534] border-transparent"
+                          : "bg-[#FEE2E2] text-[#B91C1C] border-transparent"
+                      } ${canManagePayment ? "hover:scale-[1.05] cursor-pointer" : "cursor-default opacity-90"}`}
+                    >
+                      {e.paid ? <CheckCircle2 className="h-2.5 w-2.5" /> : <XCircle className="h-2.5 w-2.5" />}
+                      {e.paid ? "Pago" : "Pendente"}
+                    </button>
                   </div>
                   <button onClick={() => openEdit(e)} className="p-1.5 rounded-lg hover:bg-muted">
                     <Pencil className="h-3.5 w-3.5 text-primary" />
