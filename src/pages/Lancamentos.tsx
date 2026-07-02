@@ -218,8 +218,8 @@ export default function Lancamentos() {
     const errs = validateForm(editCliente, editDescricao, String(parseCurrencyMask(editValor)), editData);
     if (errs) { setEditErrors(errs); toast.error("Corrija os campos inválidos"); return; }
     setEditErrors({});
-    const arrKey = CATEGORIA_ARRAY[editItem.cat];
-    const fieldKey = CATEGORIA_FIELD[editItem.cat];
+    const arrKey = arrKeyFor(editItem.cat);
+    const fieldKey = fieldKeyFor(editItem.cat);
     setData((prev) => ({
       ...prev,
       lancamentos: {
@@ -253,8 +253,8 @@ export default function Lancamentos() {
     toast.success("Lançamento atualizado");
   }
 
-  function handleDelete(cat: Categoria, id: string) {
-    const arrKey = CATEGORIA_ARRAY[cat];
+  function handleDelete(cat: TabKey, id: string) {
+    const arrKey = arrKeyFor(cat);
     const deletedItem = data.lancamentos[arrKey].find(l => l.id === id);
     if (!deletedItem) return;
 
@@ -269,9 +269,9 @@ export default function Lancamentos() {
     }));
   }
 
-  async function togglePaid(entry: Lancamento & { cat: Categoria }) {
+  async function togglePaid(entry: Lancamento & { cat: TabKey }) {
     if (!user) return;
-    const arrKey = CATEGORIA_ARRAY[entry.cat];
+    const arrKey = arrKeyFor(entry.cat);
     const nextPaid = !entry.paid;
     const patch = nextPaid
       ? { paid: true, paid_at: new Date().toISOString(), paid_by: user.id }
@@ -303,10 +303,10 @@ export default function Lancamentos() {
   }
 
   const allEntries = useMemo(() => {
-    const entries: (Lancamento & { cat: Categoria })[] = [];
-    const catsToShow = categoria === "todos" ? (["produto", "servico", "contrato", "acessorio"] as Categoria[]) : [categoria as Categoria];
+    const entries: (Lancamento & { cat: TabKey })[] = [];
+    const catsToShow: TabKey[] = categoria === "todos" ? ["produto", "servico", "contrato", "acessorio"] : [categoria];
     catsToShow.forEach((cat) => {
-      data.lancamentos[CATEGORIA_ARRAY[cat]]
+      data.lancamentos[arrKeyFor(cat)]
         .filter((l) => { const [y, m] = l.data.split("-").map(Number); return (m - 1) === filterMonth && y === filterYear; })
         .forEach((l) => entries.push({ ...l, cat }));
     });
@@ -330,11 +330,11 @@ export default function Lancamentos() {
   const paginatedEntries = allEntries.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE);
 
   const totalMes = allEntries.reduce((s, e) => s + e.valor, 0);
-  const totalComissao = allEntries.reduce((s, e) => s + calcularComissao(e.cat, e.valor, e.custos ?? 0), 0);
+  const totalComissao = allEntries.reduce((s, e) => s + comissaoFor(e.cat, e.valor, e.custos ?? 0), 0);
   const { metas: currentMetas } = getMetasForMonth(data.historico_metas, filterMonth, filterYear, data.metas, data.meta_semanal);
   const metaCategoria = categoria === "todos"
     ? Object.values(currentMetas).reduce((a, b) => a + b, 0)
-    : currentMetas[categoria as Categoria];
+    : categoria === "dmedical" ? 0 : currentMetas[categoria as Categoria];
   const totalCategoria = totalMes;
 
   function toggleSort(key: SortKey) {
