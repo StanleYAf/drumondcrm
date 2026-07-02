@@ -53,13 +53,13 @@ export default function Lancamentos() {
   const [searchParams, setSearchParams] = useSearchParams();
   const now = new Date();
 
-  const catParam = searchParams.get("categoria") as keyof typeof CATEGORIA_ARRAY | null;
+  const catParam = searchParams.get("categoria");
   const mesParam = parseInt(searchParams.get("mes") || "") - 1;
   const anoParam = parseInt(searchParams.get("ano") || "");
 
   const filterMonth = isNaN(mesParam) || mesParam < 0 || mesParam > 11 ? now.getMonth() : mesParam;
   const filterYear = isNaN(anoParam) ? now.getFullYear() : anoParam;
-  const categoria: Categoria | "todos" = catParam && ["produto", "servico", "contrato", "acessorio"].includes(catParam) ? catParam as Categoria : "todos";
+  const categoria: TabKey | "todos" = catParam && ["produto", "servico", "contrato", "acessorio", "dmedical"].includes(catParam) ? catParam as TabKey : "todos";
 
   function setFilterMonth(m: number) {
     setSearchParams(prev => { prev.set("mes", String(m + 1)); return prev; }, { replace: true });
@@ -67,7 +67,7 @@ export default function Lancamentos() {
   function setFilterYear(y: number) {
     setSearchParams(prev => { prev.set("ano", String(y)); return prev; }, { replace: true });
   }
-  function setCategoria(c: Categoria | "todos") {
+  function setCategoria(c: TabKey | "todos") {
     setSearchParams(prev => {
       if (c === "todos") prev.delete("categoria");
       else prev.set("categoria", c);
@@ -94,7 +94,7 @@ export default function Lancamentos() {
   const [stagedFiles, setStagedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [editItem, setEditItem] = useState<(Lancamento & { cat: Categoria }) | null>(null);
+  const [editItem, setEditItem] = useState<(Lancamento & { cat: TabKey }) | null>(null);
   const [editCliente, setEditCliente] = useState("");
   const [editDescricao, setEditDescricao] = useState("");
   const [editTipo, setEditTipo] = useState("");
@@ -106,9 +106,9 @@ export default function Lancamentos() {
   const [editItens, setEditItens] = useState<LancamentoItem[]>([]);
   const [editItensLoading, setEditItensLoading] = useState(false);
 
-  const formCat = categoria === "todos" ? "produto" : categoria as Categoria;
-  const fieldLabel = formCat === "acessorio" ? "Acessório" : formCat === "produto" ? "Produto" : "Serviço";
-  const tipoLabel = formCat === "acessorio" ? "Tipo de Acessório" : formCat === "produto" ? "Tipo de Produto" : formCat === "contrato" ? "Tipo de Contrato" : "Tipo de Serviço";
+  const formCat: TabKey = categoria === "todos" ? "produto" : categoria;
+  const fieldLabel = formCat === "dmedical" ? "Item" : formCat === "acessorio" ? "Acessório" : formCat === "produto" ? "Produto" : "Serviço";
+  const tipoLabel = formCat === "dmedical" ? "Tipo (Dmedical)" : formCat === "acessorio" ? "Tipo de Acessório" : formCat === "produto" ? "Tipo de Produto" : formCat === "contrato" ? "Tipo de Contrato" : "Tipo de Serviço";
 
   function validateForm(c: string, d: string, v: string, dt: string) {
     const result = lancamentoSchema.safeParse({ cliente: c, descricao: d, valor: parseFloat(v) || 0, data: dt });
