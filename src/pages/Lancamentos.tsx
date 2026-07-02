@@ -348,8 +348,8 @@ export default function Lancamentos() {
     return sortAsc ? <ChevronUp className="h-3 w-3 inline ml-0.5" /> : <ChevronDown className="h-3 w-3 inline ml-0.5" />;
   };
 
-  const editFieldLabel = editItem ? (editItem.cat === "acessorio" ? "Acessório" : editItem.cat === "produto" ? "Produto" : "Serviço") : "";
-  const editTipoLabel = editItem ? (editItem.cat === "acessorio" ? "Tipo de Acessório" : editItem.cat === "produto" ? "Tipo de Produto" : editItem.cat === "contrato" ? "Tipo de Contrato" : "Tipo de Serviço") : "";
+  const editFieldLabel = editItem ? (editItem.cat === "dmedical" ? "Item" : editItem.cat === "acessorio" ? "Acessório" : editItem.cat === "produto" ? "Produto" : "Serviço") : "";
+  const editTipoLabel = editItem ? (editItem.cat === "dmedical" ? "Tipo (Dmedical)" : editItem.cat === "acessorio" ? "Tipo de Acessório" : editItem.cat === "produto" ? "Tipo de Produto" : editItem.cat === "contrato" ? "Tipo de Contrato" : "Tipo de Serviço") : "";
 
   function ErrorMsg({ msg }: { msg?: string }) {
     if (!msg) return null;
