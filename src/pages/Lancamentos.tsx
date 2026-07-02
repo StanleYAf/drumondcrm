@@ -183,7 +183,7 @@ export default function Lancamentos() {
     toast.success("Lançamento adicionado com sucesso");
   }
 
-  async function openEdit(entry: Lancamento & { cat: Categoria }) {
+  async function openEdit(entry: Lancamento & { cat: TabKey }) {
     setEditItem(entry);
     setEditCliente(entry.cliente);
     setEditDescricao(getDescricao(entry));
@@ -709,7 +709,7 @@ export default function Lancamentos() {
               <div key={e.id} className="ios-list-item">
                 <button className="flex-1 min-w-0 text-left" onClick={() => openEdit(e)}>
                   <div className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: CAT_COLORS[e.cat] }} />
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: tabColor(e.cat) }} />
                     <span className="text-sm font-medium text-foreground truncate">{e.cliente}</span>
                   </div>
                   <p className="text-xs mt-0.5 ml-3.5 truncate text-muted-foreground">
@@ -720,7 +720,7 @@ export default function Lancamentos() {
                   <div className="flex flex-col items-end">
                     <span className="text-sm font-semibold" style={{ color: '#30D158' }}>{formatCurrency(e.valor)}</span>
                     <span className="text-[10px] font-medium" style={{ color: '#0A84FF' }}>
-                      Com.: {formatCurrency(calcularComissao(e.cat, e.valor, e.custos ?? 0))}
+                      Com.: {formatCurrency(comissaoFor(e.cat, e.valor, e.custos ?? 0))}
                     </span>
                     <button
                       type="button"
