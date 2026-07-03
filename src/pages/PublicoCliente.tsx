@@ -19,7 +19,23 @@ const mesIdx = (m: string) => MES_ORDEM[(m || "").trim().toLowerCase()] ?? 0;
 const num = (v: any) => (v === null || v === undefined ? 0 : Number(v) || 0);
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : s);
 
-interface Cliente { id: string; nome: string; responsavel: string | null }
+function extractLogoPath(v: string | null): string | null {
+  if (!v) return null;
+  const clean = v.split("?")[0];
+  const m = clean.match(/client-logos\/(.+)$/);
+  return m ? m[1] : clean;
+}
+
+async function getSignedLogoUrl(v: string | null): Promise<string | null> {
+  const path = extractLogoPath(v);
+  if (!path) return null;
+  const { data } = await supabase.storage
+    .from("client-logos")
+    .createSignedUrl(path, 60 * 60 * 24 * 7);
+  return data?.signedUrl || null;
+}
+
+interface Cliente { id: string; nome: string; responsavel: string | null; logo_url: string | null }
 interface Indicador { cliente_id: string; mes: string; ano: number; [k: string]: any }
 
 export default function PublicoCliente() {
