@@ -98,7 +98,7 @@ const ROUTE_TITLES: Record<string, { title: string; module: string }> = {
   "/financeiro": { title: "Dashboard Financeiro", module: "Financeiro" },
   "/demandas/financeiro": { title: "Demandas", module: "Financeiro" },
   "/administrativo/contratos": { title: "Contratos", module: "Administrativo" },
-  "/administrativo/art": { title: "Controle de ART", module: "Administrativo" },
+  "/administrativo/art": { title: "Controle de ART", module: "Engenharia" },
   "/configuracoes": { title: "Configurações", module: "Sistema" },
 };
 
