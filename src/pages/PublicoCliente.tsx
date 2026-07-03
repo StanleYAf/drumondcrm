@@ -41,6 +41,7 @@ interface Indicador { cliente_id: string; mes: string; ano: number; [k: string]:
 export default function PublicoCliente() {
   const { token } = useParams<{ token: string }>();
   const [cliente, setCliente] = useState<Cliente | null>(null);
+  const [clienteLogoUrl, setClienteLogoUrl] = useState<string | null>(null);
   const [indicadores, setIndicadores] = useState<Indicador[]>([]);
   const [ordens, setOrdens] = useState<OSOperacaoRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,6 +65,14 @@ export default function PublicoCliente() {
     })();
     return () => { cancelled = true; };
   }, [token]);
+
+  useEffect(() => {
+    if (!cliente?.logo_url) {
+      setClienteLogoUrl(null);
+      return;
+    }
+    getSignedLogoUrl(cliente.logo_url).then(url => setClienteLogoUrl(url));
+  }, [cliente?.logo_url]);
 
   const periodos = useMemo(() => {
     const map = new Map<string, { mes: string; ano: number }>();
