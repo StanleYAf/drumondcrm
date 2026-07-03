@@ -580,7 +580,7 @@ export default function Lancamentos() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Data</label>
-                <input type="date" value={dataLanc} onChange={e => setDataLanc(e.target.value)} className="ios-input w-full" />
+                <DateInput value={dataLanc} onChange={setDataLanc} className="ios-input w-full" />
                 <ErrorMsg msg={formErrors.data} />
               </div>
               <div>
@@ -802,7 +802,7 @@ export default function Lancamentos() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Data</label>
-                <input type="date" value={editData} onChange={e => setEditData(e.target.value)} className="ios-input w-full" />
+                <DateInput value={editData} onChange={setEditData} className="ios-input w-full" />
                 <ErrorMsg msg={editErrors.data} />
               </div>
               <div>
