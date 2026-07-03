@@ -8,18 +8,15 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  AlertTriangle, CheckCircle2, ClipboardList, Wrench, FileText, Printer, Eye,
+  ClipboardList, Wrench, FileText, Printer, Eye, ShieldCheck, ClipboardCheck,
 } from "lucide-react";
-import {
-  BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip as ReTooltip, CartesianGrid,
-} from "recharts";
 
 const MESES = [
   "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
   "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro",
 ];
 
-interface Cliente { id: string; nome: string; ativo: boolean }
+interface Cliente { id: string; nome: string; ativo: boolean; logo_url: string | null }
 interface OS {
   id: string;
   estado: string | null;
@@ -30,14 +27,42 @@ interface OS {
   numero_serie: string | null;
 }
 
+interface IndicadorRow {
+  eng_total_equipamentos: number | null;
+  eng_equipamentos_ativos: number | null;
+  pred_total_equipamentos: number | null;
+  pred_equipamentos_ativos: number | null;
+}
+
 const FECHADAS = new Set(["Fechada", "Serviço finalizado"]);
 const CANCELADAS = new Set(["Cancelada"]);
+const PENDENTES_ESTADOS = [
+  "Aberta",
+  "Aguardando peças",
+  "Agendada",
+  "Aguardando aprovação de orçamento",
+  "Em espera",
+  "Em execução",
+  "Reparo externo",
+];
 
 function isPreventiva(tipo: string | null) {
   return !!tipo && tipo.toLowerCase().includes("prevent");
 }
 function isCorretiva(tipo: string | null) {
   return !!tipo && tipo.toLowerCase().includes("corret");
+}
+function isClinica(o: OS) {
+  const q = (o.quadro_trabalho || "").toLowerCase();
+  return q.includes("clínica") || q.includes("clinica");
+}
+function isPredial(o: OS) {
+  const q = (o.quadro_trabalho || "").toLowerCase();
+  return q.includes("predial");
+}
+function estaAberta(o: OS) {
+  const e = (o.estado || "").trim();
+  return !FECHADAS.has(e) && !CANCELADAS.has(e);
 }
 
 export default function ManutencaoBoletim() {
@@ -50,11 +75,12 @@ export default function ManutencaoBoletim() {
   const [observacoes, setObservacoes] = useState<string>("");
   const [showPreview, setShowPreview] = useState(false);
   const [ordens, setOrdens] = useState<OS[]>([]);
+  const [indicador, setIndicador] = useState<IndicadorRow | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("clientes").select("id, nome, ativo").eq("ativo", true).order("nome");
+      const { data } = await supabase.from("clientes").select("id, nome, ativo, logo_url").eq("ativo", true).order("nome");
       setClientes((data || []) as Cliente[]);
     })();
   }, []);
@@ -62,13 +88,23 @@ export default function ManutencaoBoletim() {
   async function carregarDados() {
     if (!clienteId) return;
     setLoading(true);
-    const { data, error } = await supabase
+    const [{ data: osData, error }, { data: indData }] = await Promise.all([
+      supabase
       .from("ordens_servico")
       .select("id,estado,tipo_servico,localizacao,quadro_trabalho,tag,numero_serie")
       .eq("cliente_id", clienteId)
       .eq("mes", mes)
-      .eq("ano", ano);
-    if (!error) setOrdens((data || []) as OS[]);
+      .eq("ano", ano),
+      supabase
+      .from("indicadores_manutencao")
+      .select("eng_total_equipamentos,eng_equipamentos_ativos,pred_total_equipamentos,pred_equipamentos_ativos")
+      .eq("cliente_id", clienteId)
+      .eq("mes", mes)
+      .eq("ano", ano)
+      .maybeSingle(),
+    ]);
+    if (!error) setOrdens((osData || []) as OS[]);
+    setIndicador((indData as IndicadorRow) || null);
     setLoading(false);
   }
 
@@ -77,7 +113,9 @@ export default function ManutencaoBoletim() {
     setShowPreview(true);
   }
 
-  const clienteNome = clientes.find(c => c.id === clienteId)?.nome || "";
+  const clienteSel = clientes.find(c => c.id === clienteId);
+  const clienteNome = clienteSel?.nome || "";
+  const clienteLogo = clienteSel?.logo_url || null;
 
   const principaisList = useMemo(
     () => principais.split("\n").map(s => s.trim()).filter(Boolean).slice(0, 5),
@@ -91,22 +129,28 @@ export default function ManutencaoBoletim() {
   const stats = useMemo(() => {
     const corretivas = ordens.filter(o => isCorretiva(o.tipo_servico));
     const preventivas = ordens.filter(o => isPreventiva(o.tipo_servico));
-    const estadoEq = (o: OS, name: string) => (o.estado || "").trim().toLowerCase() === name.toLowerCase();
-    const corrAbertas = corretivas.filter(o => !FECHADAS.has((o.estado || "").trim()) && !CANCELADAS.has((o.estado || "").trim())).length;
-    const corrFechadas = corretivas.filter(o => FECHADAS.has((o.estado || "").trim())).length;
-    const prevAbertas = preventivas.filter(o => !FECHADAS.has((o.estado || "").trim()) && !CANCELADAS.has((o.estado || "").trim())).length;
-    const prevFechadas = preventivas.filter(o => FECHADAS.has((o.estado || "").trim())).length;
 
-    // pendentes por estado (corretivas)
-    const countByEstado = (name: string) => corretivas.filter(o => estadoEq(o, name)).length;
-    const pendAberta = countByEstado("Aberta");
-    const pendAguardPecas = countByEstado("Aguardando peças");
-    const pendAguardOrc = countByEstado("Aguardando aprovação de orçamento");
-    const pendExecucao = countByEstado("Em execução");
-    const pendReparoExt = countByEstado("Reparo externo");
+    const setorStats = (filtroSetor: (o: OS) => boolean) => {
+      const corr = corretivas.filter(filtroSetor);
+      const prev = preventivas.filter(filtroSetor);
+      return {
+        corretivasAbertas: corr.filter(estaAberta).length,
+        corretivasFechadas: corr.filter(o => FECHADAS.has((o.estado || "").trim())).length,
+        preventivasAbertas: prev.filter(estaAberta).length,
+        preventivasFechadas: prev.filter(o => FECHADAS.has((o.estado || "").trim())).length,
+      };
+    };
+    const eng = setorStats(isClinica);
+    const pred = setorStats(isPredial);
 
-    // Reincidências eng clínica
-    const clinicas = corretivas.filter(o => (o.quadro_trabalho || "").toLowerCase().includes("clínica") || (o.quadro_trabalho || "").toLowerCase().includes("clinica"));
+    // pendentes por estado (corretivas gerais)
+    const pendentesPorEstado = PENDENTES_ESTADOS.map(name => ({
+      estado: name,
+      qtd: corretivas.filter(o => (o.estado || "").trim().toLowerCase() === name.toLowerCase()).length,
+    }));
+
+    // Reincidências eng clínica (>= 3 corretivas no mesmo equipamento)
+    const clinicas = corretivas.filter(isClinica);
     const groupKey = (o: OS) => o.tag || o.numero_serie || "";
     const counts: Record<string, number> = {};
     clinicas.forEach(o => {
@@ -116,27 +160,34 @@ export default function ManutencaoBoletim() {
     });
     const reincidencias = Object.values(counts).filter(n => n >= 3).length;
 
-    // Em manutenção: corretivas não fechadas e não canceladas
-    const emManutencao = corretivas.filter(o => !FECHADAS.has((o.estado || "").trim()) && !CANCELADAS.has((o.estado || "").trim())).length;
-
-    // gráficos por unidade
-    const groupByLoc = (list: OS[]) => {
-      const m: Record<string, number> = {};
-      list.forEach(o => {
-        const k = (o.localizacao || "Sem unidade").trim() || "Sem unidade";
-        m[k] = (m[k] || 0) + 1;
+    // Parque tecnológico: fallback por TAG/nº série únicos, com corretivas abertas descontando ativos
+    const parqueSetor = (filtroSetor: (o: OS) => boolean, corrAbertasSetor: number) => {
+      const setorOs = ordens.filter(filtroSetor);
+      const tagsUnicas = new Set<string>();
+      setorOs.forEach(o => {
+        const k = o.tag || o.numero_serie || "";
+        if (k) tagsUnicas.add(k);
       });
-      return Object.entries(m).map(([unidade, qtd]) => ({ unidade, qtd })).sort((a,b) => b.qtd - a.qtd).slice(0, 8);
+      const totalCalc = tagsUnicas.size;
+      const ativosCalc = Math.max(0, totalCalc - corrAbertasSetor);
+      return { totalCalc, ativosCalc };
     };
+    const engParque = parqueSetor(isClinica, eng.corretivasAbertas);
+    const predParque = parqueSetor(isPredial, pred.corretivasAbertas);
 
     return {
-      corrAbertas, corrFechadas, prevAbertas, prevFechadas,
-      pendAberta, pendAguardPecas, pendAguardOrc, pendExecucao, pendReparoExt,
-      reincidencias, emManutencao,
-      corretivasPorUnidade: groupByLoc(corretivas),
-      preventivasPorUnidade: groupByLoc(preventivas),
+      eng, pred,
+      pendentesPorEstado,
+      reincidencias,
+      engParque,
+      predParque,
     };
   }, [ordens]);
+
+  const engTotal = indicador?.eng_total_equipamentos ?? stats.engParque.totalCalc;
+  const engAtivos = indicador?.eng_equipamentos_ativos ?? stats.engParque.ativosCalc;
+  const predTotal = indicador?.pred_total_equipamentos ?? stats.predParque.totalCalc;
+  const predAtivos = indicador?.pred_equipamentos_ativos ?? stats.predParque.ativosCalc;
 
   return (
     <div className="p-6 space-y-6">
@@ -216,9 +267,18 @@ export default function ManutencaoBoletim() {
                 {clienteNome ? `${clienteNome} — ` : ""}CLÍNICA / PREDIAL — {mes} {ano}
               </p>
             </div>
-            <div className="text-white text-right">
-              <div className="text-xl font-extrabold tracking-widest">DRUMOND</div>
-              <div className="text-[10px] opacity-80">SOLUÇÕES HOSPITALARES</div>
+            <div className="flex items-center gap-4">
+              <div className="text-white text-right">
+                <div className="text-xl font-extrabold tracking-widest">DRUMOND</div>
+                <div className="text-[10px] opacity-80">SOLUÇÕES HOSPITALARES</div>
+              </div>
+              {clienteLogo && (
+                <img
+                  src={clienteLogo}
+                  alt={clienteNome}
+                  className="h-14 w-14 rounded-md bg-white object-contain p-1"
+                />
+              )}
             </div>
           </div>
 
@@ -229,11 +289,19 @@ export default function ManutencaoBoletim() {
               {/* Principais Indicadores */}
               <div className="rounded-lg p-5 text-white" style={{ backgroundColor: "#1e3a5f" }}>
                 <h2 className="text-sm font-bold tracking-wider mb-4 border-b border-white/30 pb-2">PRINCIPAIS INDICADORES</h2>
+                <div className="text-[11px] font-semibold opacity-80 mb-2">ENG. CLÍNICA</div>
                 <div className="grid grid-cols-2 gap-3">
-                  <IndicadorItem icon={<AlertTriangle className="h-5 w-5" />} label="Chamados Abertos" value={stats.corrAbertas} />
-                  <IndicadorItem icon={<CheckCircle2 className="h-5 w-5" />} label="Chamados Atendidos" value={stats.corrFechadas} />
-                  <IndicadorItem icon={<ClipboardList className="h-5 w-5" />} label="Preventivas Abertas" value={stats.prevAbertas} />
-                  <IndicadorItem icon={<Wrench className="h-5 w-5" />} label="Preventivas Fechadas" value={stats.prevFechadas} />
+                  <IndicadorItem icon={<Wrench className="h-5 w-5" />} label="Chamados Abertos" value={stats.eng.corretivasAbertas} />
+                  <IndicadorItem icon={<ClipboardCheck className="h-5 w-5" />} label="Chamados Atendidos" value={stats.eng.corretivasFechadas} />
+                  <IndicadorItem icon={<ShieldCheck className="h-5 w-5" />} label="Preventivas Abertas" value={stats.eng.preventivasAbertas} />
+                  <IndicadorItem icon={<ClipboardList className="h-5 w-5" />} label="Preventivas Fechadas" value={stats.eng.preventivasFechadas} />
+                </div>
+                <div className="text-[11px] font-semibold opacity-80 mt-4 mb-2">ENG. PREDIAL</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <IndicadorItem icon={<Wrench className="h-5 w-5" />} label="Chamados Abertos" value={stats.pred.corretivasAbertas} />
+                  <IndicadorItem icon={<ClipboardCheck className="h-5 w-5" />} label="Chamados Atendidos" value={stats.pred.corretivasFechadas} />
+                  <IndicadorItem icon={<ShieldCheck className="h-5 w-5" />} label="Preventivas Abertas" value={stats.pred.preventivasAbertas} />
+                  <IndicadorItem icon={<ClipboardList className="h-5 w-5" />} label="Preventivas Fechadas" value={stats.pred.preventivasFechadas} />
                 </div>
               </div>
 
@@ -260,42 +328,51 @@ export default function ManutencaoBoletim() {
                   </ul>
                 )}
               </div>
-
-              {/* OS por Unidade */}
-              <div className="rounded-lg p-5" style={{ backgroundColor: "#f1f5f9" }}>
-                <h2 className="text-sm font-bold tracking-wider mb-3" style={{ color: "#1e3a5f" }}>O.S. POR UNIDADE</h2>
-                <div className="grid grid-cols-2 gap-3">
-                  <UnidadeRanking title="Corretivas" data={stats.corretivasPorUnidade} color="#ef4444" />
-                  <UnidadeRanking title="Preventivas" data={stats.preventivasPorUnidade} color="#2563eb" />
-                </div>
-              </div>
             </div>
 
             {/* RIGHT COLUMN */}
             <div className="space-y-4">
               <div className="rounded-lg p-5 text-white" style={{ backgroundColor: "#2563eb" }}>
-                <h2 className="text-sm font-bold tracking-wider mb-4 border-b border-white/30 pb-2">GESTÃO DA MANUTENÇÃO</h2>
-                <LinhaValor label="Reincidências na Eng. Clínica" value={stats.reincidencias} />
-                <div className="mt-4 mb-2 text-xs font-semibold opacity-90">OSs de corretiva pendentes {ano}</div>
-                <LinhaValor label="Aberta" value={stats.pendAberta} />
-                <LinhaValor label="Aguardando peças" value={stats.pendAguardPecas} />
-                <LinhaValor label="Aguardando aprovação de orçamento" value={stats.pendAguardOrc} />
-                <LinhaValor label="Em execução" value={stats.pendExecucao} />
-                <LinhaValor label="Reparo externo" value={stats.pendReparoExt} />
-              </div>
-
-              <div className="rounded-lg p-5 text-white" style={{ backgroundColor: "#2563eb" }}>
-                <h2 className="text-sm font-bold tracking-wider mb-4 border-b border-white/30 pb-2">DISPONIBILIDADE DO PARQUE TECNOLÓGICO</h2>
-                <LinhaValor label="Total de equipamentos" value="—" />
-                <LinhaValor label="Ativos" value="—" />
-                <LinhaValor label="Em manutenção" value={stats.emManutencao} />
-              </div>
-
-              <div className="rounded-lg p-5 text-white" style={{ backgroundColor: "#2563eb" }}>
                 <h2 className="text-sm font-bold tracking-wider mb-4 border-b border-white/30 pb-2">PLANEJAMENTO PRÓXIMO MÊS</h2>
                 <LinhaValor label="Preventivas de Eng. Clínica" value={0} />
                 <LinhaValor label="Calibrações" value={0} />
                 <LinhaValor label="Teste de Segurança Elétrica" value={0} />
+              </div>
+
+              <div className="rounded-lg p-5 text-white" style={{ backgroundColor: "#2563eb" }}>
+                <h2 className="text-sm font-bold tracking-wider mb-4 border-b border-white/30 pb-2">GESTÃO DE SERVIÇO</h2>
+                <LinhaValor label="Reincidências na Eng. Clínica" value={stats.reincidencias} />
+                <div className="mt-4 mb-2 text-xs font-semibold opacity-90">OSs de corretiva pendentes {ano}</div>
+                {stats.pendentesPorEstado.map(p => (
+                  <LinhaValor key={p.estado} label={p.estado} value={p.qtd} />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Disponibilidade do Parque Tecnológico (full width) */}
+          <div className="px-6 pb-6">
+            <div className="rounded-lg p-5 border" style={{ backgroundColor: "#f1f5f9" }}>
+              <h2 className="text-sm font-bold tracking-wider mb-4 text-center" style={{ color: "#1e3a5f" }}>
+                DISPONIBILIDADE DO PARQUE TECNOLÓGICO
+              </h2>
+              <div className="grid grid-cols-2 divide-x divide-slate-300">
+                <div className="px-4">
+                  <div className="text-xs font-bold uppercase tracking-wider mb-3 text-center" style={{ color: "#1e3a5f" }}>
+                    Total de equipamentos — Eng. Clínica
+                  </div>
+                  <ParqueLinha label="Total" value={engTotal} />
+                  <ParqueLinha label="Ativos" value={engAtivos} />
+                  <ParqueLinha label="Em manutenção" value={stats.eng.corretivasAbertas} />
+                </div>
+                <div className="px-4">
+                  <div className="text-xs font-bold uppercase tracking-wider mb-3 text-center" style={{ color: "#1e3a5f" }}>
+                    Total de equipamentos — Eng. Predial
+                  </div>
+                  <ParqueLinha label="Total" value={predTotal} />
+                  <ParqueLinha label="Ativos" value={predAtivos} />
+                  <ParqueLinha label="Em manutenção" value={stats.pred.corretivasAbertas} />
+                </div>
               </div>
             </div>
           </div>
@@ -353,64 +430,11 @@ function LinhaValor({ label, value }: { label: string; value: number | string })
   );
 }
 
-function MiniChart({ title, data, color }: { title: string; data: { unidade: string; qtd: number }[]; color: string }) {
+function ParqueLinha({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="bg-white rounded-md p-2 border">
-      <div className="text-[11px] font-semibold mb-1 text-slate-700">{title}</div>
-      <div style={{ width: "100%", height: 140 }}>
-        {data.length === 0 ? (
-          <div className="text-xs text-slate-400 text-center pt-12">Sem dados</div>
-        ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-              <XAxis dataKey="unidade" tick={{ fontSize: 9 }} interval={0} angle={-20} textAnchor="end" height={40} />
-              <YAxis tick={{ fontSize: 9 }} allowDecimals={false} />
-              <ReTooltip />
-              <Bar dataKey="qtd" fill={color} radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function UnidadeRanking({ title, data, color }: { title: string; data: { unidade: string; qtd: number }[]; color: string }) {
-  const cleanLabel = (s: string) => {
-    const t = (s || "").trim();
-    if (!t || /^sem unidade$/i.test(t)) return "Não informado";
-    return t.replace(/^DSH\s*-\s*/i, "").replace(/^SEMPER\s*-\s*/i, "");
-  };
-  const rows = data.slice(0, 6).map(d => ({ ...d, label: cleanLabel(d.unidade) }));
-  const total = data.reduce((a, b) => a + b.qtd, 0);
-  const max = Math.max(1, ...rows.map(r => r.qtd));
-  return (
-    <div className="bg-white rounded-md p-3 border border-slate-200">
-      <div className="flex items-baseline justify-between mb-2">
-        <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-700">{title}</div>
-        <div className="text-[10px] text-slate-500">Total <span className="font-bold text-slate-800">{total}</span></div>
-      </div>
-      {rows.length === 0 ? (
-        <div className="text-xs text-slate-400 text-center py-6">Sem dados</div>
-      ) : (
-        <ul className="space-y-1.5">
-          {rows.map((r) => {
-            const pct = (r.qtd / max) * 100;
-            return (
-              <li key={r.label} className="text-[11px]">
-                <div className="flex items-center justify-between mb-0.5">
-                  <span className="truncate text-slate-700 pr-2" title={r.label}>{r.label}</span>
-                  <span className="font-bold tabular-nums" style={{ color }}>{r.qtd}</span>
-                </div>
-                <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                  <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: color }} />
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+    <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0 text-sm">
+      <span className="text-slate-700">{label}</span>
+      <span className="font-bold text-lg" style={{ color: "#1e3a5f" }}>{value}</span>
     </div>
   );
 }
