@@ -80,6 +80,7 @@ export default function ManutencaoBoletim() {
   const [ordens, setOrdens] = useState<OS[]>([]);
   const [indicador, setIndicador] = useState<IndicadorRow | null>(null);
   const [loading, setLoading] = useState(false);
+  const [clienteLogoUrl, setClienteLogoUrl] = useState<string | null>(null);
 
   const [sections, setSections] = useState({
     indicadores: true,
@@ -101,6 +102,19 @@ export default function ManutencaoBoletim() {
       setClientes((data || []) as Cliente[]);
     })();
   }, []);
+
+  // Resolve signed URL for the selected client's logo (bucket is private).
+  useEffect(() => {
+    const raw = clientes.find(c => c.id === clienteId)?.logo_url || null;
+    if (!raw) { setClienteLogoUrl(null); return; }
+    const clean = raw.split("?")[0];
+    const m = clean.match(/client-logos\/(.+)$/);
+    const path = m ? m[1] : clean;
+    let cancelled = false;
+    supabase.storage.from("client-logos").createSignedUrl(path, 60 * 60 * 24 * 7)
+      .then(({ data }) => { if (!cancelled) setClienteLogoUrl(data?.signedUrl || null); });
+    return () => { cancelled = true; };
+  }, [clienteId, clientes]);
 
   async function carregarDados() {
     if (!clienteId) return null;
@@ -182,7 +196,7 @@ export default function ManutencaoBoletim() {
 
   const clienteSel = clientes.find(c => c.id === clienteId);
   const clienteNome = clienteSel?.nome || "";
-  const clienteLogo = clienteSel?.logo_url || null;
+  const clienteLogo = clienteLogoUrl;
 
   const principaisList = useMemo(
     () => principais.split("\n").map(s => s.trim()).filter(Boolean).slice(0, 5),
