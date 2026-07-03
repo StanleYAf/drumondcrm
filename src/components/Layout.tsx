@@ -50,7 +50,8 @@ const groups: ModuleDef[] = [
     title: "Engenharia",
     icon: Stethoscope,
     subs: [
-      { title: "Boletim", url: "/manutencao/boletim", icon: FileText, perm: "eng_boletim" },
+      { title: "ART", url: "/administrativo/art", icon: FileBadge, perm: "adm_art" },
+      { title: "Boletim", url: "/manutencao/boletim", icon: FileText, permutations: "eng_boletim" },
       { title: "Clientes", url: "/manutencao/clientes", icon: Building2, perm: "eng_clientes" },
       { title: "Dash Engenharia", url: "/manutencao", icon: LayoutDashboard, perm: "eng_dashboard" },
       { title: "Demandas", url: "/demandas/engenharia", icon: KanbanSquare, perm: "eng_dashboard" },
