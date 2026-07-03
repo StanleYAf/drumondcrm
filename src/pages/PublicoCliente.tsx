@@ -185,10 +185,15 @@ export default function PublicoCliente() {
             <div className="text-[11px] text-white/70">Painel de Manutenção · Acesso do Cliente</div>
           </div>
         </div>
-        <div className="relative hidden md:flex flex-col items-center text-center min-w-0 px-4">
-          <div className="text-[18px] font-bold truncate">{cliente.nome}</div>
-          <div className="text-[12px]" style={{ color: "#BCD7EC" }}>
-            {cliente.responsavel || "Relatório de Manutenção"}
+        <div className="relative hidden md:flex items-center gap-3 text-center min-w-0 px-4">
+          {clienteLogoUrl && (
+            <img src={clienteLogoUrl} alt={cliente.nome} className="h-12 w-12 rounded-lg object-contain bg-white/10" />
+          )}
+          <div className="flex flex-col items-center">
+            <div className="text-[18px] font-bold truncate">{cliente.nome}</div>
+            <div className="text-[12px]" style={{ color: "#BCD7EC" }}>
+              {cliente.responsavel || "Relatório de Manutenção"}
+            </div>
           </div>
         </div>
         <div className="relative flex items-center gap-3">
