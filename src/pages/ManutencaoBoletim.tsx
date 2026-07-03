@@ -199,12 +199,20 @@ export default function ManutencaoBoletim() {
     if (error) {
       toast.error("Erro ao salvar parque tecnológico: " + error.message);
     } else {
-      setIndicador({
+      setIndicador(prev => ({
+        ...(prev ?? {
+          eng_corretivas_abertas: null, eng_corretivas_fechadas: null,
+          eng_preventivas_abertas: null, eng_preventivas_fechadas: null,
+          pred_corretivas_abertas: null, pred_corretivas_fechadas: null,
+          pred_preventivas_abertas: null, pred_preventivas_fechadas: null,
+          eng_total_equipamentos: null, eng_equipamentos_ativos: null,
+          pred_total_equipamentos: null, pred_equipamentos_ativos: null,
+        }),
         eng_total_equipamentos: payload.eng_total_equipamentos,
         eng_equipamentos_ativos: payload.eng_equipamentos_ativos,
         pred_total_equipamentos: payload.pred_total_equipamentos,
         pred_equipamentos_ativos: payload.pred_equipamentos_ativos,
-      });
+      }));
       toast.success("Parque tecnológico salvo");
     }
   }
