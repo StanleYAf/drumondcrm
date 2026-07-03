@@ -49,6 +49,23 @@ interface Cliente {
   logo_url: string | null;
 }
 
+// Extrai o path do storage a partir de uma URL pública/assinada ou de um path puro.
+function extractLogoPath(v: string | null): string | null {
+  if (!v) return null;
+  const clean = v.split("?")[0];
+  const m = clean.match(/client-logos\/(.+)$/);
+  return m ? m[1] : clean;
+}
+
+async function getSignedLogoUrl(v: string | null): Promise<string | null> {
+  const path = extractLogoPath(v);
+  if (!path) return null;
+  const { data } = await supabase.storage
+    .from("client-logos")
+    .createSignedUrl(path, 60 * 60 * 24 * 7);
+  return data?.signedUrl || null;
+}
+
 export default function ManutencaoClientes() {
   const navigate = useNavigate();
   const { hasCargo } = useAuth();
@@ -69,6 +86,7 @@ export default function ManutencaoClientes() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoUrls, setLogoUrls] = useState<Record<string, string>>({});
 
   const load = async () => {
     setLoading(true);
@@ -77,8 +95,21 @@ export default function ManutencaoClientes() {
       .from("clientes")
       .select("*")
       .order("nome", { ascending: true });
-    if (error) setError(error.message);
-    else setClientes((data || []) as Cliente[]);
+    if (error) {
+      setError(error.message);
+    } else {
+      const list = (data || []) as Cliente[];
+      setClientes(list);
+      // Resolve signed URLs for each client with a logo
+      const entries = await Promise.all(
+        list
+          .filter(c => c.logo_url)
+          .map(async c => [c.id, await getSignedLogoUrl(c.logo_url)] as const)
+      );
+      const map: Record<string, string> = {};
+      entries.forEach(([id, url]) => { if (url) map[id] = url; });
+      setLogoUrls(map);
+    }
     setLoading(false);
   };
 
@@ -97,14 +128,14 @@ export default function ManutencaoClientes() {
     setOpen(true);
   };
 
-  const openEdit = (c: Cliente) => {
+  const openEdit = async (c: Cliente) => {
     setEditing(c);
     setNome(c.nome);
     setResponsavel(c.responsavel || "");
     setAtivo(c.ativo);
     setLogoUrl(c.logo_url || null);
     setLogoFile(null);
-    setLogoPreview(c.logo_url || null);
+    setLogoPreview(c.logo_url ? (logoUrls[c.id] || await getSignedLogoUrl(c.logo_url)) : null);
     setOpen(true);
   };
 
@@ -139,8 +170,8 @@ export default function ManutencaoClientes() {
         .from("client-logos")
         .upload(path, logoFile, { upsert: true, contentType: logoFile.type });
       if (upErr) throw upErr;
-      const { data } = supabase.storage.from("client-logos").getPublicUrl(path);
-      return `${data.publicUrl}?v=${Date.now()}`;
+      // Store the storage path (not a public URL) — bucket is private, we sign at read time.
+      return path;
     } finally {
       setUploadingLogo(false);
     }
@@ -336,11 +367,11 @@ export default function ManutencaoClientes() {
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
-                        {c.logo_url ? (
+                        {c.logo_url && logoUrls[c.id] ? (
                           <img
-                            src={c.logo_url}
+                            src={logoUrls[c.id]}
                             alt={c.nome}
-                            className="h-9 w-9 rounded-md object-cover border border-border bg-background"
+                            className="h-9 w-9 rounded-md object-contain border border-border bg-white"
                           />
                         ) : (
                           <div className="h-9 w-9 rounded-md border border-border bg-muted flex items-center justify-center text-muted-foreground">
