@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useAppData } from "@/lib/dataContext";
 import { formatDate, type PosVenda, type NotaContato } from "@/lib/types";
+import { DateInput } from "@/components/DateInput";
 import { Plus, X, PhoneOff, Users, ArrowUpDown, MessageSquare, Clock, Send } from "lucide-react";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
@@ -301,7 +302,7 @@ export default function PosVendaPage() {
             </div>
             <div>
               <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Data</label>
-              <input type="date" value={dataContato} onChange={e => setDataContato(e.target.value)} className="ios-input w-full" />
+              <DateInput value={dataContato} onChange={setDataContato} className="ios-input w-full" />
             </div>
             <button onClick={handleAdd} className="w-full h-12 rounded-xl text-base font-semibold text-foreground bg-primary">
               Adicionar

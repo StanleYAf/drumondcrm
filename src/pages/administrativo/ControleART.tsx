@@ -7,6 +7,7 @@ import {
   Plus, Pencil, ExternalLink, X, FileX,
 } from "lucide-react";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
+import { DateInput } from "@/components/DateInput";
 
 type StatusART = "ativo" | "a_vencer" | "vencido";
 
@@ -317,10 +318,10 @@ export default function ControleART() {
                 <textarea value={fDescricao} onChange={e => setFDescricao(e.target.value)} rows={2} className="form-input" />
               </Field>
               <Field label="Data de emissão *">
-                <input type="date" value={fEmissao} onChange={e => setFEmissao(e.target.value)} required className="form-input" />
+                <DateInput value={fEmissao} onChange={setFEmissao} required className="form-input" />
               </Field>
               <Field label="Data de vencimento *">
-                <input type="date" value={fVencimento} onChange={e => setFVencimento(e.target.value)} required className="form-input" />
+                <DateInput value={fVencimento} onChange={setFVencimento} required className="form-input" />
               </Field>
               <Field label="Valor (R$)">
                 <input type="number" step="0.01" min="0" value={fValor} onChange={e => setFValor(e.target.value)} placeholder="0,00" className="form-input" />

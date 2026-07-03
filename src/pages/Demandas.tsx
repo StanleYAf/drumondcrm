@@ -25,6 +25,7 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { DateInput } from "@/components/DateInput";
 
 type Setor = "engenharia" | "comercial" | "financeiro";
 type Status = "pendente" | "execucao" | "feita";
@@ -437,7 +438,7 @@ export default function Demandas() {
             </div>
             <div>
               <Label>Data de entrega</Label>
-              <Input type="date" value={form.data_entrega} onChange={(e) => setForm({ ...form, data_entrega: e.target.value })} />
+              <DateInput value={form.data_entrega} onChange={(iso) => setForm({ ...form, data_entrega: iso })} />
             </div>
             <div>
               <Label>Prioridade *</Label>

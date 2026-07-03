@@ -34,6 +34,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { DateInput } from "@/components/DateInput";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -498,9 +499,9 @@ export default function Vendas() {
           </Select>
           <div className="flex items-center gap-1.5">
             <span className="text-xs text-muted-foreground whitespace-nowrap">De</span>
-            <Input type="date" className="w-36 h-9" value={filterDateStart} onChange={(e) => setFilterDateStart(e.target.value)} />
+            <DateInput className="w-36 h-9" value={filterDateStart} onChange={setFilterDateStart} />
             <span className="text-xs text-muted-foreground whitespace-nowrap">até</span>
-            <Input type="date" className="w-36 h-9" value={filterDateEnd} onChange={(e) => setFilterDateEnd(e.target.value)} />
+            <DateInput className="w-36 h-9" value={filterDateEnd} onChange={setFilterDateEnd} />
             {(filterDateStart || filterDateEnd) && (
               <button className="text-muted-foreground hover:text-foreground" onClick={() => { setFilterDateStart(""); setFilterDateEnd(""); }}>
                 <X className="h-4 w-4" />

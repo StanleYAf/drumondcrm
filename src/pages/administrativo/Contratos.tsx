@@ -13,6 +13,7 @@ import {
 import {
   applyCurrencyMask, parseCurrencyMask, numberToCurrencyMask,
 } from "@/lib/currencyMask";
+import { DateInput } from "@/components/DateInput";
 import { abrirComprovantePDF } from "@/lib/contratoComprovante";
 
 type TipoContrato = "Clínica" | "Consultório" | "Hospital";
@@ -759,16 +760,16 @@ export default function Contratos() {
                 <textarea value={fEquip} onChange={e => setFEquip(e.target.value)} rows={2} className="form-input" />
               </Field>
               <Field label="Vigência início">
-                <input type="date" value={fIni} onChange={e => setFIni(e.target.value)} required className="form-input" />
+                <DateInput value={fIni} onChange={setFIni} required className="form-input" />
               </Field>
               <Field label="Vigência fim">
-                <input type="date" value={fFim} onChange={e => setFFim(e.target.value)} required className="form-input" />
+                <DateInput value={fFim} onChange={setFFim} required className="form-input" />
               </Field>
               <Field label="Data de faturamento">
-                <input type="date" value={fDataFat} onChange={e => setFDataFat(e.target.value)} className="form-input" />
+                <DateInput value={fDataFat || ""} onChange={setFDataFat} className="form-input" />
               </Field>
               <Field label="Data de vencimento">
-                <input type="date" value={fDataVenc} onChange={e => setFDataVenc(e.target.value)} className="form-input" />
+                <DateInput value={fDataVenc || ""} onChange={setFDataVenc} className="form-input" />
               </Field>
               <Field label="Valor do contrato">
                 <input
