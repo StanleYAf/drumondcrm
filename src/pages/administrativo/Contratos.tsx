@@ -13,6 +13,7 @@ import {
 import {
   applyCurrencyMask, parseCurrencyMask, numberToCurrencyMask,
 } from "@/lib/currencyMask";
+import { DateInput } from "@/components/DateInput";
 import { abrirComprovantePDF } from "@/lib/contratoComprovante";
 
 type TipoContrato = "Clínica" | "Consultório" | "Hospital";

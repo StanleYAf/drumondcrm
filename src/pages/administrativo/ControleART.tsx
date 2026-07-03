@@ -7,6 +7,7 @@ import {
   Plus, Pencil, ExternalLink, X, FileX,
 } from "lucide-react";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
+import { DateInput } from "@/components/DateInput";
 
 type StatusART = "ativo" | "a_vencer" | "vencido";
 
