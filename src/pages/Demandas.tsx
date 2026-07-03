@@ -438,7 +438,7 @@ export default function Demandas() {
             </div>
             <div>
               <Label>Data de entrega</Label>
-              <Input type="date" value={form.data_entrega} onChange={(e) => setForm({ ...form, data_entrega: e.target.value })} />
+              <DateInput value={form.data_entrega} onChange={(iso) => setForm({ ...form, data_entrega: iso })} />
             </div>
             <div>
               <Label>Prioridade *</Label>
