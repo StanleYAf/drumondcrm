@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useAppData } from "@/lib/dataContext";
 import { formatDate, type PosVenda, type NotaContato } from "@/lib/types";
+import { DateInput } from "@/components/DateInput";
 import { Plus, X, PhoneOff, Users, ArrowUpDown, MessageSquare, Clock, Send } from "lucide-react";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
