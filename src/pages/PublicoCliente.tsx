@@ -19,12 +19,29 @@ const mesIdx = (m: string) => MES_ORDEM[(m || "").trim().toLowerCase()] ?? 0;
 const num = (v: any) => (v === null || v === undefined ? 0 : Number(v) || 0);
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : s);
 
-interface Cliente { id: string; nome: string; responsavel: string | null }
+function extractLogoPath(v: string | null): string | null {
+  if (!v) return null;
+  const clean = v.split("?")[0];
+  const m = clean.match(/client-logos\/(.+)$/);
+  return m ? m[1] : clean;
+}
+
+async function getSignedLogoUrl(v: string | null): Promise<string | null> {
+  const path = extractLogoPath(v);
+  if (!path) return null;
+  const { data } = await supabase.storage
+    .from("client-logos")
+    .createSignedUrl(path, 60 * 60 * 24 * 7);
+  return data?.signedUrl || null;
+}
+
+interface Cliente { id: string; nome: string; responsavel: string | null; logo_url: string | null }
 interface Indicador { cliente_id: string; mes: string; ano: number; [k: string]: any }
 
 export default function PublicoCliente() {
   const { token } = useParams<{ token: string }>();
   const [cliente, setCliente] = useState<Cliente | null>(null);
+  const [clienteLogoUrl, setClienteLogoUrl] = useState<string | null>(null);
   const [indicadores, setIndicadores] = useState<Indicador[]>([]);
   const [ordens, setOrdens] = useState<OSOperacaoRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,6 +65,14 @@ export default function PublicoCliente() {
     })();
     return () => { cancelled = true; };
   }, [token]);
+
+  useEffect(() => {
+    if (!cliente?.logo_url) {
+      setClienteLogoUrl(null);
+      return;
+    }
+    getSignedLogoUrl(cliente.logo_url).then(url => setClienteLogoUrl(url));
+  }, [cliente?.logo_url]);
 
   const periodos = useMemo(() => {
     const map = new Map<string, { mes: string; ano: number }>();
@@ -160,10 +185,15 @@ export default function PublicoCliente() {
             <div className="text-[11px] text-white/70">Painel de Manutenção · Acesso do Cliente</div>
           </div>
         </div>
-        <div className="relative hidden md:flex flex-col items-center text-center min-w-0 px-4">
-          <div className="text-[18px] font-bold truncate">{cliente.nome}</div>
-          <div className="text-[12px]" style={{ color: "#BCD7EC" }}>
-            {cliente.responsavel || "Relatório de Manutenção"}
+        <div className="relative hidden md:flex items-center gap-3 text-center min-w-0 px-4">
+          {clienteLogoUrl && (
+            <img src={clienteLogoUrl} alt={cliente.nome} className="h-12 w-12 rounded-lg object-contain bg-white/10" />
+          )}
+          <div className="flex flex-col items-center">
+            <div className="text-[18px] font-bold truncate">{cliente.nome}</div>
+            <div className="text-[12px]" style={{ color: "#BCD7EC" }}>
+              {cliente.responsavel || "Relatório de Manutenção"}
+            </div>
           </div>
         </div>
         <div className="relative flex items-center gap-3">
@@ -182,8 +212,15 @@ export default function PublicoCliente() {
         </div>
       </header>
       <div className="md:hidden px-4 py-3 bg-white border-b border-[#E2E8F0]">
-        <div className="text-base font-bold text-[#1F4E79]">{cliente.nome}</div>
-        {cliente.responsavel && <div className="text-xs text-muted-foreground">{cliente.responsavel}</div>}
+        <div className="flex items-center gap-3">
+          {clienteLogoUrl && (
+            <img src={clienteLogoUrl} alt={cliente.nome} className="h-12 w-12 rounded-lg object-contain bg-white/10" />
+          )}
+          <div>
+            <div className="text-base font-bold text-[#1F4E79]">{cliente.nome}</div>
+            {cliente.responsavel && <div className="text-xs text-muted-foreground">{cliente.responsavel}</div>}
+          </div>
+        </div>
       </div>
 
       <main className="container mx-auto max-w-7xl px-4 py-6 space-y-6">
