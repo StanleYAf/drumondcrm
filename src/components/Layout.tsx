@@ -29,7 +29,6 @@ const groups: ModuleDef[] = [
     icon: Landmark,
     subs: [
       { title: "Contratos", url: "/administrativo/contratos", icon: FileSignature, perm: "adm_contratos" },
-      { title: "ART", url: "/administrativo/art", icon: FileBadge, perm: "adm_art" },
     ],
   },
   {
