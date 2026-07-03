@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/authContext";
+import { DateInput } from "@/components/DateInput";
 import { AnexosLancamento } from "@/components/AnexosLancamento";
 
 const CAT_COLORS: Record<Categoria, string> = {
