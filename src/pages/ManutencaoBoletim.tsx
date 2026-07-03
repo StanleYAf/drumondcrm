@@ -499,7 +499,7 @@ export default function ManutencaoBoletim() {
                 <img
                   src={clienteLogo}
                   alt={clienteNome}
-                  className="h-14 w-14 rounded-md bg-white object-contain p-1"
+                  className="h-16 w-auto max-w-[160px] rounded-md bg-white object-contain p-1.5"
                 />
               )}
             </div>
