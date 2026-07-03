@@ -29,7 +29,6 @@ const groups: ModuleDef[] = [
     icon: Landmark,
     subs: [
       { title: "Contratos", url: "/administrativo/contratos", icon: FileSignature, perm: "adm_contratos" },
-      { title: "ART", url: "/administrativo/art", icon: FileBadge, perm: "adm_art" },
     ],
   },
   {
@@ -51,6 +50,7 @@ const groups: ModuleDef[] = [
     title: "Engenharia",
     icon: Stethoscope,
     subs: [
+      { title: "ART", url: "/administrativo/art", icon: FileBadge, perm: "adm_art" },
       { title: "Boletim", url: "/manutencao/boletim", icon: FileText, perm: "eng_boletim" },
       { title: "Clientes", url: "/manutencao/clientes", icon: Building2, perm: "eng_clientes" },
       { title: "Dash Engenharia", url: "/manutencao", icon: LayoutDashboard, perm: "eng_dashboard" },
@@ -98,7 +98,7 @@ const ROUTE_TITLES: Record<string, { title: string; module: string }> = {
   "/financeiro": { title: "Dashboard Financeiro", module: "Financeiro" },
   "/demandas/financeiro": { title: "Demandas", module: "Financeiro" },
   "/administrativo/contratos": { title: "Contratos", module: "Administrativo" },
-  "/administrativo/art": { title: "Controle de ART", module: "Administrativo" },
+  "/administrativo/art": { title: "Controle de ART", module: "Engenharia" },
   "/configuracoes": { title: "Configurações", module: "Sistema" },
 };
 
@@ -113,10 +113,10 @@ function isGroupActive(group: Group, pathname: string): boolean {
     if (pathname === "/demandas/comercial") return true;
     return comercialRoutes.some(r => pathname.startsWith(r));
   }
-  if (group.key === "engenharia") return pathname.startsWith("/manutencao") || pathname === "/demandas/engenharia";
+  if (group.key === "engenharia") return pathname.startsWith("/manutencao") || pathname === "/demandas/engenharia" || pathname.startsWith("/administrativo/art");
   if (group.key === "estoque") return pathname.startsWith("/estoque");
   if (group.key === "financeiro") return pathname.startsWith("/financeiro") || pathname === "/demandas/financeiro";
-  if (group.key === "administrativo") return pathname.startsWith("/administrativo");
+  if (group.key === "administrativo") return pathname.startsWith("/administrativo") && !pathname.startsWith("/administrativo/art");
   return false;
 }
 
