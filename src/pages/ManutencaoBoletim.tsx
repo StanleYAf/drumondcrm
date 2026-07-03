@@ -31,14 +31,29 @@ interface OS {
 }
 
 interface IndicadorRow {
+  eng_corretivas_abertas: number | null;
+  eng_corretivas_fechadas: number | null;
+  eng_preventivas_abertas: number | null;
+  eng_preventivas_fechadas: number | null;
+  pred_corretivas_abertas: number | null;
+  pred_corretivas_fechadas: number | null;
+  pred_preventivas_abertas: number | null;
+  pred_preventivas_fechadas: number | null;
   eng_total_equipamentos: number | null;
   eng_equipamentos_ativos: number | null;
   pred_total_equipamentos: number | null;
   pred_equipamentos_ativos: number | null;
 }
 
-const FECHADAS = new Set(["Fechada", "Serviço finalizado"]);
-const CANCELADAS = new Set(["Cancelada"]);
+// Mesmas regras do dashboard de Engenharia (useEngenhariaData)
+function isFechadaEstado(e: string | null) {
+  const s = (e || "").trim().toLowerCase();
+  return s === "fechada" || s === "fechado" || s === "concluída" || s === "concluida" || s === "serviço finalizado" || s === "servico finalizado";
+}
+function isCanceladaEstado(e: string | null) {
+  const s = (e || "").trim().toLowerCase();
+  return s === "cancelada" || s === "cancelado";
+}
 const PENDENTES_ESTADOS = [
   "Aberta",
   "Aguardando peças",
@@ -64,9 +79,9 @@ function isPredial(o: OS) {
   return q.includes("predial");
 }
 function estaAberta(o: OS) {
-  const e = (o.estado || "").trim();
-  return !FECHADAS.has(e) && !CANCELADAS.has(e);
+  return !isFechadaEstado(o.estado) && !isCanceladaEstado(o.estado);
 }
+const nOrNull = (v: any): number | null => (v === null || v === undefined ? null : Number(v) || 0);
 
 export default function ManutencaoBoletim() {
   const now = new Date();
@@ -128,7 +143,7 @@ export default function ManutencaoBoletim() {
       .eq("ano", ano),
       supabase
       .from("indicadores_manutencao")
-      .select("eng_total_equipamentos,eng_equipamentos_ativos,pred_total_equipamentos,pred_equipamentos_ativos")
+      .select("eng_corretivas_abertas,eng_corretivas_fechadas,eng_preventivas_abertas,eng_preventivas_fechadas,pred_corretivas_abertas,pred_corretivas_fechadas,pred_preventivas_abertas,pred_preventivas_fechadas,eng_total_equipamentos,eng_equipamentos_ativos,pred_total_equipamentos,pred_equipamentos_ativos")
       .eq("cliente_id", clienteId)
       .eq("mes", mes)
       .eq("ano", ano)
@@ -211,18 +226,33 @@ export default function ManutencaoBoletim() {
     const corretivas = ordens.filter(o => isCorretiva(o.tipo_servico));
     const preventivas = ordens.filter(o => isPreventiva(o.tipo_servico));
 
-    const setorStats = (filtroSetor: (o: OS) => boolean) => {
+    // Fallback (calculado das OS) caso o indicador consolidado não exista
+    const setorFallback = (filtroSetor: (o: OS) => boolean) => {
       const corr = corretivas.filter(filtroSetor);
       const prev = preventivas.filter(filtroSetor);
       return {
         corretivasAbertas: corr.filter(estaAberta).length,
-        corretivasFechadas: corr.filter(o => FECHADAS.has((o.estado || "").trim())).length,
+        corretivasFechadas: corr.filter(o => isFechadaEstado(o.estado)).length,
         preventivasAbertas: prev.filter(estaAberta).length,
-        preventivasFechadas: prev.filter(o => FECHADAS.has((o.estado || "").trim())).length,
+        preventivasFechadas: prev.filter(o => isFechadaEstado(o.estado)).length,
       };
     };
-    const eng = setorStats(isClinica);
-    const pred = setorStats(isPredial);
+    const engFallback = setorFallback(isClinica);
+    const predFallback = setorFallback(isPredial);
+
+    // Fonte primária: indicadores_manutencao (mesma que o dashboard). Fallback: OS.
+    const eng = {
+      corretivasAbertas: nOrNull(indicador?.eng_corretivas_abertas) ?? engFallback.corretivasAbertas,
+      corretivasFechadas: nOrNull(indicador?.eng_corretivas_fechadas) ?? engFallback.corretivasFechadas,
+      preventivasAbertas: nOrNull(indicador?.eng_preventivas_abertas) ?? engFallback.preventivasAbertas,
+      preventivasFechadas: nOrNull(indicador?.eng_preventivas_fechadas) ?? engFallback.preventivasFechadas,
+    };
+    const pred = {
+      corretivasAbertas: nOrNull(indicador?.pred_corretivas_abertas) ?? predFallback.corretivasAbertas,
+      corretivasFechadas: nOrNull(indicador?.pred_corretivas_fechadas) ?? predFallback.corretivasFechadas,
+      preventivasAbertas: nOrNull(indicador?.pred_preventivas_abertas) ?? predFallback.preventivasAbertas,
+      preventivasFechadas: nOrNull(indicador?.pred_preventivas_fechadas) ?? predFallback.preventivasFechadas,
+    };
 
     // pendentes por estado (corretivas gerais)
     const pendentesPorEstado = PENDENTES_ESTADOS.map(name => ({
@@ -275,7 +305,7 @@ export default function ManutencaoBoletim() {
       corretivasPorUnidade: groupByLoc(corretivas),
       preventivasPorUnidade: groupByLoc(preventivas),
     };
-  }, [ordens]);
+  }, [ordens, indicador]);
 
   const engTotal = engTotalEdit !== "" ? Number(engTotalEdit) : (indicador?.eng_total_equipamentos ?? stats.engParque.totalCalc);
   const engAtivos = engAtivosEdit !== "" ? Number(engAtivosEdit) : (indicador?.eng_equipamentos_ativos ?? stats.engParque.ativosCalc);
