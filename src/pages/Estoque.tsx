@@ -1321,7 +1321,7 @@ export default function Estoque() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Validade</label>
-                    <input type="date" value={formValidade} onChange={e => setFormValidade(e.target.value)} className="ios-input w-full" disabled={formValidadeIsento} />
+                    <DateInput value={formValidade || ""} onChange={setFormValidade} className="ios-input w-full" disabled={formValidadeIsento} />
                     <label className="flex items-center gap-1.5 mt-1 cursor-pointer">
                       <input type="checkbox" checked={formValidadeIsento} onChange={e => { setFormValidadeIsento(e.target.checked); if (e.target.checked) setFormValidade(""); }}
                         className="rounded border-border" />
