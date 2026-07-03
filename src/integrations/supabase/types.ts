@@ -19,6 +19,7 @@ export type Database = {
           ativo: boolean
           created_at: string
           id: string
+          logo_url: string | null
           nome: string
           public_token: string | null
           responsavel: string | null
@@ -27,6 +28,7 @@ export type Database = {
           ativo?: boolean
           created_at?: string
           id?: string
+          logo_url?: string | null
           nome: string
           public_token?: string | null
           responsavel?: string | null
@@ -35,6 +37,7 @@ export type Database = {
           ativo?: boolean
           created_at?: string
           id?: string
+          logo_url?: string | null
           nome?: string
           public_token?: string | null
           responsavel?: string | null
@@ -367,6 +370,7 @@ export type Database = {
           eng_corretivas_abertas: number | null
           eng_corretivas_atendidas_prazo: number | null
           eng_corretivas_fechadas: number | null
+          eng_equipamentos_ativos: number | null
           eng_os_emergentes: number | null
           eng_os_muito_urgentes: number | null
           eng_os_nao_urgentes: number | null
@@ -392,6 +396,7 @@ export type Database = {
           eng_pct_urgentes: number | null
           eng_preventivas_abertas: number | null
           eng_preventivas_fechadas: number | null
+          eng_total_equipamentos: number | null
           id: string
           mes: string
           pred_ar_cg_gz_abertas: number | null
@@ -402,6 +407,7 @@ export type Database = {
           pred_corretivas_fechadas: number | null
           pred_demais_abertas: number | null
           pred_demais_fechadas: number | null
+          pred_equipamentos_ativos: number | null
           pred_os_emergentes: number | null
           pred_os_muito_urgentes: number | null
           pred_os_nao_urgentes: number | null
@@ -421,6 +427,7 @@ export type Database = {
           pred_pct_sla_triagem_urgente: number | null
           pred_preventivas_abertas: number | null
           pred_preventivas_fechadas: number | null
+          pred_total_equipamentos: number | null
           total_corretivas_abertas: number | null
           total_corretivas_fechadas: number | null
           total_preventivas_abertas: number | null
@@ -433,6 +440,7 @@ export type Database = {
           eng_corretivas_abertas?: number | null
           eng_corretivas_atendidas_prazo?: number | null
           eng_corretivas_fechadas?: number | null
+          eng_equipamentos_ativos?: number | null
           eng_os_emergentes?: number | null
           eng_os_muito_urgentes?: number | null
           eng_os_nao_urgentes?: number | null
@@ -458,6 +466,7 @@ export type Database = {
           eng_pct_urgentes?: number | null
           eng_preventivas_abertas?: number | null
           eng_preventivas_fechadas?: number | null
+          eng_total_equipamentos?: number | null
           id?: string
           mes: string
           pred_ar_cg_gz_abertas?: number | null
@@ -468,6 +477,7 @@ export type Database = {
           pred_corretivas_fechadas?: number | null
           pred_demais_abertas?: number | null
           pred_demais_fechadas?: number | null
+          pred_equipamentos_ativos?: number | null
           pred_os_emergentes?: number | null
           pred_os_muito_urgentes?: number | null
           pred_os_nao_urgentes?: number | null
@@ -487,6 +497,7 @@ export type Database = {
           pred_pct_sla_triagem_urgente?: number | null
           pred_preventivas_abertas?: number | null
           pred_preventivas_fechadas?: number | null
+          pred_total_equipamentos?: number | null
           total_corretivas_abertas?: number | null
           total_corretivas_fechadas?: number | null
           total_preventivas_abertas?: number | null
@@ -499,6 +510,7 @@ export type Database = {
           eng_corretivas_abertas?: number | null
           eng_corretivas_atendidas_prazo?: number | null
           eng_corretivas_fechadas?: number | null
+          eng_equipamentos_ativos?: number | null
           eng_os_emergentes?: number | null
           eng_os_muito_urgentes?: number | null
           eng_os_nao_urgentes?: number | null
@@ -524,6 +536,7 @@ export type Database = {
           eng_pct_urgentes?: number | null
           eng_preventivas_abertas?: number | null
           eng_preventivas_fechadas?: number | null
+          eng_total_equipamentos?: number | null
           id?: string
           mes?: string
           pred_ar_cg_gz_abertas?: number | null
@@ -534,6 +547,7 @@ export type Database = {
           pred_corretivas_fechadas?: number | null
           pred_demais_abertas?: number | null
           pred_demais_fechadas?: number | null
+          pred_equipamentos_ativos?: number | null
           pred_os_emergentes?: number | null
           pred_os_muito_urgentes?: number | null
           pred_os_nao_urgentes?: number | null
@@ -553,6 +567,7 @@ export type Database = {
           pred_pct_sla_triagem_urgente?: number | null
           pred_preventivas_abertas?: number | null
           pred_preventivas_fechadas?: number | null
+          pred_total_equipamentos?: number | null
           total_corretivas_abertas?: number | null
           total_corretivas_fechadas?: number | null
           total_preventivas_abertas?: number | null
