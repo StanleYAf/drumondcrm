@@ -277,7 +277,7 @@ export default function Lancamentos() {
       ? { paid: true, paid_at: new Date().toISOString(), paid_by: user.id }
       : { paid: false, paid_at: null as string | null, paid_by: null as string | null };
 
-    // Optimistic update
+    // Atualiza via DataContext (única fonte de verdade para persistência)
     setData((prev) => ({
       ...prev,
       lancamentos: {
@@ -285,20 +285,6 @@ export default function Lancamentos() {
         [arrKey]: prev.lancamentos[arrKey].map((l) => (l.id === entry.id ? { ...l, ...patch } : l)),
       },
     }));
-
-    const { error: dbError } = await supabase.from("lancamentos").update(patch).eq("id", entry.id);
-    if (dbError) {
-      // Revert
-      setData((prev) => ({
-        ...prev,
-        lancamentos: {
-          ...prev.lancamentos,
-          [arrKey]: prev.lancamentos[arrKey].map((l) => (l.id === entry.id ? entry : l)),
-        },
-      }));
-      toast.error("Não foi possível atualizar o pagamento.");
-      return;
-    }
     toast.success(nextPaid ? "Comissão marcada como paga." : "Pagamento cancelado.");
   }
 
