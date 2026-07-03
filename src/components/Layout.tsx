@@ -113,10 +113,10 @@ function isGroupActive(group: Group, pathname: string): boolean {
     if (pathname === "/demandas/comercial") return true;
     return comercialRoutes.some(r => pathname.startsWith(r));
   }
-  if (group.key === "engenharia") return pathname.startsWith("/manutencao") || pathname === "/demandas/engenharia";
+  if (group.key === "engenharia") return pathname.startsWith("/manutencao") || pathname === "/demandas/engenharia" || pathname.startsWith("/administrativo/art");
   if (group.key === "estoque") return pathname.startsWith("/estoque");
   if (group.key === "financeiro") return pathname.startsWith("/financeiro") || pathname === "/demandas/financeiro";
-  if (group.key === "administrativo") return pathname.startsWith("/administrativo");
+  if (group.key === "administrativo") return pathname.startsWith("/administrativo") && !pathname.startsWith("/administrativo/art");
   return false;
 }
 
