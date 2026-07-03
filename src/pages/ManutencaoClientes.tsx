@@ -367,11 +367,11 @@ export default function ManutencaoClientes() {
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
-                        {c.logo_url ? (
+                        {c.logo_url && logoUrls[c.id] ? (
                           <img
-                            src={c.logo_url}
+                            src={logoUrls[c.id]}
                             alt={c.nome}
-                            className="h-9 w-9 rounded-md object-cover border border-border bg-background"
+                            className="h-9 w-9 rounded-md object-contain border border-border bg-white"
                           />
                         ) : (
                           <div className="h-9 w-9 rounded-md border border-border bg-muted flex items-center justify-center text-muted-foreground">
