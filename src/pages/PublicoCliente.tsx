@@ -212,8 +212,15 @@ export default function PublicoCliente() {
         </div>
       </header>
       <div className="md:hidden px-4 py-3 bg-white border-b border-[#E2E8F0]">
-        <div className="text-base font-bold text-[#1F4E79]">{cliente.nome}</div>
-        {cliente.responsavel && <div className="text-xs text-muted-foreground">{cliente.responsavel}</div>}
+        <div className="flex items-center gap-3">
+          {clienteLogoUrl && (
+            <img src={clienteLogoUrl} alt={cliente.nome} className="h-12 w-12 rounded-lg object-contain bg-white/10" />
+          )}
+          <div>
+            <div className="text-base font-bold text-[#1F4E79]">{cliente.nome}</div>
+            {cliente.responsavel && <div className="text-xs text-muted-foreground">{cliente.responsavel}</div>}
+          </div>
+        </div>
       </div>
 
       <main className="container mx-auto max-w-7xl px-4 py-6 space-y-6">
