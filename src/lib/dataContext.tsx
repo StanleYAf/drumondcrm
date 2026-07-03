@@ -37,6 +37,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [pendingUndo, setPendingUndo] = useState<UndoItem | null>(null);
   const dataRef = useRef(data);
   dataRef.current = data;
+  const syncQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -58,17 +60,27 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // Realtime: reload when any table changes
   useEffect(() => {
     if (!user) return;
+    const scheduleReload = () => {
+      if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current);
+      realtimeDebounceRef.current = setTimeout(() => {
+        realtimeDebounceRef.current = null;
+        loadData();
+      }, 800);
+    };
     const channel = supabase
       .channel('realtime-all')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'lancamentos' }, () => loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'indicadores_semanais' }, () => loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'pos_venda' }, () => loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'vendedores' }, () => loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'metas_historicas' }, () => loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'notas_contato' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lancamentos' }, scheduleReload)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'indicadores_semanais' }, scheduleReload)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'pos_venda' }, scheduleReload)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vendedores' }, scheduleReload)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'metas_historicas' }, scheduleReload)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notas_contato' }, scheduleReload)
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current);
+      supabase.removeChannel(channel);
+    };
   }, [user, loadData]);
 
   const setData = useCallback((fn: (prev: AppData) => AppData) => {
@@ -76,10 +88,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       try {
         const next = fn(prev);
         if (user) {
-          syncToSupabase(user.id, prev, next).catch((err) => {
-            console.error("[DataProvider] Falha ao sincronizar dados:", err);
-            toast.error("Erro ao salvar dados. Tente novamente.");
-          });
+          // Encadeia sincronizações em fila para evitar diffs paralelos com dados obsoletos
+          syncQueueRef.current = syncQueueRef.current
+            .catch(() => {})
+            .then(() => syncToSupabase(user.id, prev, next))
+            .catch((err) => {
+              console.error("[DataProvider] Falha ao sincronizar dados:", err);
+              const msg = err instanceof Error ? err.message : String(err);
+              toast.error(`Erro ao salvar dados: ${msg}`);
+            });
         }
         return next;
       } catch (err) {
