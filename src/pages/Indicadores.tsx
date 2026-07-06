@@ -71,7 +71,7 @@ export default function Indicadores() {
     return null;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs = validate(semana, mes, vendedor, captacoes, orcamentos, visitas);
     if (errs) { setFormErrors(errs); toast.error("Corrija os campos inválidos"); return; }
@@ -82,7 +82,8 @@ export default function Indicadores() {
       captacoes: parseInt(captacoes) || 0, orcamentos: parseInt(orcamentos) || 0,
       visitas: parseInt(visitas) || 0, ano: anoParam,
     };
-    setData((prev) => ({ ...prev, indicadores_semanais: [...prev.indicadores_semanais, item] }));
+    const saved = await setData((prev) => ({ ...prev, indicadores_semanais: [...prev.indicadores_semanais, item] }));
+    if (!saved) return;
     setSemana(""); setCaptacoes(""); setOrcamentos(""); setVisitas(""); setShowForm(false);
     toast.success("Indicador registrado com sucesso");
   }
@@ -98,12 +99,12 @@ export default function Indicadores() {
     setEditErrors({});
   }
 
-  function handleEditSave() {
+  async function handleEditSave() {
     if (!editItem) return;
     const errs = validate(editSemana, editMes, editVendedor, editCaptacoes, editOrcamentos, editVisitas);
     if (errs) { setEditErrors(errs); toast.error("Corrija os campos inválidos"); return; }
     setEditErrors({});
-    setData(prev => ({
+    const saved = await setData(prev => ({
       ...prev,
       indicadores_semanais: prev.indicadores_semanais.map(i =>
         i.id === editItem.id ? {
@@ -112,14 +113,16 @@ export default function Indicadores() {
         } : i
       ),
     }));
+    if (!saved) return;
     setEditItem(null);
     toast.success("Indicador atualizado");
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     const deletedItem = data.indicadores_semanais.find(i => i.id === id);
     if (!deletedItem) return;
-    setData(prev => ({ ...prev, indicadores_semanais: prev.indicadores_semanais.filter(i => i.id !== id) }));
+    const saved = await setData(prev => ({ ...prev, indicadores_semanais: prev.indicadores_semanais.filter(i => i.id !== id) }));
+    if (!saved) return;
     undoDelete(id, "Indicador excluído.", (prev) => ({
       ...prev, indicadores_semanais: [...prev.indicadores_semanais, deletedItem],
     }));

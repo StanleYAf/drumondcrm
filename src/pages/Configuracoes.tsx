@@ -308,18 +308,18 @@ export default function Configuracoes() {
     toast.success("Perfil atualizado");
   }
 
-  function updateMeta(cat: Categoria, masked: string) {
+  async function updateMeta(cat: Categoria, masked: string) {
     const numVal = parseCurrencyMask(masked);
-    setData((prev) => {
+    await setData((prev) => {
       const newMetas = { ...prev.metas, [cat]: numVal };
       const updatedHistorico = upsertHistoricoMetas(prev, currentMonth, currentYear, newMetas, prev.meta_semanal);
       return { ...prev, metas: newMetas, historico_metas: updatedHistorico };
     });
   }
 
-  function updateMetaSemanal(field: string, value: string) {
+  async function updateMetaSemanal(field: string, value: string) {
     const numVal = parseInt(value) || 0;
-    setData((prev) => {
+    await setData((prev) => {
       const newMetaSemanal = { ...prev.meta_semanal, [field]: numVal };
       const updatedHistorico = upsertHistoricoMetas(prev, currentMonth, currentYear, prev.metas, newMetaSemanal);
       return { ...prev, meta_semanal: newMetaSemanal, historico_metas: updatedHistorico };
@@ -335,10 +335,11 @@ export default function Configuracoes() {
     return [...prev.historico_metas, entry];
   }
 
-  function addVendedor() {
+  async function addVendedor() {
     if (!novoVendedor.trim()) return;
     const nome = novoVendedor.trim();
-    setData((prev) => ({ ...prev, vendedores: [...prev.vendedores, nome] }));
+    const saved = await setData((prev) => ({ ...prev, vendedores: [...prev.vendedores, nome] }));
+    if (!saved) return;
     setVendedoresStatus(prev => [...prev, { nome, ativo: true }]);
     setNovoVendedor("");
     toast.success("Vendedor adicionado");
@@ -346,12 +347,17 @@ export default function Configuracoes() {
 
   async function toggleVendedor(name: string, ativo: boolean) {
     if (!user) return;
-    const { error } = await supabase.from("vendedores").update({ ativo }).eq("user_id", user.id).eq("nome", name);
-    if (error) { toast.error("Erro ao atualizar vendedor"); return; }
-    if (!ativo) {
-      setData((prev) => ({ ...prev, vendedores: prev.vendedores.filter((v) => v !== name) }));
-    } else {
-      setData((prev) => ({ ...prev, vendedores: [...prev.vendedores, name] }));
+    const previousStatus = vendedoresStatus;
+    const saved = await setData((prev) => ({
+      ...prev,
+      vendedores: ativo
+        ? Array.from(new Set([...prev.vendedores, name]))
+        : prev.vendedores.filter((v) => v !== name),
+    }));
+    if (!saved) {
+      setVendedoresStatus(previousStatus);
+      toast.error("Erro ao atualizar vendedor");
+      return;
     }
     setVendedoresStatus(prev => prev.map(v => v.nome === name ? { ...v, ativo } : v));
     toast.success(ativo ? "Vendedor ativado" : "Vendedor desativado");
@@ -396,9 +402,10 @@ export default function Configuracoes() {
     e.target.value = "";
   }
 
-  function confirmImport() {
+  async function confirmImport() {
     if (!pendingImport) return;
-    setData(() => pendingImport);
+    const saved = await setData(() => pendingImport);
+    if (!saved) return;
     setShowImportConfirm(false);
     setPendingImport(null);
     toast.success("Dados importados com sucesso");

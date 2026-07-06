@@ -15,7 +15,7 @@ interface UndoItem {
 
 interface DataContextType {
   data: AppData;
-  setData: (fn: (prev: AppData) => AppData) => void;
+  setData: (fn: (prev: AppData) => AppData) => Promise<boolean>;
   loading: boolean;
   error: string | null;
   undoDelete: (id: string, label: string, restoreFn: (prev: AppData) => AppData) => void;
@@ -38,13 +38,29 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const dataRef = useRef(data);
   dataRef.current = data;
   const syncQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const localRevisionRef = useRef(0);
+  const pendingSyncRef = useRef(0);
   const realtimeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const loadData = useCallback(async () => {
+  const describeChange = useCallback((prev: AppData, next: AppData) => {
+    if (JSON.stringify(prev.lancamentos) !== JSON.stringify(next.lancamentos)) return "lançamento";
+    if (JSON.stringify(prev.indicadores_semanais) !== JSON.stringify(next.indicadores_semanais)) return "indicador";
+    if (JSON.stringify(prev.pos_venda) !== JSON.stringify(next.pos_venda)) return "contato de pós-venda";
+    if (JSON.stringify(prev.vendedores) !== JSON.stringify(next.vendedores)) return "vendedor";
+    if (JSON.stringify(prev.historico_metas) !== JSON.stringify(next.historico_metas)) return "meta";
+    return "dados";
+  }, []);
+
+  const loadData = useCallback(async (guardAgainstStaleRealtime = false) => {
     if (!user) return;
+    const revisionAtStart = localRevisionRef.current;
     try {
       const loaded = await loadFromSupabase(user.id);
       if (!loaded.historico_metas) loaded.historico_metas = [];
+      if (guardAgainstStaleRealtime && (localRevisionRef.current !== revisionAtStart || pendingSyncRef.current > 0)) {
+        return;
+      }
+      dataRef.current = loaded;
       setDataRaw(loaded);
       setLoading(false);
     } catch (err) {
@@ -64,7 +80,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (realtimeDebounceRef.current) clearTimeout(realtimeDebounceRef.current);
       realtimeDebounceRef.current = setTimeout(() => {
         realtimeDebounceRef.current = null;
-        loadData();
+        loadData(true);
       }, 800);
     };
     const channel = supabase
@@ -83,29 +99,51 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     };
   }, [user, loadData]);
 
-  const setData = useCallback((fn: (prev: AppData) => AppData) => {
-    setDataRaw((prev) => {
+  const setData = useCallback((fn: (prev: AppData) => AppData): Promise<boolean> => {
+    const runSync = async (): Promise<boolean> => {
+      const prev = dataRef.current;
       try {
         const next = fn(prev);
-        if (user) {
-          // Encadeia sincronizações em fila para evitar diffs paralelos com dados obsoletos
-          syncQueueRef.current = syncQueueRef.current
-            .catch(() => {})
-            .then(() => syncToSupabase(user.id, prev, next))
-            .catch((err) => {
-              console.error("[DataProvider] Falha ao sincronizar dados:", err);
-              const msg = err instanceof Error ? err.message : String(err);
-              toast.error(`Erro ao salvar dados: ${msg}`);
-            });
+        const changedLabel = describeChange(prev, next);
+        dataRef.current = next;
+        setDataRaw(next);
+
+        if (!user) {
+          dataRef.current = prev;
+          setDataRaw(prev);
+          toast.error(`Não foi possível salvar ${changedLabel}. A alteração foi desfeita — tente novamente.`, {
+            duration: Infinity,
+            closeButton: true,
+          });
+          return false;
         }
-        return next;
+
+        pendingSyncRef.current += 1;
+        try {
+          await syncToSupabase(user.id, prev, next);
+          localRevisionRef.current += 1;
+        } finally {
+          pendingSyncRef.current = Math.max(0, pendingSyncRef.current - 1);
+        }
+        return true;
       } catch (err) {
-        console.error("[DataProvider] Erro ao atualizar dados:", err);
-        toast.error("Erro ao processar a operação.");
-        return prev;
+        console.error("[DataProvider] Falha ao sincronizar dados:", err);
+        const attempted = dataRef.current;
+        const changedLabel = describeChange(prev, attempted);
+        dataRef.current = prev;
+        setDataRaw(prev);
+        toast.error(`Não foi possível salvar ${changedLabel}. A alteração foi desfeita — tente novamente.`, {
+          duration: Infinity,
+          closeButton: true,
+        });
+        return false;
       }
-    });
-  }, [user]);
+    };
+
+    const queued = syncQueueRef.current.catch(() => {}).then(runSync);
+    syncQueueRef.current = queued.then(() => undefined, () => undefined);
+    return queued;
+  }, [describeChange, user]);
 
   const undoDelete = useCallback((id: string, label: string, restoreFn: (prev: AppData) => AppData) => {
     setPendingUndo(prev => {
@@ -117,9 +155,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setPendingUndo(null);
     }, 5000);
 
-    const restore = () => {
-      setData(restoreFn);
-      setPendingUndo(null);
+    const restore = async () => {
+      const success = await setData(restoreFn);
+      if (success) setPendingUndo(null);
       clearTimeout(timer);
     };
 
