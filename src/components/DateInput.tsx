@@ -44,7 +44,6 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
         ref={ref}
         type="text"
         inputMode="numeric"
-        placeholder={placeholder}
         value={display}
         onChange={handleChange}
         onBlur={handleBlur}
