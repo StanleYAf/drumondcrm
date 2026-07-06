@@ -9,7 +9,7 @@ export interface DateInputProps extends Omit<React.InputHTMLAttributes<HTMLInput
 }
 
 const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
-  ({ value, onChange, className, placeholder = "dd/mm/aaaa", ...props }, ref) => {
+  ({ value, onChange, className, ...props }, ref) => {
     const [display, setDisplay] = React.useState(() => isoToBr(value));
 
     React.useEffect(() => {
@@ -44,7 +44,6 @@ const DateInput = React.forwardRef<HTMLInputElement, DateInputProps>(
         ref={ref}
         type="text"
         inputMode="numeric"
-        placeholder={placeholder}
         value={display}
         onChange={handleChange}
         onBlur={handleBlur}
