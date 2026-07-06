@@ -770,7 +770,7 @@ export default function Contratos() {
                   type="text"
                   value={fDataFat}
                   onChange={e => setFDataFat(e.target.value)}
-                  placeholder='ex.: "dia 10", "dia primeiro"'
+                  
                   maxLength={100}
                   className="form-input"
                 />
