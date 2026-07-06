@@ -428,7 +428,11 @@ export default function Contratos() {
     }
     setSaving(false);
     if (error) {
-      toast.error(error.message.includes("duplicate") ? "Número de contrato já existe" : "Erro ao salvar contrato");
+      console.error("[contratos] save error:", error);
+      const msg = (error as any)?.message || "";
+      toast.error(
+        msg.includes("duplicate") ? "Número de contrato já existe" : `Erro ao salvar contrato: ${msg}`
+      );
       return;
     }
     toast.success(editItem ? "Contrato atualizado" : renewItem ? "Contrato renovado" : "Contrato cadastrado");

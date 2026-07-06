@@ -1,0 +1,1 @@
+ALTER TABLE public.contratos DROP CONSTRAINT IF EXISTS contratos_tipo_check;
