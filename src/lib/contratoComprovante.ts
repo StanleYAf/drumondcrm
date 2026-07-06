@@ -140,8 +140,8 @@ export function abrirComprovantePDF(c: ComprovanteContrato) {
         ${row("Responsável comercial", c.responsavel_comercial)}
       </table>
       <table>
-        ${row("Data de faturamento", fmtDate(c.data_faturamento))}
-        ${row("Data de vencimento", fmtDate(c.data_vencimento))}
+        ${row("Data de faturamento", c.data_faturamento || "")}
+        ${row("Data de vencimento", c.data_vencimento || "")}
         ${row("Vigência (início)", fmtDate(c.vigencia_inicio))}
         ${row("Vigência (fim)", fmtDate(c.vigencia_fim))}
         ${row("Retém ISS?", c.retem_iss ? "Sim" : "Não")}
