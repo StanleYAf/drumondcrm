@@ -766,10 +766,24 @@ export default function Contratos() {
                 <DateInput value={fFim} onChange={setFFim} required className="form-input" />
               </Field>
               <Field label="Data de faturamento">
-                <DateInput value={fDataFat || ""} onChange={setFDataFat} className="form-input" />
+                <input
+                  type="text"
+                  value={fDataFat}
+                  onChange={e => setFDataFat(e.target.value)}
+                  placeholder='ex.: "dia 10", "dia primeiro"'
+                  maxLength={100}
+                  className="form-input"
+                />
               </Field>
               <Field label="Data de vencimento">
-                <DateInput value={fDataVenc || ""} onChange={setFDataVenc} className="form-input" />
+                <input
+                  type="text"
+                  value={fDataVenc}
+                  onChange={e => setFDataVenc(e.target.value)}
+                  placeholder='ex.: "dia 15", "dia primeiro"'
+                  maxLength={100}
+                  className="form-input"
+                />
               </Field>
               <Field label="Valor do contrato">
                 <input
