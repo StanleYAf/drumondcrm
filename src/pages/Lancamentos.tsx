@@ -135,10 +135,11 @@ export default function Lancamentos() {
       vendedor: vendedor || undefined,
     };
     const arrKey = arrKeyFor(formCat);
-    setData((prev) => ({
+    const saved = await setData((prev) => ({
       ...prev,
       lancamentos: { ...prev.lancamentos, [arrKey]: [...prev.lancamentos[arrKey], newItem] },
     }));
+    if (!saved) return;
 
     // Save itens for produto/acessorio
     if (supportsItens(formCat) && user) {
@@ -221,7 +222,7 @@ export default function Lancamentos() {
     setEditErrors({});
     const arrKey = arrKeyFor(editItem.cat);
     const fieldKey = fieldKeyFor(editItem.cat);
-    setData((prev) => ({
+    const saved = await setData((prev) => ({
       ...prev,
       lancamentos: {
         ...prev.lancamentos,
@@ -230,6 +231,7 @@ export default function Lancamentos() {
         ),
       },
     }));
+    if (!saved) return;
 
     // Sync itens for produto/acessorio
     if (supportsItens(editItem.cat)) {
@@ -254,15 +256,16 @@ export default function Lancamentos() {
     toast.success("Lançamento atualizado");
   }
 
-  function handleDelete(cat: TabKey, id: string) {
+  async function handleDelete(cat: TabKey, id: string) {
     const arrKey = arrKeyFor(cat);
     const deletedItem = data.lancamentos[arrKey].find(l => l.id === id);
     if (!deletedItem) return;
 
-    setData((prev) => ({
+    const saved = await setData((prev) => ({
       ...prev,
       lancamentos: { ...prev.lancamentos, [arrKey]: prev.lancamentos[arrKey].filter((l) => l.id !== id) },
     }));
+    if (!saved) return;
 
     undoDelete(id, "Lançamento excluído.", (prev) => ({
       ...prev,
@@ -278,14 +281,29 @@ export default function Lancamentos() {
       ? { paid: true, paid_at: new Date().toISOString(), paid_by: user.id }
       : { paid: false, paid_at: null as string | null, paid_by: null as string | null };
 
-    // Atualiza via DataContext (única fonte de verdade para persistência)
-    setData((prev) => ({
+    const originalPatch = {
+      paid: entry.paid ?? false,
+      paid_at: entry.paid_at ?? null,
+      paid_by: entry.paid_by ?? null,
+    };
+
+    const saved = await setData((prev) => ({
       ...prev,
       lancamentos: {
         ...prev.lancamentos,
         [arrKey]: prev.lancamentos[arrKey].map((l) => (l.id === entry.id ? { ...l, ...patch } : l)),
       },
     }));
+    if (!saved) {
+      await setData((prev) => ({
+        ...prev,
+        lancamentos: {
+          ...prev.lancamentos,
+          [arrKey]: prev.lancamentos[arrKey].map((l) => (l.id === entry.id ? { ...l, ...originalPatch } : l)),
+        },
+      }));
+      return;
+    }
     toast.success(nextPaid ? "Comissão marcada como paga." : "Pagamento cancelado.");
   }
 

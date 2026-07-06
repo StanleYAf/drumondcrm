@@ -46,52 +46,56 @@ export default function PosVendaPage() {
 
   const pendentes = data.pos_venda.filter(p => p.status === "Aguardando retorno").length;
 
-  function handleAdd() {
+  async function handleAdd() {
     if (!cliente.trim()) { toast.error("Nome do cliente é obrigatório"); return; }
-    setData((prev) => ({
+    const saved = await setData((prev) => ({
       ...prev,
       pos_venda: [...prev.pos_venda, {
         id: crypto.randomUUID(), data: dataContato, cliente: cliente.trim(),
         vendedor, status, notas: [], status_changed_at: new Date().toISOString(),
       }],
     }));
+    if (!saved) return;
     setCliente(""); setShowAdd(false);
     toast.success("Contato adicionado");
   }
 
-  function updateStatus(id: string, newStatus: PosVenda["status"]) {
-    setData((prev) => ({
+  async function updateStatus(id: string, newStatus: PosVenda["status"]) {
+    const saved = await setData((prev) => ({
       ...prev,
       pos_venda: prev.pos_venda.map((p) => (p.id === id
         ? { ...p, status: newStatus, status_changed_at: new Date().toISOString() }
         : p
       )),
     }));
+    if (!saved) return;
     toast.success(`Status atualizado para "${newStatus}"`);
   }
 
-  function addNota(id: string) {
+  async function addNota(id: string) {
     if (!notaTexto.trim()) return;
     const nota: NotaContato = {
       id: crypto.randomUUID(),
       texto: notaTexto.trim(),
       timestamp: new Date().toISOString(),
     };
-    setData((prev) => ({
+    const saved = await setData((prev) => ({
       ...prev,
       pos_venda: prev.pos_venda.map((p) => (p.id === id
         ? { ...p, notas: [...(p.notas || []), nota] }
         : p
       )),
     }));
+    if (!saved) return;
     setNotaTexto("");
     toast.success("Nota adicionada");
   }
 
-  function handleDelete(id: string) {
+  async function handleDelete(id: string) {
     const deletedItem = data.pos_venda.find(p => p.id === id);
     if (!deletedItem) return;
-    setData((prev) => ({ ...prev, pos_venda: prev.pos_venda.filter(p => p.id !== id) }));
+    const saved = await setData((prev) => ({ ...prev, pos_venda: prev.pos_venda.filter(p => p.id !== id) }));
+    if (!saved) return;
     setEditId(null);
     undoDelete(id, "Contato excluído.", (prev) => ({
       ...prev, pos_venda: [...prev.pos_venda, deletedItem],
