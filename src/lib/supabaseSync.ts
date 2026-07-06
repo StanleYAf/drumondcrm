@@ -20,6 +20,20 @@ export async function loadFromSupabase(userId: string): Promise<AppData> {
     supabase.from("vendedores").select("*"),
   ]);
 
+  const loadErrors = [
+    { table: "lancamentos", error: lancRes.error },
+    { table: "indicadores_semanais", error: indRes.error },
+    { table: "pos_venda", error: pvRes.error },
+    { table: "notas_contato", error: notasRes.error },
+    { table: "metas_historicas", error: metasRes.error },
+    { table: "vendedores", error: vendRes.error },
+  ].filter((item) => item.error);
+
+  if (loadErrors.length > 0) {
+    const first = loadErrors[0];
+    throw new Error(`${first.table} (load): ${errorMessage(first.error)}`);
+  }
+
   // Build lancamentos by category
   const lancamentos: AppData["lancamentos"] = { produtos: [], servicos: [], contratos: [], acessorios: [], dmedical: [] };
   for (const row of lancRes.data ?? []) {
