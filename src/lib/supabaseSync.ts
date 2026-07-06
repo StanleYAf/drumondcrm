@@ -180,7 +180,7 @@ async function writeWithRetry<T>(table: string, op: string, write: () => Promise
     }
   }
 
-  throw new Error(`${table} (${op}) falhou após 3 tentativas: ${errorMessage(lastError)}`);
+  throw new Error(`${table} (${op}) falhou após todas as tentativas: ${errorMessage(lastError)}`);
 }
 
 function diffArrays<T extends { id: string }>(
