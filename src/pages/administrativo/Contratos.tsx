@@ -760,10 +760,10 @@ export default function Contratos() {
                 <textarea value={fEquip} onChange={e => setFEquip(e.target.value)} rows={2} className="form-input" />
               </Field>
               <Field label="Vigência início">
-                <DateInput value={fIni} onChange={setFIni} required className="form-input" />
+                <input type="date" value={fIni} onChange={e => setFIni(e.target.value)} required className="form-input" />
               </Field>
               <Field label="Vigência fim">
-                <DateInput value={fFim} onChange={setFFim} required className="form-input" />
+                <input type="date" value={fFim} onChange={e => setFFim(e.target.value)} required className="form-input" />
               </Field>
               <Field label="Data de faturamento">
                 <input
