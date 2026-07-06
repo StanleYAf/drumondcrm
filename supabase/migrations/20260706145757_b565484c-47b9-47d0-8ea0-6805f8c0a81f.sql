@@ -1,0 +1,1 @@
+ALTER TABLE public.contratos ALTER COLUMN data_faturamento TYPE text USING data_faturamento::text; ALTER TABLE public.contratos ALTER COLUMN data_vencimento TYPE text USING data_vencimento::text;
