@@ -36,6 +36,12 @@ interface Produto {
   nome_comercial: string | null;
   lote: string | null;
   foto_url: string | null;
+  forma_pagamento?: string | null;
+  valor_total?: number | null;
+  num_parcelas?: number | null;
+  taxa_juros_mensal?: number | null;
+  primeira_parcela?: string | null;
+  parcelas?: unknown;
 }
 
 interface Movimentacao {
@@ -62,11 +68,6 @@ interface QuickMoveState {
   quantidade: number;
   observacao: string;
   documento_ref: string;
-  forma_pagamento: FormaPagamento | "";
-  valor_mascara: string;
-  num_parcelas: number;
-  taxa_juros_mensal: number;
-  primeira_parcela: string;
 }
 
 type TabKey = "produtos" | "movimentacoes" | "alertas" | "aguardando";
@@ -159,6 +160,13 @@ export default function Estoque() {
   const [formFotoPreviews, setFormFotoPreviews] = useState<string[]>([]);
   const fotoInputRef = useRef<HTMLInputElement>(null);
   const [fotoModalUrl, setFotoModalUrl] = useState<string | null>(null);
+
+  // Payment plan for the product (used when selling / stock exit)
+  const [formFormaPagamento, setFormFormaPagamento] = useState<FormaPagamento | "">("");
+  const [formValorTotalMask, setFormValorTotalMask] = useState("");
+  const [formNumParcelas, setFormNumParcelas] = useState<number>(1);
+  const [formTaxaJurosMensal, setFormTaxaJurosMensal] = useState<number>(0);
+  const [formPrimeiraParcela, setFormPrimeiraParcela] = useState<string>(new Date().toISOString().slice(0, 10));
 
   function parseFotoUrls(fotoUrl: string | null): string[] {
     if (!fotoUrl) return [];
@@ -337,7 +345,7 @@ export default function Estoque() {
 
     const trimmed = code.trim();
     const found = produtos.find(p => p.codigo_barras?.trim() === trimmed);
-    if (found) { setQuickMove({ produto: found, tipo: null, quantidade: 1, observacao: "", documento_ref: "", forma_pagamento: "", valor_mascara: numberToCurrencyMask(Number(found.preco_venda) || 0), num_parcelas: 1, taxa_juros_mensal: 0, primeira_parcela: new Date().toISOString().slice(0,10) }); setSearchQuery(""); }
+    if (found) { setQuickMove({ produto: found, tipo: null, quantidade: 1, observacao: "", documento_ref: "" }); setSearchQuery(""); }
     else {
       resetForm();
       setFormCodigo(trimmed);
@@ -395,28 +403,9 @@ export default function Estoque() {
     const { produto, tipo, quantidade, observacao, documento_ref } = quickMove;
     const novoEstoque = tipo === "entrada" ? produto.estoque_atual + quantidade : Math.max(0, produto.estoque_atual - quantidade);
 
-    // Monta payload de pagamento apenas para saídas
-    let pagamentoPayload: Record<string, unknown> = {};
-    if (tipo === "saida" && quickMove.forma_pagamento) {
-      const valor = parseCurrencyMask(quickMove.valor_mascara);
-      const isParcelavel = FORMAS_PARCELAVEIS.includes(quickMove.forma_pagamento);
-      const nParc = isParcelavel ? Math.max(1, quickMove.num_parcelas) : 1;
-      const taxa = isParcelavel ? quickMove.taxa_juros_mensal : 0;
-      const { parcelas, valorTotal } = calcularParcelas(valor, nParc, taxa, quickMove.primeira_parcela);
-      pagamentoPayload = {
-        forma_pagamento: quickMove.forma_pagamento,
-        valor_total: valorTotal,
-        num_parcelas: nParc,
-        taxa_juros_mensal: taxa,
-        primeira_parcela: quickMove.primeira_parcela,
-        parcelas,
-      };
-    }
-
     const { error: moveErr } = await supabase.from(tbl.movimentacoes as any).insert({
       user_id: user.id, produto_id: produto.id, tipo, quantidade,
       observacao: observacao || null, documento_ref: documento_ref || null,
-      ...pagamentoPayload,
     });
     if (moveErr) { toast.error("Erro ao registrar movimentação"); setSaving(false); return; }
     const { error: updErr } = await supabase.from(tbl.produtos as any).update({ estoque_atual: novoEstoque }).eq("id", produto.id);
@@ -512,6 +501,28 @@ export default function Estoque() {
       foto_url: fotoUrl,
     };
 
+    // Payment plan for the product
+    if (formFormaPagamento) {
+      const valor = parseCurrencyMask(formValorTotalMask);
+      const isParc = FORMAS_PARCELAVEIS.includes(formFormaPagamento);
+      const nParc = isParc ? Math.max(1, formNumParcelas) : 1;
+      const taxa = isParc ? formTaxaJurosMensal : 0;
+      const { parcelas, valorTotal } = calcularParcelas(valor, nParc, taxa, formPrimeiraParcela);
+      payload.forma_pagamento = formFormaPagamento;
+      payload.valor_total = valorTotal;
+      payload.num_parcelas = nParc;
+      payload.taxa_juros_mensal = taxa;
+      payload.primeira_parcela = formPrimeiraParcela;
+      payload.parcelas = parcelas;
+    } else {
+      payload.forma_pagamento = null;
+      payload.valor_total = null;
+      payload.num_parcelas = null;
+      payload.taxa_juros_mensal = null;
+      payload.primeira_parcela = null;
+      payload.parcelas = null;
+    }
+
     let error;
     if (editProduct) {
       // Don't overwrite user_id on edit — preserve original owner
@@ -548,6 +559,9 @@ export default function Estoque() {
     setFormRegistroAnvisa(""); setFormFabricante(""); setFormValidade(""); setFormValidadeIsento(false); setFormLocalEstoque("");
     setFormNomeComercial(""); setFormLote("");
     setFormFotos([]); setFormFotoPreviews([]);
+    setFormFormaPagamento(""); setFormValorTotalMask("");
+    setFormNumParcelas(1); setFormTaxaJurosMensal(0);
+    setFormPrimeiraParcela(new Date().toISOString().slice(0, 10));
   }
 
   function openEdit(p: Produto) {
@@ -562,6 +576,11 @@ export default function Estoque() {
     setFormLocalEstoque(p.local_estoque || "");
     setFormNomeComercial(p.nome_comercial || ""); setFormLote(p.lote || "");
     setFormFotos([]); setFormFotoPreviews(parseFotoUrls(p.foto_url));
+    setFormFormaPagamento((p.forma_pagamento as FormaPagamento) || "");
+    setFormValorTotalMask(p.valor_total != null ? numberToCurrencyMask(Number(p.valor_total)) : (p.preco_venda != null ? numberToCurrencyMask(Number(p.preco_venda)) : ""));
+    setFormNumParcelas(p.num_parcelas ?? 1);
+    setFormTaxaJurosMensal(p.taxa_juros_mensal != null ? Number(p.taxa_juros_mensal) : 0);
+    setFormPrimeiraParcela(p.primeira_parcela || new Date().toISOString().slice(0, 10));
     setShowForm(true);
   }
 
@@ -798,7 +817,7 @@ export default function Estoque() {
                             </div>
                           )}
                         </div>
-                        <button onClick={() => setQuickMove({ produto: p, tipo: null, quantidade: 1, observacao: "", documento_ref: "", forma_pagamento: "", valor_mascara: numberToCurrencyMask(Number(p.preco_venda) || 0), num_parcelas: 1, taxa_juros_mensal: 0, primeira_parcela: new Date().toISOString().slice(0,10) })}
+                        <button onClick={() => setQuickMove({ produto: p, tipo: null, quantidade: 1, observacao: "", documento_ref: "" })}
                           className="p-1.5 rounded-lg hover:bg-muted" title="Movimentar">
                           <ArrowDownToLine className="h-3.5 w-3.5 text-primary" />
                         </button>
@@ -1211,97 +1230,6 @@ export default function Estoque() {
                       onChange={e => setQuickMove({ ...quickMove, observacao: e.target.value })}
                       className="ios-input w-full" placeholder="Ex: Reposição" />
                   </div>
-                  {quickMove.tipo === "saida" && (
-                    <div className="space-y-3 p-3 rounded-xl border border-border/60 bg-secondary/40">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-foreground">Pagamento</span>
-                        <span className="text-[10px] text-muted-foreground">opcional</span>
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Forma de pagamento</label>
-                        <select
-                          value={quickMove.forma_pagamento}
-                          onChange={e => setQuickMove({ ...quickMove, forma_pagamento: e.target.value as any, num_parcelas: 1 })}
-                          className="ios-input w-full"
-                        >
-                          <option value="">— Não registrar —</option>
-                          {(Object.keys(FORMA_PAGAMENTO_LABELS) as (keyof typeof FORMA_PAGAMENTO_LABELS)[]).map(k => (
-                            <option key={k} value={k}>{FORMA_PAGAMENTO_LABELS[k]}</option>
-                          ))}
-                        </select>
-                      </div>
-                      {quickMove.forma_pagamento && (
-                        <>
-                          <div>
-                            <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Valor total</label>
-                            <input
-                              value={quickMove.valor_mascara}
-                              onChange={e => setQuickMove({ ...quickMove, valor_mascara: applyCurrencyMask(e.target.value) })}
-                              className="ios-input w-full" placeholder="R$ 0,00" inputMode="numeric"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Data da 1ª parcela</label>
-                            <DateInput
-                              value={quickMove.primeira_parcela}
-                              onChange={v => setQuickMove({ ...quickMove, primeira_parcela: v })}
-                            />
-                          </div>
-                          {FORMAS_PARCELAVEIS.includes(quickMove.forma_pagamento) && (
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Nº parcelas</label>
-                                <input
-                                  type="number" min={1} max={36}
-                                  value={quickMove.num_parcelas}
-                                  onChange={e => setQuickMove({ ...quickMove, num_parcelas: Math.max(1, Math.min(36, parseInt(e.target.value) || 1)) })}
-                                  className="ios-input w-full text-center"
-                                />
-                              </div>
-                              <div>
-                                <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Juros % a.m.</label>
-                                <input
-                                  type="number" min={0} step="0.01"
-                                  value={quickMove.taxa_juros_mensal}
-                                  onChange={e => setQuickMove({ ...quickMove, taxa_juros_mensal: Math.max(0, parseFloat(e.target.value) || 0) })}
-                                  className="ios-input w-full text-center"
-                                  placeholder="0,00"
-                                />
-                              </div>
-                            </div>
-                          )}
-                          {(() => {
-                            const valor = parseCurrencyMask(quickMove.valor_mascara);
-                            if (!valor) return null;
-                            const isParc = FORMAS_PARCELAVEIS.includes(quickMove.forma_pagamento);
-                            const n = isParc ? Math.max(1, quickMove.num_parcelas) : 1;
-                            const taxa = isParc ? quickMove.taxa_juros_mensal : 0;
-                            const { parcelas, valorParcela, valorTotal } = calcularParcelas(valor, n, taxa, quickMove.primeira_parcela);
-                            return (
-                              <div className="rounded-lg bg-background/60 border border-border/50 p-2 space-y-1">
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="text-muted-foreground">
-                                    {n}× de <span className="text-foreground font-semibold">{formatCurrency(valorParcela)}</span>
-                                  </span>
-                                  <span className="text-muted-foreground">Total: <span className="text-foreground font-semibold">{formatCurrency(valorTotal)}</span></span>
-                                </div>
-                                {n > 1 && (
-                                  <div className="max-h-32 overflow-y-auto mt-1 space-y-0.5">
-                                    {parcelas.map(p => (
-                                      <div key={p.numero} className="flex items-center justify-between text-[10px] text-muted-foreground">
-                                        <span>#{p.numero} · {formatDateBR(p.vencimento)}</span>
-                                        <span className="text-foreground">{formatCurrency(p.valor)}</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })()}
-                        </>
-                      )}
-                    </div>
-                  )}
                   <div className="p-2 rounded-lg bg-muted text-center">
                     <span className="text-xs text-muted-foreground">Novo saldo: </span>
                     <span className="text-sm font-bold text-foreground">
@@ -1449,6 +1377,95 @@ export default function Estoque() {
                     <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Local de Estoque</label>
                     <input value={formLocalEstoque} onChange={e => setFormLocalEstoque(e.target.value)} className="ios-input w-full" placeholder="Ex: Prateleira A" />
                   </div>
+                </div>
+                {/* Plano de pagamento */}
+                <div className="space-y-3 p-3 rounded-xl border border-border/60 bg-secondary/40">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground">Plano de pagamento</span>
+                    <span className="text-[10px] text-muted-foreground">opcional</span>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Forma de pagamento</label>
+                    <select
+                      value={formFormaPagamento}
+                      onChange={e => { setFormFormaPagamento(e.target.value as FormaPagamento | ""); setFormNumParcelas(1); }}
+                      className="ios-input w-full"
+                    >
+                      <option value="">— Sem plano —</option>
+                      {(Object.keys(FORMA_PAGAMENTO_LABELS) as (keyof typeof FORMA_PAGAMENTO_LABELS)[]).map(k => (
+                        <option key={k} value={k}>{FORMA_PAGAMENTO_LABELS[k]}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {formFormaPagamento && (
+                    <>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Valor total</label>
+                          <input
+                            value={formValorTotalMask}
+                            onChange={e => setFormValorTotalMask(applyCurrencyMask(e.target.value))}
+                            className="ios-input w-full" placeholder="R$ 0,00" inputMode="numeric"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-medium block mb-1 text-muted-foreground">1ª parcela</label>
+                          <DateInput value={formPrimeiraParcela} onChange={setFormPrimeiraParcela} />
+                        </div>
+                      </div>
+                      {FORMAS_PARCELAVEIS.includes(formFormaPagamento) && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Nº parcelas</label>
+                            <input
+                              type="number" min={1} max={36}
+                              value={formNumParcelas}
+                              onChange={e => setFormNumParcelas(Math.max(1, Math.min(36, parseInt(e.target.value) || 1)))}
+                              className="ios-input w-full text-center"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Juros % a.m.</label>
+                            <input
+                              type="number" min={0} step="0.01"
+                              value={formTaxaJurosMensal}
+                              onChange={e => setFormTaxaJurosMensal(Math.max(0, parseFloat(e.target.value) || 0))}
+                              className="ios-input w-full text-center"
+                              placeholder="0,00"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {(() => {
+                        const valor = parseCurrencyMask(formValorTotalMask);
+                        if (!valor) return null;
+                        const isParc = FORMAS_PARCELAVEIS.includes(formFormaPagamento);
+                        const n = isParc ? Math.max(1, formNumParcelas) : 1;
+                        const taxa = isParc ? formTaxaJurosMensal : 0;
+                        const { parcelas, valorParcela, valorTotal } = calcularParcelas(valor, n, taxa, formPrimeiraParcela);
+                        return (
+                          <div className="rounded-lg bg-background/60 border border-border/50 p-2 space-y-1">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="text-muted-foreground">
+                                {n}× de <span className="text-foreground font-semibold">{formatCurrency(valorParcela)}</span>
+                              </span>
+                              <span className="text-muted-foreground">Total: <span className="text-foreground font-semibold">{formatCurrency(valorTotal)}</span></span>
+                            </div>
+                            {n > 1 && (
+                              <div className="max-h-32 overflow-y-auto mt-1 space-y-0.5">
+                                {parcelas.map(pa => (
+                                  <div key={pa.numero} className="flex items-center justify-between text-[10px] text-muted-foreground">
+                                    <span>#{pa.numero} · {formatDateBR(pa.vencimento)}</span>
+                                    <span className="text-foreground">{formatCurrency(pa.valor)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </>
+                  )}
                 </div>
                 <button type="submit" disabled={saving}
                   className="w-full h-12 rounded-xl text-base font-semibold text-foreground bg-primary disabled:opacity-50">
