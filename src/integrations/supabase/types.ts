@@ -877,57 +877,39 @@ export type Database = {
           cliente: string | null
           created_at: string
           documento_ref: string | null
-          forma_pagamento: string | null
           id: string
           motivo: string | null
-          num_parcelas: number | null
           observacao: string | null
-          parcelas: Json | null
-          primeira_parcela: string | null
           produto_id: string
           quantidade: number
-          taxa_juros_mensal: number | null
           tipo: string
           user_id: string
-          valor_total: number | null
           vendedor_id: string | null
         }
         Insert: {
           cliente?: string | null
           created_at?: string
           documento_ref?: string | null
-          forma_pagamento?: string | null
           id?: string
           motivo?: string | null
-          num_parcelas?: number | null
           observacao?: string | null
-          parcelas?: Json | null
-          primeira_parcela?: string | null
           produto_id: string
           quantidade: number
-          taxa_juros_mensal?: number | null
           tipo: string
           user_id: string
-          valor_total?: number | null
           vendedor_id?: string | null
         }
         Update: {
           cliente?: string | null
           created_at?: string
           documento_ref?: string | null
-          forma_pagamento?: string | null
           id?: string
           motivo?: string | null
-          num_parcelas?: number | null
           observacao?: string | null
-          parcelas?: Json | null
-          primeira_parcela?: string | null
           produto_id?: string
           quantidade?: number
-          taxa_juros_mensal?: number | null
           tipo?: string
           user_id?: string
-          valor_total?: number | null
           vendedor_id?: string | null
         }
         Relationships: [
@@ -952,57 +934,39 @@ export type Database = {
           cliente: string | null
           created_at: string
           documento_ref: string | null
-          forma_pagamento: string | null
           id: string
           motivo: string | null
-          num_parcelas: number | null
           observacao: string | null
-          parcelas: Json | null
-          primeira_parcela: string | null
           produto_id: string
           quantidade: number
-          taxa_juros_mensal: number | null
           tipo: string
           user_id: string
-          valor_total: number | null
           vendedor_id: string | null
         }
         Insert: {
           cliente?: string | null
           created_at?: string
           documento_ref?: string | null
-          forma_pagamento?: string | null
           id?: string
           motivo?: string | null
-          num_parcelas?: number | null
           observacao?: string | null
-          parcelas?: Json | null
-          primeira_parcela?: string | null
           produto_id: string
           quantidade: number
-          taxa_juros_mensal?: number | null
           tipo: string
           user_id: string
-          valor_total?: number | null
           vendedor_id?: string | null
         }
         Update: {
           cliente?: string | null
           created_at?: string
           documento_ref?: string | null
-          forma_pagamento?: string | null
           id?: string
           motivo?: string | null
-          num_parcelas?: number | null
           observacao?: string | null
-          parcelas?: Json | null
-          primeira_parcela?: string | null
           produto_id?: string
           quantidade?: number
-          taxa_juros_mensal?: number | null
           tipo?: string
           user_id?: string
-          valor_total?: number | null
           vendedor_id?: string | null
         }
         Relationships: [
@@ -1291,6 +1255,7 @@ export type Database = {
           estoque_atual: number
           estoque_minimo: number
           fabricante: string | null
+          forma_pagamento: string | null
           fornecedor_id: string | null
           foto_url: string | null
           id: string
@@ -1298,14 +1263,19 @@ export type Database = {
           lote: string | null
           nome: string
           nome_comercial: string | null
+          num_parcelas: number | null
           numero_serie: string | null
+          parcelas: Json | null
           preco_custo: number | null
           preco_venda: number | null
+          primeira_parcela: string | null
           registro_anvisa: string | null
+          taxa_juros_mensal: number | null
           unidade: string
           updated_at: string
           user_id: string
           validade: string | null
+          valor_total: number | null
         }
         Insert: {
           ativo?: boolean
@@ -1315,6 +1285,7 @@ export type Database = {
           estoque_atual?: number
           estoque_minimo?: number
           fabricante?: string | null
+          forma_pagamento?: string | null
           fornecedor_id?: string | null
           foto_url?: string | null
           id?: string
@@ -1322,14 +1293,19 @@ export type Database = {
           lote?: string | null
           nome: string
           nome_comercial?: string | null
+          num_parcelas?: number | null
           numero_serie?: string | null
+          parcelas?: Json | null
           preco_custo?: number | null
           preco_venda?: number | null
+          primeira_parcela?: string | null
           registro_anvisa?: string | null
+          taxa_juros_mensal?: number | null
           unidade?: string
           updated_at?: string
           user_id: string
           validade?: string | null
+          valor_total?: number | null
         }
         Update: {
           ativo?: boolean
@@ -1339,6 +1315,7 @@ export type Database = {
           estoque_atual?: number
           estoque_minimo?: number
           fabricante?: string | null
+          forma_pagamento?: string | null
           fornecedor_id?: string | null
           foto_url?: string | null
           id?: string
@@ -1346,14 +1323,19 @@ export type Database = {
           lote?: string | null
           nome?: string
           nome_comercial?: string | null
+          num_parcelas?: number | null
           numero_serie?: string | null
+          parcelas?: Json | null
           preco_custo?: number | null
           preco_venda?: number | null
+          primeira_parcela?: string | null
           registro_anvisa?: string | null
+          taxa_juros_mensal?: number | null
           unidade?: string
           updated_at?: string
           user_id?: string
           validade?: string | null
+          valor_total?: number | null
         }
         Relationships: [
           {
@@ -1374,6 +1356,7 @@ export type Database = {
           estoque_atual: number
           estoque_minimo: number
           fabricante: string | null
+          forma_pagamento: string | null
           fornecedor_id: string | null
           foto_url: string | null
           id: string
@@ -1381,14 +1364,19 @@ export type Database = {
           lote: string | null
           nome: string
           nome_comercial: string | null
+          num_parcelas: number | null
           numero_serie: string | null
+          parcelas: Json | null
           preco_custo: number | null
           preco_venda: number | null
+          primeira_parcela: string | null
           registro_anvisa: string | null
+          taxa_juros_mensal: number | null
           unidade: string
           updated_at: string
           user_id: string
           validade: string | null
+          valor_total: number | null
         }
         Insert: {
           ativo?: boolean
@@ -1398,6 +1386,7 @@ export type Database = {
           estoque_atual?: number
           estoque_minimo?: number
           fabricante?: string | null
+          forma_pagamento?: string | null
           fornecedor_id?: string | null
           foto_url?: string | null
           id?: string
@@ -1405,14 +1394,19 @@ export type Database = {
           lote?: string | null
           nome: string
           nome_comercial?: string | null
+          num_parcelas?: number | null
           numero_serie?: string | null
+          parcelas?: Json | null
           preco_custo?: number | null
           preco_venda?: number | null
+          primeira_parcela?: string | null
           registro_anvisa?: string | null
+          taxa_juros_mensal?: number | null
           unidade?: string
           updated_at?: string
           user_id: string
           validade?: string | null
+          valor_total?: number | null
         }
         Update: {
           ativo?: boolean
@@ -1422,6 +1416,7 @@ export type Database = {
           estoque_atual?: number
           estoque_minimo?: number
           fabricante?: string | null
+          forma_pagamento?: string | null
           fornecedor_id?: string | null
           foto_url?: string | null
           id?: string
@@ -1429,14 +1424,19 @@ export type Database = {
           lote?: string | null
           nome?: string
           nome_comercial?: string | null
+          num_parcelas?: number | null
           numero_serie?: string | null
+          parcelas?: Json | null
           preco_custo?: number | null
           preco_venda?: number | null
+          primeira_parcela?: string | null
           registro_anvisa?: string | null
+          taxa_juros_mensal?: number | null
           unidade?: string
           updated_at?: string
           user_id?: string
           validade?: string | null
+          valor_total?: number | null
         }
         Relationships: []
       }
