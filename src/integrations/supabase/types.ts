@@ -877,39 +877,57 @@ export type Database = {
           cliente: string | null
           created_at: string
           documento_ref: string | null
+          forma_pagamento: string | null
           id: string
           motivo: string | null
+          num_parcelas: number | null
           observacao: string | null
+          parcelas: Json | null
+          primeira_parcela: string | null
           produto_id: string
           quantidade: number
+          taxa_juros_mensal: number | null
           tipo: string
           user_id: string
+          valor_total: number | null
           vendedor_id: string | null
         }
         Insert: {
           cliente?: string | null
           created_at?: string
           documento_ref?: string | null
+          forma_pagamento?: string | null
           id?: string
           motivo?: string | null
+          num_parcelas?: number | null
           observacao?: string | null
+          parcelas?: Json | null
+          primeira_parcela?: string | null
           produto_id: string
           quantidade: number
+          taxa_juros_mensal?: number | null
           tipo: string
           user_id: string
+          valor_total?: number | null
           vendedor_id?: string | null
         }
         Update: {
           cliente?: string | null
           created_at?: string
           documento_ref?: string | null
+          forma_pagamento?: string | null
           id?: string
           motivo?: string | null
+          num_parcelas?: number | null
           observacao?: string | null
+          parcelas?: Json | null
+          primeira_parcela?: string | null
           produto_id?: string
           quantidade?: number
+          taxa_juros_mensal?: number | null
           tipo?: string
           user_id?: string
+          valor_total?: number | null
           vendedor_id?: string | null
         }
         Relationships: [
@@ -934,39 +952,57 @@ export type Database = {
           cliente: string | null
           created_at: string
           documento_ref: string | null
+          forma_pagamento: string | null
           id: string
           motivo: string | null
+          num_parcelas: number | null
           observacao: string | null
+          parcelas: Json | null
+          primeira_parcela: string | null
           produto_id: string
           quantidade: number
+          taxa_juros_mensal: number | null
           tipo: string
           user_id: string
+          valor_total: number | null
           vendedor_id: string | null
         }
         Insert: {
           cliente?: string | null
           created_at?: string
           documento_ref?: string | null
+          forma_pagamento?: string | null
           id?: string
           motivo?: string | null
+          num_parcelas?: number | null
           observacao?: string | null
+          parcelas?: Json | null
+          primeira_parcela?: string | null
           produto_id: string
           quantidade: number
+          taxa_juros_mensal?: number | null
           tipo: string
           user_id: string
+          valor_total?: number | null
           vendedor_id?: string | null
         }
         Update: {
           cliente?: string | null
           created_at?: string
           documento_ref?: string | null
+          forma_pagamento?: string | null
           id?: string
           motivo?: string | null
+          num_parcelas?: number | null
           observacao?: string | null
+          parcelas?: Json | null
+          primeira_parcela?: string | null
           produto_id?: string
           quantidade?: number
+          taxa_juros_mensal?: number | null
           tipo?: string
           user_id?: string
+          valor_total?: number | null
           vendedor_id?: string | null
         }
         Relationships: [
