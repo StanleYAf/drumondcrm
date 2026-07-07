@@ -559,6 +559,9 @@ export default function Estoque() {
     setFormRegistroAnvisa(""); setFormFabricante(""); setFormValidade(""); setFormValidadeIsento(false); setFormLocalEstoque("");
     setFormNomeComercial(""); setFormLote("");
     setFormFotos([]); setFormFotoPreviews([]);
+    setFormFormaPagamento(""); setFormValorTotalMask("");
+    setFormNumParcelas(1); setFormTaxaJurosMensal(0);
+    setFormPrimeiraParcela(new Date().toISOString().slice(0, 10));
   }
 
   function openEdit(p: Produto) {
@@ -573,6 +576,11 @@ export default function Estoque() {
     setFormLocalEstoque(p.local_estoque || "");
     setFormNomeComercial(p.nome_comercial || ""); setFormLote(p.lote || "");
     setFormFotos([]); setFormFotoPreviews(parseFotoUrls(p.foto_url));
+    setFormFormaPagamento((p.forma_pagamento as FormaPagamento) || "");
+    setFormValorTotalMask(p.valor_total != null ? numberToCurrencyMask(Number(p.valor_total)) : (p.preco_venda != null ? numberToCurrencyMask(Number(p.preco_venda)) : ""));
+    setFormNumParcelas(p.num_parcelas ?? 1);
+    setFormTaxaJurosMensal(p.taxa_juros_mensal != null ? Number(p.taxa_juros_mensal) : 0);
+    setFormPrimeiraParcela(p.primeira_parcela || new Date().toISOString().slice(0, 10));
     setShowForm(true);
   }
 
