@@ -1378,6 +1378,95 @@ export default function Estoque() {
                     <input value={formLocalEstoque} onChange={e => setFormLocalEstoque(e.target.value)} className="ios-input w-full" placeholder="Ex: Prateleira A" />
                   </div>
                 </div>
+                {/* Plano de pagamento */}
+                <div className="space-y-3 p-3 rounded-xl border border-border/60 bg-secondary/40">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground">Plano de pagamento</span>
+                    <span className="text-[10px] text-muted-foreground">opcional</span>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Forma de pagamento</label>
+                    <select
+                      value={formFormaPagamento}
+                      onChange={e => { setFormFormaPagamento(e.target.value as FormaPagamento | ""); setFormNumParcelas(1); }}
+                      className="ios-input w-full"
+                    >
+                      <option value="">— Sem plano —</option>
+                      {(Object.keys(FORMA_PAGAMENTO_LABELS) as (keyof typeof FORMA_PAGAMENTO_LABELS)[]).map(k => (
+                        <option key={k} value={k}>{FORMA_PAGAMENTO_LABELS[k]}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {formFormaPagamento && (
+                    <>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Valor total</label>
+                          <input
+                            value={formValorTotalMask}
+                            onChange={e => setFormValorTotalMask(applyCurrencyMask(e.target.value))}
+                            className="ios-input w-full" placeholder="R$ 0,00" inputMode="numeric"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-medium block mb-1 text-muted-foreground">1ª parcela</label>
+                          <DateInput value={formPrimeiraParcela} onChange={setFormPrimeiraParcela} />
+                        </div>
+                      </div>
+                      {FORMAS_PARCELAVEIS.includes(formFormaPagamento) && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Nº parcelas</label>
+                            <input
+                              type="number" min={1} max={36}
+                              value={formNumParcelas}
+                              onChange={e => setFormNumParcelas(Math.max(1, Math.min(36, parseInt(e.target.value) || 1)))}
+                              className="ios-input w-full text-center"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Juros % a.m.</label>
+                            <input
+                              type="number" min={0} step="0.01"
+                              value={formTaxaJurosMensal}
+                              onChange={e => setFormTaxaJurosMensal(Math.max(0, parseFloat(e.target.value) || 0))}
+                              className="ios-input w-full text-center"
+                              placeholder="0,00"
+                            />
+                          </div>
+                        </div>
+                      )}
+                      {(() => {
+                        const valor = parseCurrencyMask(formValorTotalMask);
+                        if (!valor) return null;
+                        const isParc = FORMAS_PARCELAVEIS.includes(formFormaPagamento);
+                        const n = isParc ? Math.max(1, formNumParcelas) : 1;
+                        const taxa = isParc ? formTaxaJurosMensal : 0;
+                        const { parcelas, valorParcela, valorTotal } = calcularParcelas(valor, n, taxa, formPrimeiraParcela);
+                        return (
+                          <div className="rounded-lg bg-background/60 border border-border/50 p-2 space-y-1">
+                            <div className="flex items-center justify-between text-[11px]">
+                              <span className="text-muted-foreground">
+                                {n}× de <span className="text-foreground font-semibold">{formatCurrency(valorParcela)}</span>
+                              </span>
+                              <span className="text-muted-foreground">Total: <span className="text-foreground font-semibold">{formatCurrency(valorTotal)}</span></span>
+                            </div>
+                            {n > 1 && (
+                              <div className="max-h-32 overflow-y-auto mt-1 space-y-0.5">
+                                {parcelas.map(pa => (
+                                  <div key={pa.numero} className="flex items-center justify-between text-[10px] text-muted-foreground">
+                                    <span>#{pa.numero} · {formatDateBR(pa.vencimento)}</span>
+                                    <span className="text-foreground">{formatCurrency(pa.valor)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </>
+                  )}
+                </div>
                 <button type="submit" disabled={saving}
                   className="w-full h-12 rounded-xl text-base font-semibold text-foreground bg-primary disabled:opacity-50">
                   {saving ? "Salvando..." : editProduct ? "Salvar Alterações" : "Cadastrar Produto"}
