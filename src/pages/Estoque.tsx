@@ -337,7 +337,7 @@ export default function Estoque() {
 
     const trimmed = code.trim();
     const found = produtos.find(p => p.codigo_barras?.trim() === trimmed);
-    if (found) { setQuickMove({ produto: found, tipo: null, quantidade: 1, observacao: "", documento_ref: "" }); setSearchQuery(""); }
+    if (found) { setQuickMove({ produto: found, tipo: null, quantidade: 1, observacao: "", documento_ref: "", forma_pagamento: "", valor_mascara: numberToCurrencyMask(Number(found.preco_venda) || 0), num_parcelas: 1, taxa_juros_mensal: 0, primeira_parcela: new Date().toISOString().slice(0,10) }); setSearchQuery(""); }
     else {
       resetForm();
       setFormCodigo(trimmed);
