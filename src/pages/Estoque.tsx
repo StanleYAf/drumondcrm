@@ -161,6 +161,13 @@ export default function Estoque() {
   const fotoInputRef = useRef<HTMLInputElement>(null);
   const [fotoModalUrl, setFotoModalUrl] = useState<string | null>(null);
 
+  // Payment plan for the product (used when selling / stock exit)
+  const [formFormaPagamento, setFormFormaPagamento] = useState<FormaPagamento | "">("");
+  const [formValorTotalMask, setFormValorTotalMask] = useState("");
+  const [formNumParcelas, setFormNumParcelas] = useState<number>(1);
+  const [formTaxaJurosMensal, setFormTaxaJurosMensal] = useState<number>(0);
+  const [formPrimeiraParcela, setFormPrimeiraParcela] = useState<string>(new Date().toISOString().slice(0, 10));
+
   function parseFotoUrls(fotoUrl: string | null): string[] {
     if (!fotoUrl) return [];
     try { const arr = JSON.parse(fotoUrl); if (Array.isArray(arr)) return arr; } catch {}
