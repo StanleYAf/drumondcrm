@@ -501,6 +501,28 @@ export default function Estoque() {
       foto_url: fotoUrl,
     };
 
+    // Payment plan for the product
+    if (formFormaPagamento) {
+      const valor = parseCurrencyMask(formValorTotalMask);
+      const isParc = FORMAS_PARCELAVEIS.includes(formFormaPagamento);
+      const nParc = isParc ? Math.max(1, formNumParcelas) : 1;
+      const taxa = isParc ? formTaxaJurosMensal : 0;
+      const { parcelas, valorTotal } = calcularParcelas(valor, nParc, taxa, formPrimeiraParcela);
+      payload.forma_pagamento = formFormaPagamento;
+      payload.valor_total = valorTotal;
+      payload.num_parcelas = nParc;
+      payload.taxa_juros_mensal = taxa;
+      payload.primeira_parcela = formPrimeiraParcela;
+      payload.parcelas = parcelas;
+    } else {
+      payload.forma_pagamento = null;
+      payload.valor_total = null;
+      payload.num_parcelas = null;
+      payload.taxa_juros_mensal = null;
+      payload.primeira_parcela = null;
+      payload.parcelas = null;
+    }
+
     let error;
     if (editProduct) {
       // Don't overwrite user_id on edit — preserve original owner
