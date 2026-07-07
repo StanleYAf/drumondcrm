@@ -780,7 +780,7 @@ export default function Estoque() {
                             </div>
                           )}
                         </div>
-                        <button onClick={() => setQuickMove({ produto: p, tipo: null, quantidade: 1, observacao: "", documento_ref: "", forma_pagamento: "", valor_mascara: numberToCurrencyMask(Number(p.preco_venda) || 0), num_parcelas: 1, taxa_juros_mensal: 0, primeira_parcela: new Date().toISOString().slice(0,10) })}
+                        <button onClick={() => setQuickMove({ produto: p, tipo: null, quantidade: 1, observacao: "", documento_ref: "" })}
                           className="p-1.5 rounded-lg hover:bg-muted" title="Movimentar">
                           <ArrowDownToLine className="h-3.5 w-3.5 text-primary" />
                         </button>
