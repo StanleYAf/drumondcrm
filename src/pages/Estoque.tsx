@@ -36,6 +36,12 @@ interface Produto {
   nome_comercial: string | null;
   lote: string | null;
   foto_url: string | null;
+  forma_pagamento?: string | null;
+  valor_total?: number | null;
+  num_parcelas?: number | null;
+  taxa_juros_mensal?: number | null;
+  primeira_parcela?: string | null;
+  parcelas?: unknown;
 }
 
 interface Movimentacao {
@@ -62,11 +68,6 @@ interface QuickMoveState {
   quantidade: number;
   observacao: string;
   documento_ref: string;
-  forma_pagamento: FormaPagamento | "";
-  valor_mascara: string;
-  num_parcelas: number;
-  taxa_juros_mensal: number;
-  primeira_parcela: string;
 }
 
 type TabKey = "produtos" | "movimentacoes" | "alertas" | "aguardando";
