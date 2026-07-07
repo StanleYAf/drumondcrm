@@ -338,7 +338,7 @@ export default function Estoque() {
 
     const trimmed = code.trim();
     const found = produtos.find(p => p.codigo_barras?.trim() === trimmed);
-    if (found) { setQuickMove({ produto: found, tipo: null, quantidade: 1, observacao: "", documento_ref: "", forma_pagamento: "", valor_mascara: numberToCurrencyMask(Number(found.preco_venda) || 0), num_parcelas: 1, taxa_juros_mensal: 0, primeira_parcela: new Date().toISOString().slice(0,10) }); setSearchQuery(""); }
+    if (found) { setQuickMove({ produto: found, tipo: null, quantidade: 1, observacao: "", documento_ref: "" }); setSearchQuery(""); }
     else {
       resetForm();
       setFormCodigo(trimmed);
@@ -396,28 +396,9 @@ export default function Estoque() {
     const { produto, tipo, quantidade, observacao, documento_ref } = quickMove;
     const novoEstoque = tipo === "entrada" ? produto.estoque_atual + quantidade : Math.max(0, produto.estoque_atual - quantidade);
 
-    // Monta payload de pagamento apenas para saídas
-    let pagamentoPayload: Record<string, unknown> = {};
-    if (tipo === "saida" && quickMove.forma_pagamento) {
-      const valor = parseCurrencyMask(quickMove.valor_mascara);
-      const isParcelavel = FORMAS_PARCELAVEIS.includes(quickMove.forma_pagamento);
-      const nParc = isParcelavel ? Math.max(1, quickMove.num_parcelas) : 1;
-      const taxa = isParcelavel ? quickMove.taxa_juros_mensal : 0;
-      const { parcelas, valorTotal } = calcularParcelas(valor, nParc, taxa, quickMove.primeira_parcela);
-      pagamentoPayload = {
-        forma_pagamento: quickMove.forma_pagamento,
-        valor_total: valorTotal,
-        num_parcelas: nParc,
-        taxa_juros_mensal: taxa,
-        primeira_parcela: quickMove.primeira_parcela,
-        parcelas,
-      };
-    }
-
     const { error: moveErr } = await supabase.from(tbl.movimentacoes as any).insert({
       user_id: user.id, produto_id: produto.id, tipo, quantidade,
       observacao: observacao || null, documento_ref: documento_ref || null,
-      ...pagamentoPayload,
     });
     if (moveErr) { toast.error("Erro ao registrar movimentação"); setSaving(false); return; }
     const { error: updErr } = await supabase.from(tbl.produtos as any).update({ estoque_atual: novoEstoque }).eq("id", produto.id);
