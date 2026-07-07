@@ -1211,6 +1211,97 @@ export default function Estoque() {
                       onChange={e => setQuickMove({ ...quickMove, observacao: e.target.value })}
                       className="ios-input w-full" placeholder="Ex: Reposição" />
                   </div>
+                  {quickMove.tipo === "saida" && (
+                    <div className="space-y-3 p-3 rounded-xl border border-border/60 bg-secondary/40">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-foreground">Pagamento</span>
+                        <span className="text-[10px] text-muted-foreground">opcional</span>
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Forma de pagamento</label>
+                        <select
+                          value={quickMove.forma_pagamento}
+                          onChange={e => setQuickMove({ ...quickMove, forma_pagamento: e.target.value as any, num_parcelas: 1 })}
+                          className="ios-input w-full"
+                        >
+                          <option value="">— Não registrar —</option>
+                          {(Object.keys(FORMA_PAGAMENTO_LABELS) as (keyof typeof FORMA_PAGAMENTO_LABELS)[]).map(k => (
+                            <option key={k} value={k}>{FORMA_PAGAMENTO_LABELS[k]}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {quickMove.forma_pagamento && (
+                        <>
+                          <div>
+                            <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Valor total</label>
+                            <input
+                              value={quickMove.valor_mascara}
+                              onChange={e => setQuickMove({ ...quickMove, valor_mascara: applyCurrencyMask(e.target.value) })}
+                              className="ios-input w-full" placeholder="R$ 0,00" inputMode="numeric"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Data da 1ª parcela</label>
+                            <DateInput
+                              value={quickMove.primeira_parcela}
+                              onChange={v => setQuickMove({ ...quickMove, primeira_parcela: v })}
+                            />
+                          </div>
+                          {FORMAS_PARCELAVEIS.includes(quickMove.forma_pagamento) && (
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Nº parcelas</label>
+                                <input
+                                  type="number" min={1} max={36}
+                                  value={quickMove.num_parcelas}
+                                  onChange={e => setQuickMove({ ...quickMove, num_parcelas: Math.max(1, Math.min(36, parseInt(e.target.value) || 1)) })}
+                                  className="ios-input w-full text-center"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Juros % a.m.</label>
+                                <input
+                                  type="number" min={0} step="0.01"
+                                  value={quickMove.taxa_juros_mensal}
+                                  onChange={e => setQuickMove({ ...quickMove, taxa_juros_mensal: Math.max(0, parseFloat(e.target.value) || 0) })}
+                                  className="ios-input w-full text-center"
+                                  placeholder="0,00"
+                                />
+                              </div>
+                            </div>
+                          )}
+                          {(() => {
+                            const valor = parseCurrencyMask(quickMove.valor_mascara);
+                            if (!valor) return null;
+                            const isParc = FORMAS_PARCELAVEIS.includes(quickMove.forma_pagamento);
+                            const n = isParc ? Math.max(1, quickMove.num_parcelas) : 1;
+                            const taxa = isParc ? quickMove.taxa_juros_mensal : 0;
+                            const { parcelas, valorParcela, valorTotal } = calcularParcelas(valor, n, taxa, quickMove.primeira_parcela);
+                            return (
+                              <div className="rounded-lg bg-background/60 border border-border/50 p-2 space-y-1">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="text-muted-foreground">
+                                    {n}× de <span className="text-foreground font-semibold">{formatCurrency(valorParcela)}</span>
+                                  </span>
+                                  <span className="text-muted-foreground">Total: <span className="text-foreground font-semibold">{formatCurrency(valorTotal)}</span></span>
+                                </div>
+                                {n > 1 && (
+                                  <div className="max-h-32 overflow-y-auto mt-1 space-y-0.5">
+                                    {parcelas.map(p => (
+                                      <div key={p.numero} className="flex items-center justify-between text-[10px] text-muted-foreground">
+                                        <span>#{p.numero} · {formatDateBR(p.vencimento)}</span>
+                                        <span className="text-foreground">{formatCurrency(p.valor)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </>
+                      )}
+                    </div>
+                  )}
                   <div className="p-2 rounded-lg bg-muted text-center">
                     <span className="text-xs text-muted-foreground">Novo saldo: </span>
                     <span className="text-sm font-bold text-foreground">
