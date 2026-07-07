@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { formatCurrency, MESES } from "@/lib/types";
 import { applyCurrencyMask, parseCurrencyMask, numberToCurrencyMask } from "@/lib/currencyMask";
 import { DateInput } from "@/components/DateInput";
+import { FORMA_PAGAMENTO_LABELS, FORMAS_PARCELAVEIS, calcularParcelas, formatDateBR, type FormaPagamento } from "@/lib/pagamento";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import {
   Package, Search, Camera, Plus, Pencil, ArrowDownToLine, ArrowUpFromLine,
@@ -61,6 +62,11 @@ interface QuickMoveState {
   quantidade: number;
   observacao: string;
   documento_ref: string;
+  forma_pagamento: FormaPagamento | "";
+  valor_mascara: string;
+  num_parcelas: number;
+  taxa_juros_mensal: number;
+  primeira_parcela: string;
 }
 
 type TabKey = "produtos" | "movimentacoes" | "alertas" | "aguardando";
