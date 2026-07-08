@@ -23,7 +23,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
 import {
   Plus, Search, MoreHorizontal, User, Building2, Phone, Mail,
-  DollarSign, MessageSquare, GripVertical, X, Pencil, Trash2, ArrowRight, XCircle,
+  DollarSign, MessageSquare, GripVertical, X, Pencil, Trash2, ArrowRight, XCircle, Archive, ArchiveRestore,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +66,8 @@ interface Lead {
   observacoes: string | null;
   created_at: string;
   updated_at: string;
+  etapa_changed_at?: string;
+  arquivado_em?: string | null;
 }
 
 const ORIGENS: Origem[] = ["Instagram", "Facebook", "Indicação", "Site", "Google", "WhatsApp", "Outro"];
@@ -112,6 +114,7 @@ function KanbanColumn({
   onEdit,
   onMoveTo,
   onDelete,
+  onToggleArquivar,
 }: {
   etapa: (typeof ETAPAS)[number];
   leads: Lead[];
@@ -119,6 +122,7 @@ function KanbanColumn({
   onEdit: (l: Lead) => void;
   onMoveTo: (l: Lead, e: Etapa) => void;
   onDelete: (l: Lead) => void;
+  onToggleArquivar: (l: Lead) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: etapa.key });
   const total = leads.reduce((s, l) => s + (l.valor_estimado || 0), 0);
@@ -147,6 +151,7 @@ function KanbanColumn({
               onEdit={() => onEdit(lead)}
               onMoveTo={(e) => onMoveTo(lead, e)}
               onDelete={() => onDelete(lead)}
+              onToggleArquivar={() => onToggleArquivar(lead)}
             />
           ))}
         </SortableContext>
@@ -165,12 +170,14 @@ function SortableLeadCard({
   onEdit,
   onMoveTo,
   onDelete,
+  onToggleArquivar,
 }: {
   lead: Lead;
   onClick: () => void;
   onEdit: () => void;
   onMoveTo: (e: Etapa) => void;
   onDelete: () => void;
+  onToggleArquivar?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: lead.id,
@@ -185,7 +192,7 @@ function SortableLeadCard({
 
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
-      <LeadCard lead={lead} onClick={onClick} onEdit={onEdit} onMoveTo={onMoveTo} onDelete={onDelete} dragListeners={listeners} />
+      <LeadCard lead={lead} onClick={onClick} onEdit={onEdit} onMoveTo={onMoveTo} onDelete={onDelete} onToggleArquivar={onToggleArquivar} dragListeners={listeners} />
     </div>
   );
 }
@@ -196,6 +203,7 @@ function LeadCard({
   onEdit,
   onMoveTo,
   onDelete,
+  onToggleArquivar,
   dragListeners,
 }: {
   lead: Lead;
@@ -203,11 +211,13 @@ function LeadCard({
   onEdit: () => void;
   onMoveTo: (e: Etapa) => void;
   onDelete: () => void;
+  onToggleArquivar?: () => void;
   dragListeners?: any;
 }) {
+  const isArquivado = !!lead.arquivado_em;
   return (
     <Card
-      className="p-3 cursor-pointer hover:border-primary/40 transition-colors bg-background/60 backdrop-blur-sm border-border/60"
+      className={`p-3 cursor-pointer hover:border-primary/40 transition-colors bg-background/60 backdrop-blur-sm border-border/60 ${isArquivado ? "opacity-60" : ""}`}
       onClick={onClick}
     >
       <div className="flex items-start justify-between gap-2">
@@ -236,6 +246,15 @@ function LeadCard({
                 <ArrowRight className="h-3.5 w-3.5 mr-2" />{e.label}
               </DropdownMenuItem>
             ))}
+            {(lead.etapa === "perdido" || lead.etapa === "convertido") && (
+              <DropdownMenuItem onClick={() => onToggleArquivar?.()}>
+                {isArquivado ? (
+                  <><ArchiveRestore className="h-3.5 w-3.5 mr-2" />Desarquivar</>
+                ) : (
+                  <><Archive className="h-3.5 w-3.5 mr-2" />Arquivar</>
+                )}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem className="text-destructive" onClick={onDelete}>
               <Trash2 className="h-3.5 w-3.5 mr-2" />Excluir
             </DropdownMenuItem>
@@ -282,6 +301,7 @@ export default function Vendas() {
   const [filterTipo, setFilterTipo] = useState<string>("all");
   const [filterDateStart, setFilterDateStart] = useState("");
   const [filterDateEnd, setFilterDateEnd] = useState("");
+  const [showArquivados, setShowArquivados] = useState(false);
 
   // Form state
   const emptyForm = {
@@ -298,6 +318,8 @@ export default function Vendas() {
 
   // ── Fetch ──
   const fetchLeads = useCallback(async () => {
+    // Auto-archive terminal leads older than 8 days before fetching
+    await supabase.rpc("auto_arquivar_leads_e_posvenda" as any);
     const { data, error } = await supabase.from("leads").select("*").order("created_at", { ascending: false });
     if (!error && data) setLeads(data as unknown as Lead[]);
     setLoading(false);
@@ -330,6 +352,8 @@ export default function Vendas() {
   // ── Filtered leads ──
   const filtered = useMemo(() => {
     return leads.filter((l) => {
+      if (!showArquivados && l.arquivado_em) return false;
+      if (showArquivados && !l.arquivado_em) return false;
       if (search) {
         const s = search.toLowerCase();
         if (!l.nome_cliente.toLowerCase().includes(s) && !(l.empresa || "").toLowerCase().includes(s)) return false;
@@ -341,7 +365,9 @@ export default function Vendas() {
       if (filterDateEnd && l.created_at > filterDateEnd + "T23:59:59") return false;
       return true;
     });
-  }, [leads, search, filterResp, filterOrigem, filterTipo, filterDateStart, filterDateEnd]);
+  }, [leads, search, filterResp, filterOrigem, filterTipo, filterDateStart, filterDateEnd, showArquivados]);
+
+  const arquivadosCount = useMemo(() => leads.filter((l) => l.arquivado_em).length, [leads]);
 
   const responsaveis = useMemo(() => [...new Set(leads.map((l) => l.responsavel).filter(Boolean))], [leads]);
 
@@ -386,6 +412,12 @@ export default function Vendas() {
     await supabase.from("leads").delete().eq("id", lead.id);
     toast.success("Lead excluído");
     if (detailLead?.id === lead.id) setDetailLead(null);
+  };
+
+  const handleToggleArquivar = async (lead: Lead) => {
+    const arquivado_em = lead.arquivado_em ? null : new Date().toISOString();
+    await supabase.from("leads").update({ arquivado_em } as any).eq("id", lead.id);
+    toast.success(arquivado_em ? "Lead arquivado" : "Lead desarquivado");
   };
 
   const openEdit = (lead: Lead) => {
@@ -466,9 +498,20 @@ export default function Vendas() {
       <div className="px-4 sm:px-6 py-4 border-b border-border space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h1 className="text-xl font-bold">Pipeline de Vendas</h1>
-          <Button onClick={() => { setEditLead(null); setForm(emptyForm); setShowModal(true); }}>
-            <Plus className="h-4 w-4 mr-2" /> Novo Lead
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={showArquivados ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowArquivados((v) => !v)}
+              className="h-9"
+            >
+              <Archive className="h-4 w-4 mr-2" />
+              {showArquivados ? "Ver ativos" : `Arquivados${arquivadosCount ? ` (${arquivadosCount})` : ""}`}
+            </Button>
+            <Button onClick={() => { setEditLead(null); setForm(emptyForm); setShowModal(true); }}>
+              <Plus className="h-4 w-4 mr-2" /> Novo Lead
+            </Button>
+          </div>
         </div>
         {/* Filters */}
         <div className="flex flex-wrap gap-2">
@@ -524,6 +567,7 @@ export default function Vendas() {
                 onEdit={openEdit}
                 onMoveTo={handleMoveTo}
                 onDelete={handleDelete}
+                onToggleArquivar={handleToggleArquivar}
               />
             ))}
           </div>

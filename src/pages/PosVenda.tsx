@@ -1,12 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useAppData } from "@/lib/dataContext";
 import { formatDate, type PosVenda, type NotaContato } from "@/lib/types";
 import { DateInput } from "@/components/DateInput";
-import { Plus, X, PhoneOff, Users, ArrowUpDown, MessageSquare, Clock, Send } from "lucide-react";
+import { Plus, X, PhoneOff, Users, ArrowUpDown, MessageSquare, Clock, Send, Archive, ArchiveRestore } from "lucide-react";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { EmptyState } from "@/components/EmptyState";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const STATUS_CONFIG: Record<string, { color: string; bg: string }> = {
   "Aguardando retorno": { color: "#FF453A", bg: "rgba(255,69,58,0.15)" },
@@ -38,6 +39,8 @@ export default function PosVendaPage() {
   const [filterStatus, setFilterStatus] = useState("Todos");
   const [filterVendedor, setFilterVendedor] = useState<string | null>(null);
   const [sortMode, setSortMode] = useState<SortMode>("data");
+  const [arquivados, setArquivados] = useState<Set<string>>(new Set());
+  const [showArquivados, setShowArquivados] = useState(false);
   const [cliente, setCliente] = useState("");
   const [vendedor, setVendedor] = useState(data.vendedores[0] || "");
   const [status, setStatus] = useState<PosVenda["status"]>("Aguardando retorno");
@@ -45,6 +48,30 @@ export default function PosVendaPage() {
   const [notaTexto, setNotaTexto] = useState("");
 
   const pendentes = data.pos_venda.filter(p => p.status === "Aguardando retorno").length;
+
+  // Load archived IDs + run auto-archive on mount
+  const refreshArquivados = useCallback(async () => {
+    await supabase.rpc("auto_arquivar_leads_e_posvenda" as any);
+    const { data: rows } = await supabase
+      .from("pos_venda")
+      .select("id, arquivado_em")
+      .not("arquivado_em", "is", null);
+    setArquivados(new Set((rows || []).map((r: any) => r.id)));
+  }, []);
+  useEffect(() => { refreshArquivados(); }, [refreshArquivados]);
+
+  async function toggleArquivar(id: string) {
+    const isArq = arquivados.has(id);
+    const arquivado_em = isArq ? null : new Date().toISOString();
+    const { error } = await supabase.from("pos_venda").update({ arquivado_em } as any).eq("id", id);
+    if (error) { toast.error("Erro ao arquivar"); return; }
+    setArquivados((prev) => {
+      const next = new Set(prev);
+      if (isArq) next.delete(id); else next.add(id);
+      return next;
+    });
+    toast.success(isArq ? "Contato desarquivado" : "Contato arquivado");
+  }
 
   async function handleAdd() {
     if (!cliente.trim()) { toast.error("Nome do cliente é obrigatório"); return; }
@@ -104,6 +131,11 @@ export default function PosVendaPage() {
 
   const filtered = useMemo(() => {
     let list = data.pos_venda;
+    if (showArquivados) {
+      list = list.filter(p => arquivados.has(p.id));
+    } else {
+      list = list.filter(p => !arquivados.has(p.id));
+    }
     if (filterStatus !== "Todos") list = list.filter(p => p.status === filterStatus);
     if (filterVendedor) list = list.filter(p => p.vendedor === filterVendedor);
 
@@ -118,7 +150,7 @@ export default function PosVendaPage() {
       sorted.reverse();
     }
     return sorted;
-  }, [data.pos_venda, filterStatus, filterVendedor, sortMode]);
+  }, [data.pos_venda, filterStatus, filterVendedor, sortMode, arquivados, showArquivados]);
 
   if (loading) return <ListSkeleton />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
@@ -135,6 +167,11 @@ export default function PosVendaPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={() => setShowArquivados(v => !v)}
+            className={`flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium ${showArquivados ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'}`}>
+            <Archive className="h-3.5 w-3.5" />
+            {showArquivados ? `Ativos` : `Arquivados${arquivados.size ? ` (${arquivados.size})` : ''}`}
+          </button>
           <button onClick={() => setSortMode(s => s === "data" ? "status" : s === "status" ? "dias" : "data")}
             className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium text-foreground bg-secondary">
             <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -267,6 +304,13 @@ export default function PosVendaPage() {
                     </div>
 
                     {/* Delete */}
+                    <button onClick={() => toggleArquivar(p.id)}
+                      className="w-full text-center py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2"
+                      style={{ color: '#8E8E93', background: 'rgba(255,255,255,0.05)' }}>
+                      {arquivados.has(p.id)
+                        ? (<><ArchiveRestore className="h-4 w-4" /> Desarquivar</>)
+                        : (<><Archive className="h-4 w-4" /> Arquivar</>)}
+                    </button>
                     <button onClick={() => handleDelete(p.id)}
                       className="w-full text-center py-2.5 rounded-xl text-sm font-medium"
                       style={{ color: '#FF453A', background: 'rgba(255,69,58,0.08)' }}>
