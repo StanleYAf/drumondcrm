@@ -771,11 +771,22 @@ function _notaFill(n: number) {
   return "hsl(0 84% 55%)";
 }
 
-export function SatisfacaoCliente({ clienteId }: { clienteId?: string | null }) {
-  const [loading, setLoading] = useState(true);
-  const [items, setItems] = useState<_AvaliacaoRow[]>([]);
+export function SatisfacaoCliente({
+  clienteId,
+  initialItems,
+}: {
+  clienteId?: string | null;
+  initialItems?: _AvaliacaoRow[];
+}) {
+  const [loading, setLoading] = useState(!initialItems);
+  const [items, setItems] = useState<_AvaliacaoRow[]>(initialItems ?? []);
 
   useEffect(() => {
+    if (initialItems) {
+      setItems(initialItems);
+      setLoading(false);
+      return;
+    }
     let cancelled = false;
     (async () => {
       setLoading(true);
@@ -803,7 +814,7 @@ export function SatisfacaoCliente({ clienteId }: { clienteId?: string | null }) 
     return () => {
       cancelled = true;
     };
-  }, [clienteId]);
+  }, [clienteId, initialItems]);
 
   if (loading) {
     return (

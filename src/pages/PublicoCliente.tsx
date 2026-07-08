@@ -10,6 +10,7 @@ import { DisponibilidadeEquipamentos } from "@/features/engenharia/components/Di
 import { OsPorEstado } from "@/features/engenharia/components/OsPorEstado";
 import { OsPorSetor } from "@/features/engenharia/components/OsPorSetor";
 import type { OSOperacaoRow } from "@/features/engenharia/hooks/useClienteOperacaoData";
+import { SatisfacaoCliente } from "@/pages/Manutencao";
 
 const MES_ORDEM: Record<string, number> = {
   janeiro: 1, fevereiro: 2, março: 3, marco: 3, abril: 4, maio: 5, junho: 6,
@@ -44,6 +45,7 @@ export default function PublicoCliente() {
   const [clienteLogoUrl, setClienteLogoUrl] = useState<string | null>(null);
   const [indicadores, setIndicadores] = useState<Indicador[]>([]);
   const [ordens, setOrdens] = useState<OSOperacaoRow[]>([]);
+  const [avaliacoes, setAvaliacoes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [periodo, setPeriodo] = useState("");
@@ -61,6 +63,7 @@ export default function PublicoCliente() {
       setCliente(payload.cliente);
       setIndicadores(payload.indicadores || []);
       setOrdens((payload.ordens_servico || []) as OSOperacaoRow[]);
+      setAvaliacoes((payload.avaliacoes || []) as any[]);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -335,6 +338,7 @@ export default function PublicoCliente() {
               <OsPorEstado os={osPeriodo} />
               <OsPorSetor os={osPeriodo} />
             </div>
+            <SatisfacaoCliente initialItems={avaliacoes} />
           </>
         )}
 
