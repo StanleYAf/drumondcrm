@@ -589,6 +589,17 @@ export default function Contratos() {
         >
           Limpar
         </button>
+        {isAdmin && (
+          <label className="ml-auto inline-flex items-center gap-2 text-xs text-[#475569] cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showArquivados}
+              onChange={e => setShowArquivados(e.target.checked)}
+              className="h-4 w-4"
+            />
+            Mostrar arquivados
+          </label>
+        )}
       </div>
 
       {/* Tabela */}
@@ -632,7 +643,7 @@ export default function Contratos() {
                 {filtered.map(c => {
                   const st = c.status_manual && MANUAL_STATUS_STYLE[c.status_manual]
                     ? MANUAL_STATUS_STYLE[c.status_manual]
-                    : STATUS_STYLE[c.status];
+                    : STATUS_STYLE[c.statusEfetivo];
                   return (
                     <tr key={c.id} className="border-t border-[#F1F5F9] hover:bg-[#F8FAFC]">
                       <td className="px-4 py-3 font-medium text-[#0F172A]">{c.numero_contrato}</td>
@@ -646,12 +657,22 @@ export default function Contratos() {
                       </td>
                       <td className="px-4 py-3 text-right text-[#0F172A] whitespace-nowrap">{fmtBRL(c.valor_mensal)}</td>
                       <td className="px-4 py-3">
-                        <span
-                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
-                          style={{ background: st.bg, color: st.color }}
-                        >
-                          {st.label}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
+                            style={{ background: st.bg, color: st.color }}
+                          >
+                            {st.label}
+                          </span>
+                          {c.arquivado && (
+                            <span
+                              className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium"
+                              style={{ background: "#E2E8F0", color: "#475569" }}
+                            >
+                              Arquivado
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center justify-end gap-1">
@@ -684,6 +705,24 @@ export default function Contratos() {
                           >
                             <RefreshCw className="h-4 w-4" />
                           </button>
+                          {isAdmin && (
+                            <>
+                              <button
+                                onClick={() => handleArquivar(c)}
+                                title={c.arquivado ? "Desarquivar" : "Arquivar"}
+                                className="h-8 w-8 grid place-items-center rounded-md text-[#64748B] hover:bg-[#F1F5F9] hover:text-[#0F172A]"
+                              >
+                                {c.arquivado ? <ArchiveRestore className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                              </button>
+                              <button
+                                onClick={() => setConfirmDelete(c)}
+                                title="Excluir"
+                                className="h-8 w-8 grid place-items-center rounded-md text-[#B91C1C] hover:bg-[#FEE2E2]"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
