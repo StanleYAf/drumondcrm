@@ -778,11 +778,13 @@ export type Database = {
       }
       leads: {
         Row: {
+          arquivado_em: string | null
           created_at: string
           email: string | null
           empresa: string | null
           empresa_interna: string
           etapa: Database["public"]["Enums"]["etapa_lead"]
+          etapa_changed_at: string
           id: string
           nome_cliente: string
           observacoes: string | null
@@ -795,11 +797,13 @@ export type Database = {
           valor_estimado: number | null
         }
         Insert: {
+          arquivado_em?: string | null
           created_at?: string
           email?: string | null
           empresa?: string | null
           empresa_interna?: string
           etapa?: Database["public"]["Enums"]["etapa_lead"]
+          etapa_changed_at?: string
           id?: string
           nome_cliente: string
           observacoes?: string | null
@@ -812,11 +816,13 @@ export type Database = {
           valor_estimado?: number | null
         }
         Update: {
+          arquivado_em?: string | null
           created_at?: string
           email?: string | null
           empresa?: string | null
           empresa_interna?: string
           etapa?: Database["public"]["Enums"]["etapa_lead"]
+          etapa_changed_at?: string
           id?: string
           nome_cliente?: string
           observacoes?: string | null
@@ -1218,6 +1224,7 @@ export type Database = {
       }
       pos_venda: {
         Row: {
+          arquivado_em: string | null
           cliente: string
           created_at: string
           data: string
@@ -1229,6 +1236,7 @@ export type Database = {
           vendedor: string
         }
         Insert: {
+          arquivado_em?: string | null
           cliente: string
           created_at?: string
           data: string
@@ -1240,6 +1248,7 @@ export type Database = {
           vendedor: string
         }
         Update: {
+          arquivado_em?: string | null
           cliente?: string
           created_at?: string
           data?: string
@@ -1606,6 +1615,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auto_arquivar_leads_e_posvenda: { Args: never; Returns: undefined }
       get_dados_publicos_cliente: { Args: { _token: string }; Returns: Json }
       has_cargo: {
         Args: { _cargo: string; _user_id: string }
