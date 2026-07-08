@@ -114,6 +114,7 @@ function KanbanColumn({
   onEdit,
   onMoveTo,
   onDelete,
+  onToggleArquivar,
 }: {
   etapa: (typeof ETAPAS)[number];
   leads: Lead[];
@@ -121,6 +122,7 @@ function KanbanColumn({
   onEdit: (l: Lead) => void;
   onMoveTo: (l: Lead, e: Etapa) => void;
   onDelete: (l: Lead) => void;
+  onToggleArquivar: (l: Lead) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: etapa.key });
   const total = leads.reduce((s, l) => s + (l.valor_estimado || 0), 0);
@@ -149,6 +151,7 @@ function KanbanColumn({
               onEdit={() => onEdit(lead)}
               onMoveTo={(e) => onMoveTo(lead, e)}
               onDelete={() => onDelete(lead)}
+              onToggleArquivar={() => onToggleArquivar(lead)}
             />
           ))}
         </SortableContext>
@@ -167,12 +170,14 @@ function SortableLeadCard({
   onEdit,
   onMoveTo,
   onDelete,
+  onToggleArquivar,
 }: {
   lead: Lead;
   onClick: () => void;
   onEdit: () => void;
   onMoveTo: (e: Etapa) => void;
   onDelete: () => void;
+  onToggleArquivar?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: lead.id,
@@ -187,7 +192,7 @@ function SortableLeadCard({
 
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
-      <LeadCard lead={lead} onClick={onClick} onEdit={onEdit} onMoveTo={onMoveTo} onDelete={onDelete} dragListeners={listeners} />
+      <LeadCard lead={lead} onClick={onClick} onEdit={onEdit} onMoveTo={onMoveTo} onDelete={onDelete} onToggleArquivar={onToggleArquivar} dragListeners={listeners} />
     </div>
   );
 }
