@@ -968,6 +968,26 @@ export default function Contratos() {
         </div>
       )}
 
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir contrato?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. O contrato{confirmDelete ? ` ${confirmDelete.numero_contrato}` : ""} será removido permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => confirmDelete && handleDelete(confirmDelete)}
+              className="bg-[#B91C1C] hover:bg-[#991B1B]"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <style>{`
         .form-input {
           width: 100%;
