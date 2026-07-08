@@ -301,6 +301,7 @@ export default function Vendas() {
   const [filterTipo, setFilterTipo] = useState<string>("all");
   const [filterDateStart, setFilterDateStart] = useState("");
   const [filterDateEnd, setFilterDateEnd] = useState("");
+  const [showArquivados, setShowArquivados] = useState(false);
 
   // Form state
   const emptyForm = {
@@ -317,6 +318,8 @@ export default function Vendas() {
 
   // ── Fetch ──
   const fetchLeads = useCallback(async () => {
+    // Auto-archive terminal leads older than 8 days before fetching
+    await supabase.rpc("auto_arquivar_leads_e_posvenda" as any);
     const { data, error } = await supabase.from("leads").select("*").order("created_at", { ascending: false });
     if (!error && data) setLeads(data as unknown as Lead[]);
     setLoading(false);
@@ -349,6 +352,8 @@ export default function Vendas() {
   // ── Filtered leads ──
   const filtered = useMemo(() => {
     return leads.filter((l) => {
+      if (!showArquivados && l.arquivado_em) return false;
+      if (showArquivados && !l.arquivado_em) return false;
       if (search) {
         const s = search.toLowerCase();
         if (!l.nome_cliente.toLowerCase().includes(s) && !(l.empresa || "").toLowerCase().includes(s)) return false;
@@ -360,7 +365,9 @@ export default function Vendas() {
       if (filterDateEnd && l.created_at > filterDateEnd + "T23:59:59") return false;
       return true;
     });
-  }, [leads, search, filterResp, filterOrigem, filterTipo, filterDateStart, filterDateEnd]);
+  }, [leads, search, filterResp, filterOrigem, filterTipo, filterDateStart, filterDateEnd, showArquivados]);
+
+  const arquivadosCount = useMemo(() => leads.filter((l) => l.arquivado_em).length, [leads]);
 
   const responsaveis = useMemo(() => [...new Set(leads.map((l) => l.responsavel).filter(Boolean))], [leads]);
 
@@ -405,6 +412,12 @@ export default function Vendas() {
     await supabase.from("leads").delete().eq("id", lead.id);
     toast.success("Lead excluído");
     if (detailLead?.id === lead.id) setDetailLead(null);
+  };
+
+  const handleToggleArquivar = async (lead: Lead) => {
+    const arquivado_em = lead.arquivado_em ? null : new Date().toISOString();
+    await supabase.from("leads").update({ arquivado_em } as any).eq("id", lead.id);
+    toast.success(arquivado_em ? "Lead arquivado" : "Lead desarquivado");
   };
 
   const openEdit = (lead: Lead) => {
