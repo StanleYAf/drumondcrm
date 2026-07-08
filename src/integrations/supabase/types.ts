@@ -88,6 +88,9 @@ export type Database = {
       }
       contratos: {
         Row: {
+          arquivado: boolean
+          arquivado_em: string | null
+          arquivado_por: string | null
           cliente_id: string | null
           contratos_cliente_id: string | null
           created_at: string
@@ -115,6 +118,9 @@ export type Database = {
           vigencia_inicio: string
         }
         Insert: {
+          arquivado?: boolean
+          arquivado_em?: string | null
+          arquivado_por?: string | null
           cliente_id?: string | null
           contratos_cliente_id?: string | null
           created_at?: string
@@ -142,6 +148,9 @@ export type Database = {
           vigencia_inicio: string
         }
         Update: {
+          arquivado?: boolean
+          arquivado_em?: string | null
+          arquivado_por?: string | null
           cliente_id?: string | null
           contratos_cliente_id?: string | null
           created_at?: string
