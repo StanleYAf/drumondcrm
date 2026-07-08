@@ -481,7 +481,7 @@ export default function ManutencaoBoletim() {
             <div className="text-white">
               <h1 className="text-3xl font-bold tracking-wide">BOLETIM DE ENGENHARIA</h1>
               <p className="text-sm mt-1 opacity-90">
-                {clienteNome ? `${clienteNome} — ` : ""}CLÍNICA / PREDIAL — {mes} {ano}
+                {clienteNome ? `${clienteNome} — ` : ""}{setorHeaderLabel} — {mes} {ano}
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -499,6 +499,19 @@ export default function ManutencaoBoletim() {
             </div>
           </div>
 
+          {semDados ? (
+            <div className="p-10 text-center space-y-4" style={{ backgroundColor: "#ffffff" }}>
+              <AlertCircle className="h-10 w-10 mx-auto text-amber-500" />
+              <p className="text-slate-700 text-sm">
+                Nenhum dado importado para <strong>{clienteNome || "este cliente"}</strong> em <strong>{mes}/{ano}</strong>.
+                Importe a planilha do Arkmeds antes de gerar o boletim.
+              </p>
+              <Button onClick={() => navigate("/manutencao/upload")}>
+                Ir para Importar Excel
+              </Button>
+            </div>
+          ) : (
+          <>
           {/* Grid */}
           {(leftBlocks.length > 0 || rightBlocks.length > 0) && (
             <div className="grid grid-cols-2 gap-4 p-6" style={{ backgroundColor: "#ffffff" }}>
@@ -513,24 +526,29 @@ export default function ManutencaoBoletim() {
                 <h2 className="text-sm font-bold tracking-wider mb-4 text-center" style={{ color: "#1e3a5f" }}>
                   DISPONIBILIDADE DO PARQUE TECNOLÓGICO
                 </h2>
-                <div className="grid grid-cols-2 divide-x divide-slate-300">
-                  <div className="px-4">
-                    <div className="text-xs font-bold uppercase tracking-wider mb-3 text-center" style={{ color: "#1e3a5f" }}>
-                      Total de equipamentos — Eng. Clínica
+                {(() => {
+                  const colunas: { titulo: string; parque: { total: number; ativos: number; emManutencao: number } }[] = [];
+                  if (temClinica) colunas.push({ titulo: ambosSetores ? "Total de equipamentos — Eng. Clínica" : "Total de equipamentos", parque: stats.engParque });
+                  if (temPredial) colunas.push({ titulo: ambosSetores ? "Total de equipamentos — Eng. Predial" : "Total de equipamentos", parque: stats.predParque });
+                  const gridClass = colunas.length === 2 ? "grid grid-cols-2 divide-x divide-slate-300" : "grid grid-cols-1";
+                  return (
+                    <div className={gridClass}>
+                      {colunas.map((c, i) => (
+                        <div key={i} className="px-4">
+                          <div className="text-xs font-bold uppercase tracking-wider mb-3 text-center" style={{ color: "#1e3a5f" }}>
+                            {c.titulo}
+                          </div>
+                          <ParqueLinha label="Total" value={c.parque.total} />
+                          <ParqueLinha label="Ativos" value={c.parque.ativos} />
+                          <ParqueLinha label="Em manutenção" value={c.parque.emManutencao} />
+                          {sections.incluirGraficoDisp && c.parque.total > 0 && (
+                            <DisponibilidadePie ativos={c.parque.ativos} emManutencao={c.parque.emManutencao} />
+                          )}
+                        </div>
+                      ))}
                     </div>
-                    <ParqueLinha label="Total" value={engTotal} />
-                    <ParqueLinha label="Ativos" value={engAtivos} />
-                    <ParqueLinha label="Em manutenção" value={stats.eng.corretivasAbertas} />
-                  </div>
-                  <div className="px-4">
-                    <div className="text-xs font-bold uppercase tracking-wider mb-3 text-center" style={{ color: "#1e3a5f" }}>
-                      Total de equipamentos — Eng. Predial
-                    </div>
-                    <ParqueLinha label="Total" value={predTotal} />
-                    <ParqueLinha label="Ativos" value={predAtivos} />
-                    <ParqueLinha label="Em manutenção" value={stats.pred.corretivasAbertas} />
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
             </div>
           )}
@@ -540,11 +558,13 @@ export default function ManutencaoBoletim() {
               <div className="rounded-lg p-5" style={{ backgroundColor: "#f1f5f9" }}>
                 <h2 className="text-sm font-bold tracking-wider mb-3" style={{ color: "#1e3a5f" }}>O.S. POR UNIDADE</h2>
                 <div className="grid grid-cols-2 gap-3">
-                  <UnidadeRanking title="Corretivas" data={stats.corretivasPorUnidade} color="#ef4444" />
-                  <UnidadeRanking title="Preventivas" data={stats.preventivasPorUnidade} color="#2563eb" />
+                  <UnidadeRanking title="OSs de corretiva por unidade" data={stats.corretivasPorUnidade} color="#ef4444" />
+                  <UnidadeRanking title="OSs de preventiva por unidade" data={stats.preventivasPorUnidade} color="#2563eb" />
                 </div>
               </div>
             </div>
+          )}
+          </>
           )}
 
           {/* Footer */}
