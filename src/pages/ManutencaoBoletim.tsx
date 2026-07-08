@@ -1,25 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  ClipboardList, Wrench, FileText, Printer, Eye, ShieldCheck, ClipboardCheck,
+  ClipboardList, Wrench, FileText, Printer, Eye, ShieldCheck, ClipboardCheck, AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RTooltip, Legend } from "recharts";
 
 const MESES = [
   "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
   "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro",
 ];
 
-interface Cliente { id: string; nome: string; ativo: boolean; logo_url: string | null }
+interface Cliente {
+  id: string;
+  nome: string;
+  ativo: boolean;
+  logo_url: string | null;
+  tem_engenharia_clinica: boolean;
+  tem_predial: boolean;
+}
 interface OS {
   id: string;
   estado: string | null;
@@ -84,6 +92,7 @@ function estaAberta(o: OS) {
 const nOrNull = (v: any): number | null => (v === null || v === undefined ? null : Number(v) || 0);
 
 export default function ManutencaoBoletim() {
+  const navigate = useNavigate();
   const now = new Date();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [clienteId, setClienteId] = useState<string>("");
@@ -94,26 +103,29 @@ export default function ManutencaoBoletim() {
   const [showPreview, setShowPreview] = useState(false);
   const [ordens, setOrdens] = useState<OS[]>([]);
   const [indicador, setIndicador] = useState<IndicadorRow | null>(null);
+  const [semDados, setSemDados] = useState(false);
   const [loading, setLoading] = useState(false);
   const [clienteLogoUrl, setClienteLogoUrl] = useState<string | null>(null);
 
   const [sections, setSections] = useState({
     indicadores: true,
+    incluirPreventivas: true,
+    principaisManutencoes: true,
     observacoes: true,
     planejamento: true,
     gestao: true,
     disponibilidade: true,
-    osUnidade: true,
+    incluirGraficoDisp: false,
+    osUnidade: false,
   });
-
-  const [engTotalEdit, setEngTotalEdit] = useState<string>("");
-  const [engAtivosEdit, setEngAtivosEdit] = useState<string>("");
-  const [predTotalEdit, setPredTotalEdit] = useState<string>("");
-  const [predAtivosEdit, setPredAtivosEdit] = useState<string>("");
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("clientes").select("id, nome, ativo, logo_url").eq("ativo", true).order("nome");
+      const { data } = await supabase
+        .from("clientes")
+        .select("id, nome, ativo, logo_url, tem_engenharia_clinica, tem_predial")
+        .eq("ativo", true)
+        .order("nome");
       setClientes((data || []) as Cliente[]);
     })();
   }, []);
