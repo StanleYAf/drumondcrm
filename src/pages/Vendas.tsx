@@ -498,9 +498,20 @@ export default function Vendas() {
       <div className="px-4 sm:px-6 py-4 border-b border-border space-y-3">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <h1 className="text-xl font-bold">Pipeline de Vendas</h1>
-          <Button onClick={() => { setEditLead(null); setForm(emptyForm); setShowModal(true); }}>
-            <Plus className="h-4 w-4 mr-2" /> Novo Lead
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant={showArquivados ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowArquivados((v) => !v)}
+              className="h-9"
+            >
+              <Archive className="h-4 w-4 mr-2" />
+              {showArquivados ? "Ver ativos" : `Arquivados${arquivadosCount ? ` (${arquivadosCount})` : ""}`}
+            </Button>
+            <Button onClick={() => { setEditLead(null); setForm(emptyForm); setShowModal(true); }}>
+              <Plus className="h-4 w-4 mr-2" /> Novo Lead
+            </Button>
+          </div>
         </div>
         {/* Filters */}
         <div className="flex flex-wrap gap-2">
