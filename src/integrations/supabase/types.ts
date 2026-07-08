@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      avaliacoes_chamados: {
+        Row: {
+          arquivado_em: string | null
+          arquivado_por: string | null
+          base: string
+          comentario: string | null
+          created_at: string
+          id: string
+          nota: number
+          numero_os: string
+          responsavel_tecnico: string | null
+        }
+        Insert: {
+          arquivado_em?: string | null
+          arquivado_por?: string | null
+          base: string
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          nota: number
+          numero_os: string
+          responsavel_tecnico?: string | null
+        }
+        Update: {
+          arquivado_em?: string | null
+          arquivado_por?: string | null
+          base?: string
+          comentario?: string | null
+          created_at?: string
+          id?: string
+          nota?: number
+          numero_os?: string
+          responsavel_tecnico?: string | null
+        }
+        Relationships: []
+      }
       clientes: {
         Row: {
           ativo: boolean
