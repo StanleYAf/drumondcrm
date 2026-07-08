@@ -1,25 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  ClipboardList, Wrench, FileText, Printer, Eye, ShieldCheck, ClipboardCheck,
+  ClipboardList, Wrench, FileText, Printer, Eye, ShieldCheck, ClipboardCheck, AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RTooltip, Legend } from "recharts";
 
 const MESES = [
   "Janeiro","Fevereiro","Março","Abril","Maio","Junho",
   "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro",
 ];
 
-interface Cliente { id: string; nome: string; ativo: boolean; logo_url: string | null }
+interface Cliente {
+  id: string;
+  nome: string;
+  ativo: boolean;
+  logo_url: string | null;
+  tem_engenharia_clinica: boolean;
+  tem_predial: boolean;
+}
 interface OS {
   id: string;
   estado: string | null;
@@ -84,6 +92,7 @@ function estaAberta(o: OS) {
 const nOrNull = (v: any): number | null => (v === null || v === undefined ? null : Number(v) || 0);
 
 export default function ManutencaoBoletim() {
+  const navigate = useNavigate();
   const now = new Date();
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [clienteId, setClienteId] = useState<string>("");
@@ -94,26 +103,29 @@ export default function ManutencaoBoletim() {
   const [showPreview, setShowPreview] = useState(false);
   const [ordens, setOrdens] = useState<OS[]>([]);
   const [indicador, setIndicador] = useState<IndicadorRow | null>(null);
+  const [semDados, setSemDados] = useState(false);
   const [loading, setLoading] = useState(false);
   const [clienteLogoUrl, setClienteLogoUrl] = useState<string | null>(null);
 
   const [sections, setSections] = useState({
     indicadores: true,
+    incluirPreventivas: true,
+    principaisManutencoes: true,
     observacoes: true,
     planejamento: true,
     gestao: true,
     disponibilidade: true,
-    osUnidade: true,
+    incluirGraficoDisp: false,
+    osUnidade: false,
   });
-
-  const [engTotalEdit, setEngTotalEdit] = useState<string>("");
-  const [engAtivosEdit, setEngAtivosEdit] = useState<string>("");
-  const [predTotalEdit, setPredTotalEdit] = useState<string>("");
-  const [predAtivosEdit, setPredAtivosEdit] = useState<string>("");
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from("clientes").select("id, nome, ativo, logo_url").eq("ativo", true).order("nome");
+      const { data } = await supabase
+        .from("clientes")
+        .select("id, nome, ativo, logo_url, tem_engenharia_clinica, tem_predial")
+        .eq("ativo", true)
+        .order("nome");
       setClientes((data || []) as Cliente[]);
     })();
   }, []);
@@ -153,73 +165,25 @@ export default function ManutencaoBoletim() {
     if (!error) setOrdens(os);
     const ind = (indData as IndicadorRow) || null;
     setIndicador(ind);
+    setSemDados(ind === null);
     setLoading(false);
     return { os, ind };
   }
 
   async function handlePreview() {
-    const result = await carregarDados();
-    if (result) {
-      // pre-fill parque inputs with saved value or auto-calculated fallback
-      const corretivas = result.os.filter(o => isCorretiva(o.tipo_servico));
-      const abertaSetor = (f: (o: OS) => boolean) =>
-        corretivas.filter(f).filter(estaAberta).length;
-      const parqueFallback = (f: (o: OS) => boolean, abertas: number) => {
-        const setorOs = result.os.filter(f);
-        const tags = new Set<string>();
-        setorOs.forEach(o => { const k = o.tag || o.numero_serie || ""; if (k) tags.add(k); });
-        return { total: tags.size, ativos: Math.max(0, tags.size - abertas) };
-      };
-      const eA = abertaSetor(isClinica);
-      const pA = abertaSetor(isPredial);
-      const eF = parqueFallback(isClinica, eA);
-      const pF = parqueFallback(isPredial, pA);
-      setEngTotalEdit(String(result.ind?.eng_total_equipamentos ?? eF.total));
-      setEngAtivosEdit(String(result.ind?.eng_equipamentos_ativos ?? eF.ativos));
-      setPredTotalEdit(String(result.ind?.pred_total_equipamentos ?? pF.total));
-      setPredAtivosEdit(String(result.ind?.pred_equipamentos_ativos ?? pF.ativos));
-    }
+    await carregarDados();
     setShowPreview(true);
-  }
-
-  async function persistirParque() {
-    if (!clienteId) return;
-    const payload = {
-      cliente_id: clienteId,
-      mes,
-      ano,
-      eng_total_equipamentos: engTotalEdit === "" ? null : Number(engTotalEdit),
-      eng_equipamentos_ativos: engAtivosEdit === "" ? null : Number(engAtivosEdit),
-      pred_total_equipamentos: predTotalEdit === "" ? null : Number(predTotalEdit),
-      pred_equipamentos_ativos: predAtivosEdit === "" ? null : Number(predAtivosEdit),
-    };
-    const { error } = await supabase
-      .from("indicadores_manutencao")
-      .upsert(payload, { onConflict: "cliente_id,mes,ano" });
-    if (error) {
-      toast.error("Erro ao salvar parque tecnológico: " + error.message);
-    } else {
-      setIndicador(prev => ({
-        ...(prev ?? {
-          eng_corretivas_abertas: null, eng_corretivas_fechadas: null,
-          eng_preventivas_abertas: null, eng_preventivas_fechadas: null,
-          pred_corretivas_abertas: null, pred_corretivas_fechadas: null,
-          pred_preventivas_abertas: null, pred_preventivas_fechadas: null,
-          eng_total_equipamentos: null, eng_equipamentos_ativos: null,
-          pred_total_equipamentos: null, pred_equipamentos_ativos: null,
-        }),
-        eng_total_equipamentos: payload.eng_total_equipamentos,
-        eng_equipamentos_ativos: payload.eng_equipamentos_ativos,
-        pred_total_equipamentos: payload.pred_total_equipamentos,
-        pred_equipamentos_ativos: payload.pred_equipamentos_ativos,
-      }));
-      toast.success("Parque tecnológico salvo");
-    }
   }
 
   const clienteSel = clientes.find(c => c.id === clienteId);
   const clienteNome = clienteSel?.nome || "";
   const clienteLogo = clienteLogoUrl;
+  const temClinica = clienteSel?.tem_engenharia_clinica ?? true;
+  const temPredial = clienteSel?.tem_predial ?? true;
+  const soClinica = temClinica && !temPredial;
+  const soPredial = temPredial && !temClinica;
+  const ambosSetores = temClinica && temPredial;
+  const setorHeaderLabel = soClinica ? "CLÍNICA" : soPredial ? "PREDIAL" : "CLÍNICA / PREDIAL";
 
   const principaisList = useMemo(
     () => principais.split("\n").map(s => s.trim()).filter(Boolean).slice(0, 5),
@@ -279,20 +243,26 @@ export default function ManutencaoBoletim() {
     });
     const reincidencias = Object.values(counts).filter(n => n >= 3).length;
 
-    // Parque tecnológico: fallback por TAG/nº série únicos, com corretivas abertas descontando ativos
-    const parqueSetor = (filtroSetor: (o: OS) => boolean, corrAbertasSetor: number) => {
+    // Parque tecnológico: 100% automático a partir das OS do setor
+    // Total = TAG/nº série únicos que aparecem em qualquer OS do setor
+    // Em manutenção = únicos com >=1 OS corretiva com estado diferente de Fechada e Cancelada
+    const parqueSetor = (filtroSetor: (o: OS) => boolean) => {
       const setorOs = ordens.filter(filtroSetor);
       const tagsUnicas = new Set<string>();
+      const emManutSet = new Set<string>();
       setorOs.forEach(o => {
         const k = o.tag || o.numero_serie || "";
-        if (k) tagsUnicas.add(k);
+        if (!k) return;
+        tagsUnicas.add(k);
+        if (isCorretiva(o.tipo_servico) && estaAberta(o)) emManutSet.add(k);
       });
-      const totalCalc = tagsUnicas.size;
-      const ativosCalc = Math.max(0, totalCalc - corrAbertasSetor);
-      return { totalCalc, ativosCalc };
+      const total = tagsUnicas.size;
+      const emManutencao = emManutSet.size;
+      const ativos = Math.max(0, total - emManutencao);
+      return { total, ativos, emManutencao };
     };
-    const engParque = parqueSetor(isClinica, eng.corretivasAbertas);
-    const predParque = parqueSetor(isPredial, pred.corretivasAbertas);
+    const engParque = parqueSetor(isClinica);
+    const predParque = parqueSetor(isPredial);
 
     // OS por unidade (localização)
     const groupByLoc = (list: OS[]) => {
@@ -315,49 +285,58 @@ export default function ManutencaoBoletim() {
     };
   }, [ordens, indicador]);
 
-  const engTotal = engTotalEdit !== "" ? Number(engTotalEdit) : (indicador?.eng_total_equipamentos ?? stats.engParque.totalCalc);
-  const engAtivos = engAtivosEdit !== "" ? Number(engAtivosEdit) : (indicador?.eng_equipamentos_ativos ?? stats.engParque.ativosCalc);
-  const predTotal = predTotalEdit !== "" ? Number(predTotalEdit) : (indicador?.pred_total_equipamentos ?? stats.predParque.totalCalc);
-  const predAtivos = predAtivosEdit !== "" ? Number(predAtivosEdit) : (indicador?.pred_equipamentos_ativos ?? stats.predParque.ativosCalc);
-
   const toggleSection = (k: keyof typeof sections) =>
     setSections(s => ({ ...s, [k]: !s[k] }));
 
-  const SECTION_OPTS: { key: keyof typeof sections; label: string }[] = [
+  const SECTION_OPTS: { key: keyof typeof sections; label: string; parent?: keyof typeof sections }[] = [
     { key: "indicadores", label: "Principais Indicadores" },
+    { key: "incluirPreventivas", label: "Incluir Preventivas nos indicadores", parent: "indicadores" },
+    { key: "principaisManutencoes", label: "Principais Manutenções" },
     { key: "observacoes", label: "Observações Importantes" },
     { key: "planejamento", label: "Planejamento Próximo Mês" },
     { key: "gestao", label: "Gestão de Serviço" },
     { key: "disponibilidade", label: "Disponibilidade do Parque Tecnológico" },
-    { key: "osUnidade", label: "O.S. por Unidade (gráficos)" },
+    { key: "incluirGraficoDisp", label: "Incluir gráfico visual", parent: "disponibilidade" },
+    { key: "osUnidade", label: "O.S. por Unidade" },
   ];
 
   // Left/right column contents (only rendered sections occupy space)
   const leftBlocks: React.ReactNode[] = [];
   const rightBlocks: React.ReactNode[] = [];
-  if (showPreview) {
+  if (showPreview && !semDados) {
     if (sections.indicadores) {
+      const renderSetor = (label: string, d: typeof stats.eng) => (
+        <>
+          {label && <div className="text-[11px] font-semibold opacity-80 mb-2">{label}</div>}
+          <div className="grid grid-cols-2 gap-3">
+            <IndicadorItem icon={<Wrench className="h-5 w-5" />} label="Chamados Abertos" value={d.corretivasAbertas} />
+            <IndicadorItem icon={<ClipboardCheck className="h-5 w-5" />} label="Chamados Atendidos" value={d.corretivasFechadas} />
+            {sections.incluirPreventivas && (
+              <>
+                <IndicadorItem icon={<ShieldCheck className="h-5 w-5" />} label="Preventivas Abertas" value={d.preventivasAbertas} />
+                <IndicadorItem icon={<ClipboardList className="h-5 w-5" />} label="Preventivas Fechadas" value={d.preventivasFechadas} />
+              </>
+            )}
+          </div>
+        </>
+      );
       leftBlocks.push(
         <div key="ind" className="rounded-lg p-5 text-white" style={{ backgroundColor: "#1e3a5f" }}>
           <h2 className="text-sm font-bold tracking-wider mb-4 border-b border-white/30 pb-2">PRINCIPAIS INDICADORES</h2>
-          <div className="text-[11px] font-semibold opacity-80 mb-2">ENG. CLÍNICA</div>
-          <div className="grid grid-cols-2 gap-3">
-            <IndicadorItem icon={<Wrench className="h-5 w-5" />} label="Chamados Abertos" value={stats.eng.corretivasAbertas} />
-            <IndicadorItem icon={<ClipboardCheck className="h-5 w-5" />} label="Chamados Atendidos" value={stats.eng.corretivasFechadas} />
-            <IndicadorItem icon={<ShieldCheck className="h-5 w-5" />} label="Preventivas Abertas" value={stats.eng.preventivasAbertas} />
-            <IndicadorItem icon={<ClipboardList className="h-5 w-5" />} label="Preventivas Fechadas" value={stats.eng.preventivasFechadas} />
-          </div>
-          <div className="text-[11px] font-semibold opacity-80 mt-4 mb-2">ENG. PREDIAL</div>
-          <div className="grid grid-cols-2 gap-3">
-            <IndicadorItem icon={<Wrench className="h-5 w-5" />} label="Chamados Abertos" value={stats.pred.corretivasAbertas} />
-            <IndicadorItem icon={<ClipboardCheck className="h-5 w-5" />} label="Chamados Atendidos" value={stats.pred.corretivasFechadas} />
-            <IndicadorItem icon={<ShieldCheck className="h-5 w-5" />} label="Preventivas Abertas" value={stats.pred.preventivasAbertas} />
-            <IndicadorItem icon={<ClipboardList className="h-5 w-5" />} label="Preventivas Fechadas" value={stats.pred.preventivasFechadas} />
-          </div>
+          {ambosSetores ? (
+            <>
+              {renderSetor("ENG. CLÍNICA", stats.eng)}
+              <div className="mt-4">{renderSetor("ENG. PREDIAL", stats.pred)}</div>
+            </>
+          ) : soPredial ? (
+            renderSetor("", stats.pred)
+          ) : (
+            renderSetor("", stats.eng)
+          )}
         </div>
       );
     }
-    if (principaisList.length > 0) {
+    if (sections.principaisManutencoes && principaisList.length > 0) {
       leftBlocks.push(
         <div key="pm" className="rounded-lg p-5 border" style={{ backgroundColor: "#f8fafc" }}>
           <h2 className="text-sm font-bold tracking-wider mb-3" style={{ color: "#1e3a5f" }}>PRINCIPAIS MANUTENÇÕES</h2>
@@ -460,47 +439,24 @@ export default function ManutencaoBoletim() {
             </div>
 
             <div className="border rounded-lg p-4">
-              <Label className="text-sm font-semibold">Parque Tecnológico</Label>
-              <p className="text-xs text-muted-foreground mb-3">
-                Pré-preenchido com o valor calculado automaticamente. Edite para sobrescrever e salvar.
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div>
-                  <Label className="text-xs">Eng. Clínica — Total</Label>
-                  <Input type="number" min={0} value={engTotalEdit} onChange={e => setEngTotalEdit(e.target.value)} />
-                </div>
-                <div>
-                  <Label className="text-xs">Eng. Clínica — Ativos</Label>
-                  <Input type="number" min={0} value={engAtivosEdit} onChange={e => setEngAtivosEdit(e.target.value)} />
-                </div>
-                <div>
-                  <Label className="text-xs">Eng. Predial — Total</Label>
-                  <Input type="number" min={0} value={predTotalEdit} onChange={e => setPredTotalEdit(e.target.value)} />
-                </div>
-                <div>
-                  <Label className="text-xs">Eng. Predial — Ativos</Label>
-                  <Input type="number" min={0} value={predAtivosEdit} onChange={e => setPredAtivosEdit(e.target.value)} />
-                </div>
-              </div>
-              <div className="mt-3">
-                <Button type="button" variant="outline" size="sm" onClick={persistirParque} disabled={!clienteId}>
-                  Salvar parque tecnológico
-                </Button>
-              </div>
-            </div>
-
-            <div className="border rounded-lg p-4">
               <Label className="text-sm font-semibold">Seções do boletim</Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
-                {SECTION_OPTS.map(opt => (
-                  <label key={opt.key} className="flex items-center gap-2 text-sm cursor-pointer">
-                    <Checkbox
-                      checked={sections[opt.key]}
-                      onCheckedChange={() => toggleSection(opt.key)}
-                    />
-                    <span>{opt.label}</span>
-                  </label>
-                ))}
+                {SECTION_OPTS.map(opt => {
+                  const parentOff = opt.parent ? !sections[opt.parent] : false;
+                  return (
+                    <label
+                      key={opt.key}
+                      className={`flex items-center gap-2 text-sm cursor-pointer ${opt.parent ? "pl-6" : ""} ${parentOff ? "opacity-40 pointer-events-none" : ""}`}
+                    >
+                      <Checkbox
+                        checked={sections[opt.key]}
+                        onCheckedChange={() => toggleSection(opt.key)}
+                        disabled={parentOff}
+                      />
+                      <span>{opt.label}</span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
 
@@ -525,7 +481,7 @@ export default function ManutencaoBoletim() {
             <div className="text-white">
               <h1 className="text-3xl font-bold tracking-wide">BOLETIM DE ENGENHARIA</h1>
               <p className="text-sm mt-1 opacity-90">
-                {clienteNome ? `${clienteNome} — ` : ""}CLÍNICA / PREDIAL — {mes} {ano}
+                {clienteNome ? `${clienteNome} — ` : ""}{setorHeaderLabel} — {mes} {ano}
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -543,6 +499,19 @@ export default function ManutencaoBoletim() {
             </div>
           </div>
 
+          {semDados ? (
+            <div className="p-10 text-center space-y-4" style={{ backgroundColor: "#ffffff" }}>
+              <AlertCircle className="h-10 w-10 mx-auto text-amber-500" />
+              <p className="text-slate-700 text-sm">
+                Nenhum dado importado para <strong>{clienteNome || "este cliente"}</strong> em <strong>{mes}/{ano}</strong>.
+                Importe a planilha do Arkmeds antes de gerar o boletim.
+              </p>
+              <Button onClick={() => navigate("/manutencao/upload")}>
+                Ir para Importar Excel
+              </Button>
+            </div>
+          ) : (
+          <>
           {/* Grid */}
           {(leftBlocks.length > 0 || rightBlocks.length > 0) && (
             <div className="grid grid-cols-2 gap-4 p-6" style={{ backgroundColor: "#ffffff" }}>
@@ -557,24 +526,29 @@ export default function ManutencaoBoletim() {
                 <h2 className="text-sm font-bold tracking-wider mb-4 text-center" style={{ color: "#1e3a5f" }}>
                   DISPONIBILIDADE DO PARQUE TECNOLÓGICO
                 </h2>
-                <div className="grid grid-cols-2 divide-x divide-slate-300">
-                  <div className="px-4">
-                    <div className="text-xs font-bold uppercase tracking-wider mb-3 text-center" style={{ color: "#1e3a5f" }}>
-                      Total de equipamentos — Eng. Clínica
+                {(() => {
+                  const colunas: { titulo: string; parque: { total: number; ativos: number; emManutencao: number } }[] = [];
+                  if (temClinica) colunas.push({ titulo: ambosSetores ? "Total de equipamentos — Eng. Clínica" : "Total de equipamentos", parque: stats.engParque });
+                  if (temPredial) colunas.push({ titulo: ambosSetores ? "Total de equipamentos — Eng. Predial" : "Total de equipamentos", parque: stats.predParque });
+                  const gridClass = colunas.length === 2 ? "grid grid-cols-2 divide-x divide-slate-300" : "grid grid-cols-1";
+                  return (
+                    <div className={gridClass}>
+                      {colunas.map((c, i) => (
+                        <div key={i} className="px-4">
+                          <div className="text-xs font-bold uppercase tracking-wider mb-3 text-center" style={{ color: "#1e3a5f" }}>
+                            {c.titulo}
+                          </div>
+                          <ParqueLinha label="Total" value={c.parque.total} />
+                          <ParqueLinha label="Ativos" value={c.parque.ativos} />
+                          <ParqueLinha label="Em manutenção" value={c.parque.emManutencao} />
+                          {sections.incluirGraficoDisp && c.parque.total > 0 && (
+                            <DisponibilidadePie ativos={c.parque.ativos} emManutencao={c.parque.emManutencao} />
+                          )}
+                        </div>
+                      ))}
                     </div>
-                    <ParqueLinha label="Total" value={engTotal} />
-                    <ParqueLinha label="Ativos" value={engAtivos} />
-                    <ParqueLinha label="Em manutenção" value={stats.eng.corretivasAbertas} />
-                  </div>
-                  <div className="px-4">
-                    <div className="text-xs font-bold uppercase tracking-wider mb-3 text-center" style={{ color: "#1e3a5f" }}>
-                      Total de equipamentos — Eng. Predial
-                    </div>
-                    <ParqueLinha label="Total" value={predTotal} />
-                    <ParqueLinha label="Ativos" value={predAtivos} />
-                    <ParqueLinha label="Em manutenção" value={stats.pred.corretivasAbertas} />
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
             </div>
           )}
@@ -584,11 +558,13 @@ export default function ManutencaoBoletim() {
               <div className="rounded-lg p-5" style={{ backgroundColor: "#f1f5f9" }}>
                 <h2 className="text-sm font-bold tracking-wider mb-3" style={{ color: "#1e3a5f" }}>O.S. POR UNIDADE</h2>
                 <div className="grid grid-cols-2 gap-3">
-                  <UnidadeRanking title="Corretivas" data={stats.corretivasPorUnidade} color="#ef4444" />
-                  <UnidadeRanking title="Preventivas" data={stats.preventivasPorUnidade} color="#2563eb" />
+                  <UnidadeRanking title="OSs de corretiva por unidade" data={stats.corretivasPorUnidade} color="#ef4444" />
+                  <UnidadeRanking title="OSs de preventiva por unidade" data={stats.preventivasPorUnidade} color="#2563eb" />
                 </div>
               </div>
             </div>
+          )}
+          </>
           )}
 
           {/* Footer */}
@@ -649,6 +625,37 @@ function ParqueLinha({ label, value }: { label: string; value: number | string }
     <div className="flex items-center justify-between py-2 border-b border-slate-200 last:border-0 text-sm">
       <span className="text-slate-700">{label}</span>
       <span className="font-bold text-lg" style={{ color: "#1e3a5f" }}>{value}</span>
+    </div>
+  );
+}
+
+function DisponibilidadePie({ ativos, emManutencao }: { ativos: number; emManutencao: number }) {
+  const total = ativos + emManutencao;
+  if (total <= 0) return null;
+  const data = [
+    { name: "Ativos", value: ativos, color: "#2563eb" },
+    { name: "Em manutenção", value: emManutencao, color: "#ef4444" },
+  ];
+  const pct = (v: number) => `${((v / total) * 100).toFixed(1)}%`;
+  return (
+    <div className="mt-3" style={{ height: 180 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={data}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            outerRadius={60}
+            label={(entry: any) => `${entry.name}: ${pct(entry.value)}`}
+          >
+            {data.map((d, i) => <Cell key={i} fill={d.color} />)}
+          </Pie>
+          <RTooltip formatter={(v: any) => [`${v} (${pct(Number(v))})`, ""]} />
+          <Legend />
+        </PieChart>
+      </ResponsiveContainer>
     </div>
   );
 }
