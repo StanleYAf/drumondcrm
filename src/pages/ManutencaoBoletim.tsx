@@ -165,73 +165,25 @@ export default function ManutencaoBoletim() {
     if (!error) setOrdens(os);
     const ind = (indData as IndicadorRow) || null;
     setIndicador(ind);
+    setSemDados(ind === null);
     setLoading(false);
     return { os, ind };
   }
 
   async function handlePreview() {
-    const result = await carregarDados();
-    if (result) {
-      // pre-fill parque inputs with saved value or auto-calculated fallback
-      const corretivas = result.os.filter(o => isCorretiva(o.tipo_servico));
-      const abertaSetor = (f: (o: OS) => boolean) =>
-        corretivas.filter(f).filter(estaAberta).length;
-      const parqueFallback = (f: (o: OS) => boolean, abertas: number) => {
-        const setorOs = result.os.filter(f);
-        const tags = new Set<string>();
-        setorOs.forEach(o => { const k = o.tag || o.numero_serie || ""; if (k) tags.add(k); });
-        return { total: tags.size, ativos: Math.max(0, tags.size - abertas) };
-      };
-      const eA = abertaSetor(isClinica);
-      const pA = abertaSetor(isPredial);
-      const eF = parqueFallback(isClinica, eA);
-      const pF = parqueFallback(isPredial, pA);
-      setEngTotalEdit(String(result.ind?.eng_total_equipamentos ?? eF.total));
-      setEngAtivosEdit(String(result.ind?.eng_equipamentos_ativos ?? eF.ativos));
-      setPredTotalEdit(String(result.ind?.pred_total_equipamentos ?? pF.total));
-      setPredAtivosEdit(String(result.ind?.pred_equipamentos_ativos ?? pF.ativos));
-    }
+    await carregarDados();
     setShowPreview(true);
-  }
-
-  async function persistirParque() {
-    if (!clienteId) return;
-    const payload = {
-      cliente_id: clienteId,
-      mes,
-      ano,
-      eng_total_equipamentos: engTotalEdit === "" ? null : Number(engTotalEdit),
-      eng_equipamentos_ativos: engAtivosEdit === "" ? null : Number(engAtivosEdit),
-      pred_total_equipamentos: predTotalEdit === "" ? null : Number(predTotalEdit),
-      pred_equipamentos_ativos: predAtivosEdit === "" ? null : Number(predAtivosEdit),
-    };
-    const { error } = await supabase
-      .from("indicadores_manutencao")
-      .upsert(payload, { onConflict: "cliente_id,mes,ano" });
-    if (error) {
-      toast.error("Erro ao salvar parque tecnológico: " + error.message);
-    } else {
-      setIndicador(prev => ({
-        ...(prev ?? {
-          eng_corretivas_abertas: null, eng_corretivas_fechadas: null,
-          eng_preventivas_abertas: null, eng_preventivas_fechadas: null,
-          pred_corretivas_abertas: null, pred_corretivas_fechadas: null,
-          pred_preventivas_abertas: null, pred_preventivas_fechadas: null,
-          eng_total_equipamentos: null, eng_equipamentos_ativos: null,
-          pred_total_equipamentos: null, pred_equipamentos_ativos: null,
-        }),
-        eng_total_equipamentos: payload.eng_total_equipamentos,
-        eng_equipamentos_ativos: payload.eng_equipamentos_ativos,
-        pred_total_equipamentos: payload.pred_total_equipamentos,
-        pred_equipamentos_ativos: payload.pred_equipamentos_ativos,
-      }));
-      toast.success("Parque tecnológico salvo");
-    }
   }
 
   const clienteSel = clientes.find(c => c.id === clienteId);
   const clienteNome = clienteSel?.nome || "";
   const clienteLogo = clienteLogoUrl;
+  const temClinica = clienteSel?.tem_engenharia_clinica ?? true;
+  const temPredial = clienteSel?.tem_predial ?? true;
+  const soClinica = temClinica && !temPredial;
+  const soPredial = temPredial && !temClinica;
+  const ambosSetores = temClinica && temPredial;
+  const setorHeaderLabel = soClinica ? "CLÍNICA" : soPredial ? "PREDIAL" : "CLÍNICA / PREDIAL";
 
   const principaisList = useMemo(
     () => principais.split("\n").map(s => s.trim()).filter(Boolean).slice(0, 5),
@@ -291,20 +243,26 @@ export default function ManutencaoBoletim() {
     });
     const reincidencias = Object.values(counts).filter(n => n >= 3).length;
 
-    // Parque tecnológico: fallback por TAG/nº série únicos, com corretivas abertas descontando ativos
-    const parqueSetor = (filtroSetor: (o: OS) => boolean, corrAbertasSetor: number) => {
+    // Parque tecnológico: 100% automático a partir das OS do setor
+    // Total = TAG/nº série únicos que aparecem em qualquer OS do setor
+    // Em manutenção = únicos com >=1 OS corretiva com estado diferente de Fechada e Cancelada
+    const parqueSetor = (filtroSetor: (o: OS) => boolean) => {
       const setorOs = ordens.filter(filtroSetor);
       const tagsUnicas = new Set<string>();
+      const emManutSet = new Set<string>();
       setorOs.forEach(o => {
         const k = o.tag || o.numero_serie || "";
-        if (k) tagsUnicas.add(k);
+        if (!k) return;
+        tagsUnicas.add(k);
+        if (isCorretiva(o.tipo_servico) && estaAberta(o)) emManutSet.add(k);
       });
-      const totalCalc = tagsUnicas.size;
-      const ativosCalc = Math.max(0, totalCalc - corrAbertasSetor);
-      return { totalCalc, ativosCalc };
+      const total = tagsUnicas.size;
+      const emManutencao = emManutSet.size;
+      const ativos = Math.max(0, total - emManutencao);
+      return { total, ativos, emManutencao };
     };
-    const engParque = parqueSetor(isClinica, eng.corretivasAbertas);
-    const predParque = parqueSetor(isPredial, pred.corretivasAbertas);
+    const engParque = parqueSetor(isClinica);
+    const predParque = parqueSetor(isPredial);
 
     // OS por unidade (localização)
     const groupByLoc = (list: OS[]) => {
@@ -327,21 +285,19 @@ export default function ManutencaoBoletim() {
     };
   }, [ordens, indicador]);
 
-  const engTotal = engTotalEdit !== "" ? Number(engTotalEdit) : (indicador?.eng_total_equipamentos ?? stats.engParque.totalCalc);
-  const engAtivos = engAtivosEdit !== "" ? Number(engAtivosEdit) : (indicador?.eng_equipamentos_ativos ?? stats.engParque.ativosCalc);
-  const predTotal = predTotalEdit !== "" ? Number(predTotalEdit) : (indicador?.pred_total_equipamentos ?? stats.predParque.totalCalc);
-  const predAtivos = predAtivosEdit !== "" ? Number(predAtivosEdit) : (indicador?.pred_equipamentos_ativos ?? stats.predParque.ativosCalc);
-
   const toggleSection = (k: keyof typeof sections) =>
     setSections(s => ({ ...s, [k]: !s[k] }));
 
-  const SECTION_OPTS: { key: keyof typeof sections; label: string }[] = [
+  const SECTION_OPTS: { key: keyof typeof sections; label: string; parent?: keyof typeof sections }[] = [
     { key: "indicadores", label: "Principais Indicadores" },
+    { key: "incluirPreventivas", label: "Incluir Preventivas nos indicadores", parent: "indicadores" },
+    { key: "principaisManutencoes", label: "Principais Manutenções" },
     { key: "observacoes", label: "Observações Importantes" },
     { key: "planejamento", label: "Planejamento Próximo Mês" },
     { key: "gestao", label: "Gestão de Serviço" },
     { key: "disponibilidade", label: "Disponibilidade do Parque Tecnológico" },
-    { key: "osUnidade", label: "O.S. por Unidade (gráficos)" },
+    { key: "incluirGraficoDisp", label: "Incluir gráfico visual", parent: "disponibilidade" },
+    { key: "osUnidade", label: "O.S. por Unidade" },
   ];
 
   // Left/right column contents (only rendered sections occupy space)
