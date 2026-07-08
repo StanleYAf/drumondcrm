@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -47,6 +48,8 @@ interface Cliente {
   created_at: string;
   public_token: string | null;
   logo_url: string | null;
+  tem_engenharia_clinica: boolean;
+  tem_predial: boolean;
 }
 
 // Extrai o path do storage a partir de uma URL pública/assinada ou de um path puro.
@@ -81,6 +84,8 @@ export default function ManutencaoClientes() {
   const [nome, setNome] = useState("");
   const [responsavel, setResponsavel] = useState("");
   const [ativo, setAtivo] = useState(true);
+  const [temEngClinica, setTemEngClinica] = useState(true);
+  const [temPredial, setTemPredial] = useState(true);
   const [saving, setSaving] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -122,6 +127,8 @@ export default function ManutencaoClientes() {
     setNome("");
     setResponsavel("");
     setAtivo(true);
+    setTemEngClinica(true);
+    setTemPredial(true);
     setLogoUrl(null);
     setLogoFile(null);
     setLogoPreview(null);
@@ -133,6 +140,8 @@ export default function ManutencaoClientes() {
     setNome(c.nome);
     setResponsavel(c.responsavel || "");
     setAtivo(c.ativo);
+    setTemEngClinica(c.tem_engenharia_clinica ?? true);
+    setTemPredial(c.tem_predial ?? true);
     setLogoUrl(c.logo_url || null);
     setLogoFile(null);
     setLogoPreview(c.logo_url ? (logoUrls[c.id] || await getSignedLogoUrl(c.logo_url)) : null);
@@ -182,12 +191,18 @@ export default function ManutencaoClientes() {
       toast.error("Nome do cliente é obrigatório");
       return;
     }
+    if (!temEngClinica && !temPredial) {
+      toast.error("O cliente precisa ter pelo menos um setor marcado");
+      return;
+    }
     setSaving(true);
     try {
       const basePayload = {
         nome: nome.trim(),
         responsavel: responsavel.trim() || null,
         ativo,
+        tem_engenharia_clinica: temEngClinica,
+        tem_predial: temPredial,
       };
       let clienteId = editing?.id;
       if (editing) {
@@ -379,6 +394,15 @@ export default function ManutencaoClientes() {
                           </div>
                         )}
                         <span>{c.nome}</span>
+                        {(c.tem_engenharia_clinica || c.tem_predial) && (
+                          <Badge variant="outline" className="text-[10px] font-normal">
+                            {c.tem_engenharia_clinica && c.tem_predial
+                              ? "Clínica + Predial"
+                              : c.tem_engenharia_clinica
+                              ? "Clínica"
+                              : "Predial"}
+                          </Badge>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
@@ -514,6 +538,25 @@ export default function ManutencaoClientes() {
               <p className="text-xs text-muted-foreground">
                 PNG, JPG, WEBP ou SVG — máx 5MB
               </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Setores atendidos</Label>
+              <div className="flex flex-col gap-2 rounded-lg border p-3">
+                <label className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Checkbox
+                    checked={temEngClinica}
+                    onCheckedChange={(v) => setTemEngClinica(v === true)}
+                  />
+                  Engenharia Clínica
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Checkbox
+                    checked={temPredial}
+                    onCheckedChange={(v) => setTemPredial(v === true)}
+                  />
+                  Predial
+                </label>
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="nome">Nome do cliente *</Label>
