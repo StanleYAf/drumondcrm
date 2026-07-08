@@ -23,6 +23,8 @@ export type Database = {
           nome: string
           public_token: string | null
           responsavel: string | null
+          tem_engenharia_clinica: boolean
+          tem_predial: boolean
         }
         Insert: {
           ativo?: boolean
@@ -32,6 +34,8 @@ export type Database = {
           nome: string
           public_token?: string | null
           responsavel?: string | null
+          tem_engenharia_clinica?: boolean
+          tem_predial?: boolean
         }
         Update: {
           ativo?: boolean
@@ -41,6 +45,8 @@ export type Database = {
           nome?: string
           public_token?: string | null
           responsavel?: string | null
+          tem_engenharia_clinica?: boolean
+          tem_predial?: boolean
         }
         Relationships: []
       }
