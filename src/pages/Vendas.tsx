@@ -23,7 +23,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { useDroppable } from "@dnd-kit/core";
 import {
   Plus, Search, MoreHorizontal, User, Building2, Phone, Mail,
-  DollarSign, MessageSquare, GripVertical, X, Pencil, Trash2, ArrowRight, XCircle,
+  DollarSign, MessageSquare, GripVertical, X, Pencil, Trash2, ArrowRight, XCircle, Archive, ArchiveRestore,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +66,8 @@ interface Lead {
   observacoes: string | null;
   created_at: string;
   updated_at: string;
+  etapa_changed_at?: string;
+  arquivado_em?: string | null;
 }
 
 const ORIGENS: Origem[] = ["Instagram", "Facebook", "Indicação", "Site", "Google", "WhatsApp", "Outro"];
