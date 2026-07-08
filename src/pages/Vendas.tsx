@@ -556,6 +556,7 @@ export default function Vendas() {
                 onEdit={openEdit}
                 onMoveTo={handleMoveTo}
                 onDelete={handleDelete}
+                onToggleArquivar={handleToggleArquivar}
               />
             ))}
           </div>
