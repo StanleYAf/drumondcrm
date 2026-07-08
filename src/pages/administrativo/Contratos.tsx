@@ -5,7 +5,12 @@ import { toast } from "sonner";
 import {
   FileText, CircleCheck, ClockAlert, CircleX, DollarSign, AlertTriangle,
   Plus, Pencil, RefreshCw, ExternalLink, X, FileX, FileDown, UserPlus,
+  Archive, ArchiveRestore, Trash2,
 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
 import {
   CATEGORIAS_CLIENTE, isValidCNPJ, maskCNPJ, isValidEmail,
@@ -45,6 +50,9 @@ interface Contrato {
   created_at: string | null;
   created_by: string | null;
   created_by_name: string | null;
+  arquivado?: boolean | null;
+  arquivado_em?: string | null;
+  arquivado_por?: string | null;
 }
 
 interface ContratoCliente {
@@ -81,6 +89,21 @@ function statusFromVigencia(vigencia_fim: string): StatusContrato {
   return "ativo";
 }
 
+function normalizeManualStatus(s: string | null | undefined): StatusContrato | null {
+  if (!s) return null;
+  const v = s.toLowerCase();
+  if (v === "ativo") return "ativo";
+  if (v === "renegociação" || v === "renegociacao" || v === "suspenso") return "a_vencer";
+  if (v === "cancelado") return "vencido";
+  return null;
+}
+
+function effectiveStatus(c: { status_manual: string | null; vigencia_fim: string }): StatusContrato {
+  const m = normalizeManualStatus(c.status_manual);
+  if (m) return m;
+  return statusFromVigencia(c.vigencia_fim);
+}
+
 function fmtBRL(v: number | null | undefined): string {
   if (v == null) return "—";
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -114,7 +137,8 @@ const MANUAL_STATUS_STYLE: Record<string, { bg: string; color: string; label: st
 };
 
 export default function Contratos() {
-  const { user, displayName } = useAuth();
+  const { user, displayName, hasCargo } = useAuth();
+  const isAdmin = hasCargo("admin");
   const [contratos, setContratos] = useState<Contrato[]>([]);
   const [clientes, setClientes] = useState<ContratoCliente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,6 +147,8 @@ export default function Contratos() {
   const [filterTipo, setFilterTipo] = useState("");
   const [filterStatus, setFilterStatus] = useState<"" | StatusContrato>("");
   const [filterResp, setFilterResp] = useState("");
+  const [showArquivados, setShowArquivados] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState<Contrato | null>(null);
 
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<Contrato | null>(null);
@@ -183,29 +209,51 @@ export default function Contratos() {
     return {
       ...c,
       status: statusFromVigencia(c.vigencia_fim),
+      statusEfetivo: effectiveStatus(c),
       cliente_nome: cli?.nome || "—",
       cliente_obj: cli || null,
     };
   }), [contratos, clienteMap]);
 
   const filtered = useMemo(() => enriched.filter(c => {
+    if (!showArquivados && c.arquivado) return false;
     if (filterCliente && c.contratos_cliente_id !== filterCliente) return false;
     if (filterTipo && c.tipo !== filterTipo) return false;
-    if (filterStatus && c.status !== filterStatus) return false;
+    if (filterStatus && c.statusEfetivo !== filterStatus) return false;
     if (filterResp && !(c.responsavel_comercial || "").toLowerCase().includes(filterResp.toLowerCase())) return false;
     return true;
-  }), [enriched, filterCliente, filterTipo, filterStatus, filterResp]);
+  }), [enriched, filterCliente, filterTipo, filterStatus, filterResp, showArquivados]);
 
   const kpis = useMemo(() => {
-    const total = enriched.length;
-    const ativos = enriched.filter(c => c.status === "ativo").length;
-    const aVencer = enriched.filter(c => c.status === "a_vencer").length;
-    const vencidos = enriched.filter(c => c.status === "vencido").length;
-    const valorMensal = enriched
-      .filter(c => c.status === "ativo")
+    const base = enriched.filter(c => !c.arquivado);
+    const total = base.length;
+    const ativos = base.filter(c => c.statusEfetivo === "ativo").length;
+    const aVencer = base.filter(c => c.statusEfetivo === "a_vencer").length;
+    const vencidos = base.filter(c => c.statusEfetivo === "vencido").length;
+    const valorMensal = base
+      .filter(c => c.statusEfetivo === "ativo")
       .reduce((s, c) => s + (Number(c.valor_mensal) || 0), 0);
     return { total, ativos, aVencer, vencidos, valorMensal };
   }, [enriched]);
+
+  async function handleArquivar(c: Contrato) {
+    const arquivar = !c.arquivado;
+    const payload: any = arquivar
+      ? { arquivado: true, arquivado_em: new Date().toISOString(), arquivado_por: user?.id || null }
+      : { arquivado: false, arquivado_em: null, arquivado_por: null };
+    const { error } = await supabase.from("contratos").update(payload).eq("id", c.id);
+    if (error) { toast.error("Erro ao " + (arquivar ? "arquivar" : "desarquivar")); return; }
+    toast.success(arquivar ? "Contrato arquivado" : "Contrato desarquivado");
+    await fetchData();
+  }
+
+  async function handleDelete(c: Contrato) {
+    const { error } = await supabase.from("contratos").delete().eq("id", c.id);
+    if (error) { toast.error("Erro ao excluir: " + error.message); return; }
+    toast.success("Contrato excluído");
+    setConfirmDelete(null);
+    await fetchData();
+  }
 
   function resetForm() {
     setShowForm(false); setEditItem(null); setRenewItem(null);
