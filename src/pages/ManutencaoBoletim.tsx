@@ -629,6 +629,37 @@ function ParqueLinha({ label, value }: { label: string; value: number | string }
   );
 }
 
+function DisponibilidadePie({ ativos, emManutencao }: { ativos: number; emManutencao: number }) {
+  const total = ativos + emManutencao;
+  if (total <= 0) return null;
+  const data = [
+    { name: "Ativos", value: ativos, color: "#2563eb" },
+    { name: "Em manutenção", value: emManutencao, color: "#ef4444" },
+  ];
+  const pct = (v: number) => `${((v / total) * 100).toFixed(1)}%`;
+  return (
+    <div className="mt-3" style={{ height: 180 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={data}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            outerRadius={60}
+            label={(entry: any) => `${entry.name}: ${pct(entry.value)}`}
+          >
+            {data.map((d, i) => <Cell key={i} fill={d.color} />)}
+          </Pie>
+          <RTooltip formatter={(v: any) => [`${v} (${pct(Number(v))})`, ""]} />
+          <Legend />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
 function UnidadeRanking({ title, data, color }: { title: string; data: { unidade: string; qtd: number }[]; color: string }) {
   const cleanLabel = (s: string) => {
     const t = (s || "").trim();
