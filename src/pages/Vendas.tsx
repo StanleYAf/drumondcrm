@@ -205,11 +205,13 @@ function LeadCard({
   onEdit: () => void;
   onMoveTo: (e: Etapa) => void;
   onDelete: () => void;
+  onToggleArquivar?: () => void;
   dragListeners?: any;
 }) {
+  const isArquivado = !!lead.arquivado_em;
   return (
     <Card
-      className="p-3 cursor-pointer hover:border-primary/40 transition-colors bg-background/60 backdrop-blur-sm border-border/60"
+      className={`p-3 cursor-pointer hover:border-primary/40 transition-colors bg-background/60 backdrop-blur-sm border-border/60 ${isArquivado ? "opacity-60" : ""}`}
       onClick={onClick}
     >
       <div className="flex items-start justify-between gap-2">
@@ -238,6 +240,11 @@ function LeadCard({
                 <ArrowRight className="h-3.5 w-3.5 mr-2" />{e.label}
               </DropdownMenuItem>
             ))}
+            {(lead.etapa === "perdido" || lead.etapa === "convertido") && (
+              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); (arguments as any); }}>
+                {/* placeholder replaced below */}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem className="text-destructive" onClick={onDelete}>
               <Trash2 className="h-3.5 w-3.5 mr-2" />Excluir
             </DropdownMenuItem>
