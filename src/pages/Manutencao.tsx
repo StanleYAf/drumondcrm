@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Upload, Wrench, CheckCircle, ClipboardList, CheckSquare, ArrowUp, ArrowDown, Minus, ArrowLeft } from "lucide-react";
+import { Upload, Wrench, CheckCircle, ClipboardList, CheckSquare, ArrowUp, ArrowDown, Minus, ArrowLeft, Star } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -367,6 +368,7 @@ export default function Manutencao() {
           </div>
         </TabsContent>
       </Tabs>
+      <SatisfacaoCliente clienteId={clienteId} />
     </div>
   );
 }
