@@ -439,47 +439,24 @@ export default function ManutencaoBoletim() {
             </div>
 
             <div className="border rounded-lg p-4">
-              <Label className="text-sm font-semibold">Parque Tecnológico</Label>
-              <p className="text-xs text-muted-foreground mb-3">
-                Pré-preenchido com o valor calculado automaticamente. Edite para sobrescrever e salvar.
-              </p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div>
-                  <Label className="text-xs">Eng. Clínica — Total</Label>
-                  <Input type="number" min={0} value={engTotalEdit} onChange={e => setEngTotalEdit(e.target.value)} />
-                </div>
-                <div>
-                  <Label className="text-xs">Eng. Clínica — Ativos</Label>
-                  <Input type="number" min={0} value={engAtivosEdit} onChange={e => setEngAtivosEdit(e.target.value)} />
-                </div>
-                <div>
-                  <Label className="text-xs">Eng. Predial — Total</Label>
-                  <Input type="number" min={0} value={predTotalEdit} onChange={e => setPredTotalEdit(e.target.value)} />
-                </div>
-                <div>
-                  <Label className="text-xs">Eng. Predial — Ativos</Label>
-                  <Input type="number" min={0} value={predAtivosEdit} onChange={e => setPredAtivosEdit(e.target.value)} />
-                </div>
-              </div>
-              <div className="mt-3">
-                <Button type="button" variant="outline" size="sm" onClick={persistirParque} disabled={!clienteId}>
-                  Salvar parque tecnológico
-                </Button>
-              </div>
-            </div>
-
-            <div className="border rounded-lg p-4">
               <Label className="text-sm font-semibold">Seções do boletim</Label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
-                {SECTION_OPTS.map(opt => (
-                  <label key={opt.key} className="flex items-center gap-2 text-sm cursor-pointer">
-                    <Checkbox
-                      checked={sections[opt.key]}
-                      onCheckedChange={() => toggleSection(opt.key)}
-                    />
-                    <span>{opt.label}</span>
-                  </label>
-                ))}
+                {SECTION_OPTS.map(opt => {
+                  const parentOff = opt.parent ? !sections[opt.parent] : false;
+                  return (
+                    <label
+                      key={opt.key}
+                      className={`flex items-center gap-2 text-sm cursor-pointer ${opt.parent ? "pl-6" : ""} ${parentOff ? "opacity-40 pointer-events-none" : ""}`}
+                    >
+                      <Checkbox
+                        checked={sections[opt.key]}
+                        onCheckedChange={() => toggleSection(opt.key)}
+                        disabled={parentOff}
+                      />
+                      <span>{opt.label}</span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
 
