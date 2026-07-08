@@ -241,8 +241,12 @@ function LeadCard({
               </DropdownMenuItem>
             ))}
             {(lead.etapa === "perdido" || lead.etapa === "convertido") && (
-              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); (arguments as any); }}>
-                {/* placeholder replaced below */}
+              <DropdownMenuItem onClick={() => onToggleArquivar?.()}>
+                {isArquivado ? (
+                  <><ArchiveRestore className="h-3.5 w-3.5 mr-2" />Desarquivar</>
+                ) : (
+                  <><Archive className="h-3.5 w-3.5 mr-2" />Arquivar</>
+                )}
               </DropdownMenuItem>
             )}
             <DropdownMenuItem className="text-destructive" onClick={onDelete}>
