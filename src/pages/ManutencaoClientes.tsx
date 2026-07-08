@@ -540,6 +540,25 @@ export default function ManutencaoClientes() {
               </p>
             </div>
             <div className="space-y-2">
+              <Label>Setores atendidos</Label>
+              <div className="flex flex-col gap-2 rounded-lg border p-3">
+                <label className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Checkbox
+                    checked={temEngClinica}
+                    onCheckedChange={(v) => setTemEngClinica(v === true)}
+                  />
+                  Engenharia Clínica
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Checkbox
+                    checked={temPredial}
+                    onCheckedChange={(v) => setTemPredial(v === true)}
+                  />
+                  Predial
+                </label>
+              </div>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="nome">Nome do cliente *</Label>
               <Input
                 id="nome"
