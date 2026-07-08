@@ -303,29 +303,40 @@ export default function ManutencaoBoletim() {
   // Left/right column contents (only rendered sections occupy space)
   const leftBlocks: React.ReactNode[] = [];
   const rightBlocks: React.ReactNode[] = [];
-  if (showPreview) {
+  if (showPreview && !semDados) {
     if (sections.indicadores) {
+      const renderSetor = (label: string, d: typeof stats.eng) => (
+        <>
+          {label && <div className="text-[11px] font-semibold opacity-80 mb-2">{label}</div>}
+          <div className="grid grid-cols-2 gap-3">
+            <IndicadorItem icon={<Wrench className="h-5 w-5" />} label="Chamados Abertos" value={d.corretivasAbertas} />
+            <IndicadorItem icon={<ClipboardCheck className="h-5 w-5" />} label="Chamados Atendidos" value={d.corretivasFechadas} />
+            {sections.incluirPreventivas && (
+              <>
+                <IndicadorItem icon={<ShieldCheck className="h-5 w-5" />} label="Preventivas Abertas" value={d.preventivasAbertas} />
+                <IndicadorItem icon={<ClipboardList className="h-5 w-5" />} label="Preventivas Fechadas" value={d.preventivasFechadas} />
+              </>
+            )}
+          </div>
+        </>
+      );
       leftBlocks.push(
         <div key="ind" className="rounded-lg p-5 text-white" style={{ backgroundColor: "#1e3a5f" }}>
           <h2 className="text-sm font-bold tracking-wider mb-4 border-b border-white/30 pb-2">PRINCIPAIS INDICADORES</h2>
-          <div className="text-[11px] font-semibold opacity-80 mb-2">ENG. CLÍNICA</div>
-          <div className="grid grid-cols-2 gap-3">
-            <IndicadorItem icon={<Wrench className="h-5 w-5" />} label="Chamados Abertos" value={stats.eng.corretivasAbertas} />
-            <IndicadorItem icon={<ClipboardCheck className="h-5 w-5" />} label="Chamados Atendidos" value={stats.eng.corretivasFechadas} />
-            <IndicadorItem icon={<ShieldCheck className="h-5 w-5" />} label="Preventivas Abertas" value={stats.eng.preventivasAbertas} />
-            <IndicadorItem icon={<ClipboardList className="h-5 w-5" />} label="Preventivas Fechadas" value={stats.eng.preventivasFechadas} />
-          </div>
-          <div className="text-[11px] font-semibold opacity-80 mt-4 mb-2">ENG. PREDIAL</div>
-          <div className="grid grid-cols-2 gap-3">
-            <IndicadorItem icon={<Wrench className="h-5 w-5" />} label="Chamados Abertos" value={stats.pred.corretivasAbertas} />
-            <IndicadorItem icon={<ClipboardCheck className="h-5 w-5" />} label="Chamados Atendidos" value={stats.pred.corretivasFechadas} />
-            <IndicadorItem icon={<ShieldCheck className="h-5 w-5" />} label="Preventivas Abertas" value={stats.pred.preventivasAbertas} />
-            <IndicadorItem icon={<ClipboardList className="h-5 w-5" />} label="Preventivas Fechadas" value={stats.pred.preventivasFechadas} />
-          </div>
+          {ambosSetores ? (
+            <>
+              {renderSetor("ENG. CLÍNICA", stats.eng)}
+              <div className="mt-4">{renderSetor("ENG. PREDIAL", stats.pred)}</div>
+            </>
+          ) : soPredial ? (
+            renderSetor("", stats.pred)
+          ) : (
+            renderSetor("", stats.eng)
+          )}
         </div>
       );
     }
-    if (principaisList.length > 0) {
+    if (sections.principaisManutencoes && principaisList.length > 0) {
       leftBlocks.push(
         <div key="pm" className="rounded-lg p-5 border" style={{ backgroundColor: "#f8fafc" }}>
           <h2 className="text-sm font-bold tracking-wider mb-3" style={{ color: "#1e3a5f" }}>PRINCIPAIS MANUTENÇÕES</h2>
