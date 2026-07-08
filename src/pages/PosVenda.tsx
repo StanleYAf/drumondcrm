@@ -167,6 +167,11 @@ export default function PosVendaPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={() => setShowArquivados(v => !v)}
+            className={`flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium ${showArquivados ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'}`}>
+            <Archive className="h-3.5 w-3.5" />
+            {showArquivados ? `Ativos` : `Arquivados${arquivados.size ? ` (${arquivados.size})` : ''}`}
+          </button>
           <button onClick={() => setSortMode(s => s === "data" ? "status" : s === "status" ? "dias" : "data")}
             className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium text-foreground bg-secondary">
             <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -299,6 +304,13 @@ export default function PosVendaPage() {
                     </div>
 
                     {/* Delete */}
+                    <button onClick={() => toggleArquivar(p.id)}
+                      className="w-full text-center py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2"
+                      style={{ color: '#8E8E93', background: 'rgba(255,255,255,0.05)' }}>
+                      {arquivados.has(p.id)
+                        ? (<><ArchiveRestore className="h-4 w-4" /> Desarquivar</>)
+                        : (<><Archive className="h-4 w-4" /> Arquivar</>)}
+                    </button>
                     <button onClick={() => handleDelete(p.id)}
                       className="w-full text-center py-2.5 rounded-xl text-sm font-medium"
                       style={{ color: '#FF453A', background: 'rgba(255,69,58,0.08)' }}>
