@@ -198,6 +198,7 @@ function LeadCard({
   onEdit,
   onMoveTo,
   onDelete,
+  onToggleArquivar,
   dragListeners,
 }: {
   lead: Lead;
