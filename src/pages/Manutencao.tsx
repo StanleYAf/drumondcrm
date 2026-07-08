@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Upload, Wrench, CheckCircle, ClipboardList, CheckSquare, ArrowUp, ArrowDown, Minus, ArrowLeft } from "lucide-react";
+import { Upload, Wrench, CheckCircle, ClipboardList, CheckSquare, ArrowUp, ArrowDown, Minus, ArrowLeft, Star } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -367,6 +368,7 @@ export default function Manutencao() {
           </div>
         </TabsContent>
       </Tabs>
+      <SatisfacaoCliente clienteId={clienteId} />
     </div>
   );
 }
@@ -756,6 +758,143 @@ function SetorPanel({ atual, prefix, num, prioridadesMode, extraArCondicionado }
           </CardContent>
         </Card>
       )}
+    </div>
+  );
+}
+type _AvaliacaoRow = { numero_os: string; nota: number; comentario: string | null; responsavel_tecnico: string | null; arquivado_em: string | null; created_at: string };
+
+function _notaFill(n: number) {
+  if (n === 5) return "hsl(142 71% 35%)";
+  if (n === 4) return "hsl(142 71% 55%)";
+  if (n === 3) return "hsl(45 93% 55%)";
+  if (n === 2) return "hsl(25 95% 55%)";
+  return "hsl(0 84% 55%)";
+}
+
+export function SatisfacaoCliente({ clienteId }: { clienteId?: string | null }) {
+  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<_AvaliacaoRow[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const { data: avals } = await supabase
+        .from("avaliacoes_chamados")
+        .select("numero_os, nota, comentario, responsavel_tecnico, arquivado_em, created_at");
+      let list = ((avals ?? []) as unknown) as _AvaliacaoRow[];
+      if (clienteId && list.length) {
+        const numeros = Array.from(new Set(list.map((a) => a.numero_os)));
+        const { data: os } = await supabase
+          .from("ordens_servico")
+          .select("numero, cliente_id")
+          .eq("cliente_id", clienteId)
+          .in("numero", numeros);
+        const allowed = new Set(((os ?? []) as Array<{ numero: string }>).map((o) => o.numero));
+        list = list.filter((a) => allowed.has(a.numero_os));
+      } else if (!clienteId && list.length) {
+        // Visão geral: mantém todas
+      }
+      if (!cancelled) {
+        setItems(list);
+        setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [clienteId]);
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader><CardTitle className="text-lg">Satisfação do Cliente</CardTitle></CardHeader>
+        <CardContent><div className="h-40 rounded-xl bg-muted/30 animate-pulse" /></CardContent>
+      </Card>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <Card>
+        <CardHeader><CardTitle className="text-lg">Satisfação do Cliente</CardTitle></CardHeader>
+        <CardContent className="py-10 text-center text-sm text-muted-foreground">
+          Nenhuma avaliação sincronizada ainda.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const total = items.length;
+  const media = items.reduce((s, i) => s + i.nota, 0) / total;
+  const label = media >= 4.5 ? "Excelente" : media >= 4 ? "Bom" : media >= 3 ? "Regular" : "Ruim";
+  const cardCls =
+    media >= 4.5 ? "bg-emerald-500/10 border-emerald-500/40"
+    : media >= 4 ? "bg-green-500/10 border-green-500/40"
+    : media >= 3 ? "bg-yellow-500/10 border-yellow-500/40"
+    : "bg-red-500/10 border-red-500/40";
+  const dist = [5, 4, 3, 2, 1].map((n) => ({ nota: `${n}★`, notaN: n, qtd: items.filter((i) => i.nota === n).length }));
+  const recentes = [...items].sort((a, b) => {
+    const da = a.arquivado_em ?? a.created_at;
+    const db = b.arquivado_em ?? b.created_at;
+    return (db ?? "").localeCompare(da ?? "");
+  }).slice(0, 10);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <Card className={cn("border", cardCls)}>
+          <CardHeader><CardTitle className="text-base">Satisfação do Cliente</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex items-baseline gap-2">
+              <span className="text-5xl font-bold">{media.toFixed(1)}</span>
+              <Star className="h-6 w-6 fill-current text-yellow-400" />
+            </div>
+            <div className="text-lg font-semibold">{label}</div>
+            <div className="text-sm text-muted-foreground">{total} avalia{total === 1 ? "ção" : "ções"}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader><CardTitle className="text-base">Distribuição das Notas</CardTitle></CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={dist} layout="vertical" margin={{ left: 8, right: 16 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={12} allowDecimals={false} />
+                <YAxis type="category" dataKey="nota" stroke="hsl(var(--muted-foreground))" fontSize={12} width={40} />
+                <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} />
+                <Bar dataKey="qtd" radius={[0, 6, 6, 0]}>
+                  {dist.map((d) => <Cell key={d.notaN} fill={_notaFill(d.notaN)} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Avaliações Recentes</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          {recentes.map((a, idx) => {
+            const dt = a.arquivado_em ?? a.created_at;
+            const dataFmt = dt ? new Date(dt).toLocaleDateString("pt-BR") : "—";
+            return (
+              <div key={`${a.numero_os}-${idx}`} className="rounded-xl border border-border/40 bg-muted/20 p-4 space-y-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Badge className="text-white border-0" style={{ backgroundColor: _notaFill(a.nota) }}>{a.nota} ★</Badge>
+                    <span className="text-sm font-medium">OS {a.numero_os}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{dataFmt}</span>
+                </div>
+                {a.comentario && <p className="text-sm text-foreground">{a.comentario}</p>}
+                {a.responsavel_tecnico && <p className="text-xs text-muted-foreground">Técnico: {a.responsavel_tecnico}</p>}
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
     </div>
   );
 }

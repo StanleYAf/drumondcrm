@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { DashboardSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { useAuth } from "@/lib/authContext";
+import { SatisfacaoCliente } from "@/pages/Manutencao";
 
 import { useEngenhariaData, type Filtros } from "@/features/engenharia/hooks/useEngenhariaData";
 import { FiltrosGlobais } from "@/features/engenharia/components/FiltrosGlobais";
@@ -108,6 +109,8 @@ export default function ManutencaoGeral() {
             <ProdutividadeTecnicos tecnicos={tecnicosAgg} />
             <PendenciasTecnicoBar tecnicos={tecnicosAgg} />
           </div>
+
+          <SatisfacaoCliente />
         </>
       )}
     </div>
