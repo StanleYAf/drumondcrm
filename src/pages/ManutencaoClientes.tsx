@@ -394,6 +394,15 @@ export default function ManutencaoClientes() {
                           </div>
                         )}
                         <span>{c.nome}</span>
+                        {(c.tem_engenharia_clinica || c.tem_predial) && (
+                          <Badge variant="outline" className="text-[10px] font-normal">
+                            {c.tem_engenharia_clinica && c.tem_predial
+                              ? "Clínica + Predial"
+                              : c.tem_engenharia_clinica
+                              ? "Clínica"
+                              : "Predial"}
+                          </Badge>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
