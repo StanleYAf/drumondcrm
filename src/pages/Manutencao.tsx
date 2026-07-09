@@ -825,27 +825,48 @@ export function SatisfacaoCliente({
     );
   }
 
-  if (items.length === 0) {
+  // Filtra apenas avaliações do mês atual (usa arquivado_em, senão created_at)
+  const now = new Date();
+  const mesAtual = now.getMonth();
+  const anoAtual = now.getFullYear();
+  const itemsMes = items.filter((a) => {
+    const dt = a.arquivado_em ?? a.created_at;
+    if (!dt) return false;
+    const d = new Date(dt);
+    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+  });
+  const nomeMes = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+
+  if (itemsMes.length === 0) {
     return (
       <Card>
-        <CardHeader><CardTitle className="text-lg">Satisfação do Cliente</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-lg">Satisfação do Cliente</CardTitle>
+          <p className="text-xs text-muted-foreground capitalize">{nomeMes}</p>
+        </CardHeader>
         <CardContent className="py-10 text-center text-sm text-muted-foreground">
-          Nenhuma avaliação sincronizada ainda.
+          Nenhuma avaliação neste mês.
         </CardContent>
       </Card>
     );
   }
 
-  const total = items.length;
-  const media = items.reduce((s, i) => s + i.nota, 0) / total;
+  const total = itemsMes.length;
+  const media = itemsMes.reduce((s, i) => s + i.nota, 0) / total;
+  const criticas = itemsMes.filter((i) => i.nota < 3).length;
   const label = media >= 4.5 ? "Excelente" : media >= 4 ? "Bom" : media >= 3 ? "Regular" : "Ruim";
   const cardCls =
     media >= 4.5 ? "bg-emerald-500/10 border-emerald-500/40"
     : media >= 4 ? "bg-green-500/10 border-green-500/40"
     : media >= 3 ? "bg-yellow-500/10 border-yellow-500/40"
     : "bg-red-500/10 border-red-500/40";
-  const dist = [5, 4, 3, 2, 1].map((n) => ({ nota: `${n}★`, notaN: n, qtd: items.filter((i) => i.nota === n).length }));
-  const recentes = [...items].sort((a, b) => {
+  const dist = [5, 4, 3, 2, 1].map((n) => ({ nota: `${n}★`, notaN: n, qtd: itemsMes.filter((i) => i.nota === n).length }));
+  const criticasList = [...itemsMes].filter((i) => i.nota < 3).sort((a, b) => {
+    const da = a.arquivado_em ?? a.created_at;
+    const db = b.arquivado_em ?? b.created_at;
+    return (db ?? "").localeCompare(da ?? "");
+  });
+  const recentes = [...itemsMes].sort((a, b) => {
     const da = a.arquivado_em ?? a.created_at;
     const db = b.arquivado_em ?? b.created_at;
     return (db ?? "").localeCompare(da ?? "");
@@ -853,9 +874,13 @@ export function SatisfacaoCliente({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Satisfação do Cliente</h3>
+        <span className="text-xs text-muted-foreground capitalize">{nomeMes}</span>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className={cn("border", cardCls)}>
-          <CardHeader><CardTitle className="text-base">Satisfação do Cliente</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Média do Mês</CardTitle></CardHeader>
           <CardContent className="space-y-2">
             <div className="flex items-baseline gap-2">
               <span className="text-5xl font-bold">{media.toFixed(1)}</span>
@@ -863,6 +888,19 @@ export function SatisfacaoCliente({
             </div>
             <div className="text-lg font-semibold">{label}</div>
             <div className="text-sm text-muted-foreground">{total} avalia{total === 1 ? "ção" : "ções"}</div>
+          </CardContent>
+        </Card>
+
+        <Card className={cn("border", criticas > 0 ? "bg-red-500/10 border-red-500/40" : "bg-emerald-500/10 border-emerald-500/40")}>
+          <CardHeader><CardTitle className="text-base">Avaliações Críticas</CardTitle></CardHeader>
+          <CardContent className="space-y-2">
+            <div className="text-5xl font-bold" style={{ color: criticas > 0 ? "hsl(0 84% 55%)" : undefined }}>
+              {criticas}
+            </div>
+            <div className="text-sm text-muted-foreground">Notas abaixo de 3</div>
+            <div className="text-xs text-muted-foreground">
+              {total > 0 ? `${((criticas / total) * 100).toFixed(0)}% do total do mês` : ""}
+            </div>
           </CardContent>
         </Card>
 
@@ -884,8 +922,38 @@ export function SatisfacaoCliente({
         </Card>
       </div>
 
+      {criticasList.length > 0 && (
+        <Card className="border-red-500/40 bg-red-500/5">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <span className="inline-block h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+              Avaliações Críticas do Mês ({criticasList.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {criticasList.map((a, idx) => {
+              const dt = a.arquivado_em ?? a.created_at;
+              const dataFmt = dt ? new Date(dt).toLocaleDateString("pt-BR") : "—";
+              return (
+                <div key={`crit-${a.numero_os}-${idx}`} className="rounded-xl border border-red-500/30 bg-background/50 p-4 space-y-2">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <Badge className="text-white border-0" style={{ backgroundColor: _notaFill(a.nota) }}>{a.nota} ★</Badge>
+                      <span className="text-sm font-medium">OS {a.numero_os}</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{dataFmt}</span>
+                  </div>
+                  {a.comentario && <p className="text-sm text-foreground">{a.comentario}</p>}
+                  {a.responsavel_tecnico && <p className="text-xs text-muted-foreground">Técnico: {a.responsavel_tecnico}</p>}
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
-        <CardHeader><CardTitle className="text-base">Avaliações Recentes</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Avaliações Recentes do Mês</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           {recentes.map((a, idx) => {
             const dt = a.arquivado_em ?? a.created_at;
