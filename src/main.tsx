@@ -25,9 +25,12 @@ async function refreshStaleRuntime(buildId: string) {
     if ("serviceWorker" in navigator) {
       const registrations = await navigator.serviceWorker.getRegistrations();
       await Promise.all(
-        registrations
-          .filter((registration) => !registration.active?.scriptURL.includes("OneSignalSDKWorker.js"))
-          .map((registration) => registration.unregister()),
+        registrations.map((registration) => {
+          if (registration.active?.scriptURL.includes("OneSignalSDKWorker.js")) {
+            return registration.update();
+          }
+          return registration.unregister();
+        }),
       );
     }
   } catch (error) {
