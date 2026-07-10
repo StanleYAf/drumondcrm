@@ -4,7 +4,7 @@ import { NavLink } from "@/components/NavLink";
 import {
   LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings,
   Boxes, LogOut, Briefcase, Building2, ClipboardList, DollarSign, RefreshCw, KanbanSquare,
-  Stethoscope, Plus, Landmark, FileSignature, FileBadge,
+  Stethoscope, Plus, Landmark, FileSignature, FileBadge, CalendarClock,
 } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 import type { PermCode } from "@/lib/permissions";
@@ -53,6 +53,7 @@ const groups: ModuleDef[] = [
       { title: "ART", url: "/administrativo/art", icon: FileBadge, perm: "adm_art" },
       { title: "Boletim", url: "/manutencao/boletim", icon: FileText, perm: "eng_boletim" },
       { title: "Clientes", url: "/manutencao/clientes", icon: Building2, perm: "eng_clientes" },
+      { title: "Cronograma", url: "/manutencao/cronograma", icon: CalendarClock, perm: "eng_dashboard" },
       { title: "Dash Engenharia", url: "/manutencao", icon: LayoutDashboard, perm: "eng_dashboard" },
       { title: "Demandas", url: "/demandas/engenharia", icon: KanbanSquare, perm: "eng_dashboard" },
       { title: "Indicadores", url: "/manutencao/os", icon: ClipboardList, perm: "eng_os" },

@@ -281,6 +281,118 @@ export type Database = {
         }
         Relationships: []
       }
+      cronograma_equipamentos: {
+        Row: {
+          ativo: boolean
+          cliente_id: string
+          created_at: string
+          descontinuidade: boolean
+          equipamento: string
+          fornecedor: string | null
+          id: string
+          identificacao: string | null
+          localizacao: string | null
+          marca: string | null
+          modelo: string | null
+          numero_serie: string | null
+          patrimonio: string | null
+          periodicidade: string | null
+          registro_anvisa: string | null
+          status: string
+          tem_contrato_terceiro: boolean
+        }
+        Insert: {
+          ativo?: boolean
+          cliente_id: string
+          created_at?: string
+          descontinuidade?: boolean
+          equipamento: string
+          fornecedor?: string | null
+          id?: string
+          identificacao?: string | null
+          localizacao?: string | null
+          marca?: string | null
+          modelo?: string | null
+          numero_serie?: string | null
+          patrimonio?: string | null
+          periodicidade?: string | null
+          registro_anvisa?: string | null
+          status?: string
+          tem_contrato_terceiro?: boolean
+        }
+        Update: {
+          ativo?: boolean
+          cliente_id?: string
+          created_at?: string
+          descontinuidade?: boolean
+          equipamento?: string
+          fornecedor?: string | null
+          id?: string
+          identificacao?: string | null
+          localizacao?: string | null
+          marca?: string | null
+          modelo?: string | null
+          numero_serie?: string | null
+          patrimonio?: string | null
+          periodicidade?: string | null
+          registro_anvisa?: string | null
+          status?: string
+          tem_contrato_terceiro?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cronograma_equipamentos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cronograma_planejamento: {
+        Row: {
+          ano: number
+          created_at: string
+          equipamento_id: string
+          id: string
+          mes: number
+          observacao: string | null
+          status: Database["public"]["Enums"]["status_cronograma"]
+          tipo_servico: Database["public"]["Enums"]["tipo_servico_cronograma"]
+          updated_at: string
+        }
+        Insert: {
+          ano: number
+          created_at?: string
+          equipamento_id: string
+          id?: string
+          mes: number
+          observacao?: string | null
+          status?: Database["public"]["Enums"]["status_cronograma"]
+          tipo_servico: Database["public"]["Enums"]["tipo_servico_cronograma"]
+          updated_at?: string
+        }
+        Update: {
+          ano?: number
+          created_at?: string
+          equipamento_id?: string
+          id?: string
+          mes?: number
+          observacao?: string | null
+          status?: Database["public"]["Enums"]["status_cronograma"]
+          tipo_servico?: Database["public"]["Enums"]["tipo_servico_cronograma"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cronograma_planejamento_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "cronograma_equipamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demandas: {
         Row: {
           created_at: string
@@ -1696,8 +1808,15 @@ export type Database = {
         | "Google"
         | "WhatsApp"
         | "Outro"
+      status_cronograma:
+        | "planejado"
+        | "adiada"
+        | "executado"
+        | "desativado"
+        | "instalado"
       status_pos_venda: "Aguardando retorno" | "Contatado" | "Convertido"
       tipo_lead: "Clínica" | "Hospital" | "Veterinário" | "Consultório"
+      tipo_servico_cronograma: "P" | "C" | "T" | "Q" | "AA" | "V"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1852,8 +1971,16 @@ export const Constants = {
         "WhatsApp",
         "Outro",
       ],
+      status_cronograma: [
+        "planejado",
+        "adiada",
+        "executado",
+        "desativado",
+        "instalado",
+      ],
       status_pos_venda: ["Aguardando retorno", "Contatado", "Convertido"],
       tipo_lead: ["Clínica", "Hospital", "Veterinário", "Consultório"],
+      tipo_servico_cronograma: ["P", "C", "T", "Q", "AA", "V"],
     },
   },
 } as const
