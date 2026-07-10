@@ -761,6 +761,41 @@ function ParqueLinha({ label, value }: { label: string; value: number | string }
 }
 
 function DisponibilidadePie({ ativos, emManutencao }: { ativos: number; emManutencao: number }) {
+  return _DisponibilidadePieImpl({ ativos, emManutencao });
+}
+
+function AjustesGrupo({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{titulo}</div>
+      <div className="space-y-2">{children}</div>
+    </div>
+  );
+}
+
+function AjusteInput({
+  label, k, value, overrides, onChange,
+}: {
+  label: string; k: string; value: number;
+  overrides: Record<string, number>;
+  onChange: (k: string, v: string) => void;
+}) {
+  const overridden = k in overrides;
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs text-slate-600 flex-1 truncate" title={label}>{label}</span>
+      <Input
+        type="number"
+        className={`h-8 w-24 text-sm ${overridden ? "border-primary" : ""}`}
+        value={overridden ? String(overrides[k]) : ""}
+        placeholder={String(value)}
+        onChange={(e) => onChange(k, e.target.value)}
+      />
+    </div>
+  );
+}
+
+function _DisponibilidadePieImpl({ ativos, emManutencao }: { ativos: number; emManutencao: number }) {
   const total = ativos + emManutencao;
   if (total <= 0) return null;
   const data = [
