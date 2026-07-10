@@ -497,6 +497,100 @@ export default function ManutencaoBoletim() {
               </div>
             </div>
 
+            {clienteId && (
+              <div className="border rounded-lg p-4">
+                <Label className="text-sm font-semibold">Setores atendidos neste boletim</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Padrão vem do cadastro do cliente. Desmarque para omitir o setor no boletim.
+                </p>
+                <div className="flex flex-wrap gap-6 mt-3">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox checked={temClinica} onCheckedChange={(v) => toggleSetor("clinica", !!v)} />
+                    <span>Eng. Clínica</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox checked={temPredial} onCheckedChange={(v) => toggleSetor("predial", !!v)} />
+                    <span>Eng. Predial</span>
+                  </label>
+                  {setoresOverride && (
+                    <button
+                      type="button"
+                      className="text-xs text-primary underline"
+                      onClick={() => setSetoresOverride(null)}
+                    >
+                      Restaurar padrão do cliente
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {showPreview && !semDados && (
+              <div className="border rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-semibold">Ajustar valores do boletim</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Sobrescreva manualmente qualquer número. Deixe em branco para usar o valor calculado.
+                    </p>
+                  </div>
+                  {Object.keys(dataOverrides).length > 0 && (
+                    <button
+                      type="button"
+                      className="text-xs text-primary underline"
+                      onClick={() => setDataOverrides({})}
+                    >
+                      Limpar ajustes
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                  {temClinica && (
+                    <AjustesGrupo titulo="Eng. Clínica — Indicadores">
+                      <AjusteInput label="Corretivas abertas" k="eng.corretivasAbertas" value={stats.eng.corretivasAbertas} overrides={dataOverrides} onChange={setOv} />
+                      <AjusteInput label="Corretivas fechadas" k="eng.corretivasFechadas" value={stats.eng.corretivasFechadas} overrides={dataOverrides} onChange={setOv} />
+                      <AjusteInput label="Preventivas abertas" k="eng.preventivasAbertas" value={stats.eng.preventivasAbertas} overrides={dataOverrides} onChange={setOv} />
+                      <AjusteInput label="Preventivas fechadas" k="eng.preventivasFechadas" value={stats.eng.preventivasFechadas} overrides={dataOverrides} onChange={setOv} />
+                    </AjustesGrupo>
+                  )}
+                  {temPredial && (
+                    <AjustesGrupo titulo="Eng. Predial — Indicadores">
+                      <AjusteInput label="Corretivas abertas" k="pred.corretivasAbertas" value={stats.pred.corretivasAbertas} overrides={dataOverrides} onChange={setOv} />
+                      <AjusteInput label="Corretivas fechadas" k="pred.corretivasFechadas" value={stats.pred.corretivasFechadas} overrides={dataOverrides} onChange={setOv} />
+                      <AjusteInput label="Preventivas abertas" k="pred.preventivasAbertas" value={stats.pred.preventivasAbertas} overrides={dataOverrides} onChange={setOv} />
+                      <AjusteInput label="Preventivas fechadas" k="pred.preventivasFechadas" value={stats.pred.preventivasFechadas} overrides={dataOverrides} onChange={setOv} />
+                    </AjustesGrupo>
+                  )}
+                  <AjustesGrupo titulo="Planejamento próximo mês">
+                    <AjusteInput label="Preventivas de Eng. Clínica" k="plan.preventivas" value={Number(ov("plan.preventivas", 0))} overrides={dataOverrides} onChange={setOv} />
+                    <AjusteInput label="Calibrações" k="plan.calibracoes" value={Number(ov("plan.calibracoes", 0))} overrides={dataOverrides} onChange={setOv} />
+                    <AjusteInput label="Teste de Segurança Elétrica" k="plan.testeSegEletrica" value={Number(ov("plan.testeSegEletrica", 0))} overrides={dataOverrides} onChange={setOv} />
+                  </AjustesGrupo>
+                  <AjustesGrupo titulo="Gestão de serviço">
+                    <AjusteInput label="Reincidências na Eng. Clínica" k="reincidencias" value={stats.reincidencias} overrides={dataOverrides} onChange={setOv} />
+                    {stats.pendentesPorEstado.map((p) => (
+                      <AjusteInput key={p.estado} label={`Pendente: ${p.estado}`} k={`pend.${p.estado}`} value={p.qtd} overrides={dataOverrides} onChange={setOv} />
+                    ))}
+                  </AjustesGrupo>
+                  {temClinica && (
+                    <AjustesGrupo titulo="Parque tecnológico — Eng. Clínica">
+                      <AjusteInput label="Total" k="engParque.total" value={stats.engParque.total} overrides={dataOverrides} onChange={setOv} />
+                      <AjusteInput label="Ativos" k="engParque.ativos" value={stats.engParque.ativos} overrides={dataOverrides} onChange={setOv} />
+                      <AjusteInput label="Em manutenção" k="engParque.emManutencao" value={stats.engParque.emManutencao} overrides={dataOverrides} onChange={setOv} />
+                    </AjustesGrupo>
+                  )}
+                  {temPredial && (
+                    <AjustesGrupo titulo="Parque tecnológico — Eng. Predial">
+                      <AjusteInput label="Total" k="predParque.total" value={stats.predParque.total} overrides={dataOverrides} onChange={setOv} />
+                      <AjusteInput label="Ativos" k="predParque.ativos" value={stats.predParque.ativos} overrides={dataOverrides} onChange={setOv} />
+                      <AjusteInput label="Em manutenção" k="predParque.emManutencao" value={stats.predParque.emManutencao} overrides={dataOverrides} onChange={setOv} />
+                    </AjustesGrupo>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="flex gap-2">
               <Button onClick={handlePreview} disabled={!clienteId || loading}>
                 <Eye className="mr-2 h-4 w-4" />
