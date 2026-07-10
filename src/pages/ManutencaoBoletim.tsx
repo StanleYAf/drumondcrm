@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -107,6 +108,23 @@ export default function ManutencaoBoletim() {
   const [loading, setLoading] = useState(false);
   const [clienteLogoUrl, setClienteLogoUrl] = useState<string | null>(null);
 
+  // Override manual dos setores (padrão vem do cadastro do cliente)
+  const [setoresOverride, setSetoresOverride] = useState<{ clinica: boolean; predial: boolean } | null>(null);
+  // Override manual de qualquer número exibido no boletim
+  const [dataOverrides, setDataOverrides] = useState<Record<string, number>>({});
+  const setOv = (k: string, v: string) => {
+    setDataOverrides((prev) => {
+      const next = { ...prev };
+      if (v === "" || v === null) delete next[k];
+      else {
+        const n = Number(v);
+        if (!Number.isNaN(n)) next[k] = n;
+      }
+      return next;
+    });
+  };
+  const ov = (k: string, fallback: number) => (k in dataOverrides ? dataOverrides[k] : fallback);
+
   const [sections, setSections] = useState({
     indicadores: true,
     incluirPreventivas: true,
@@ -143,6 +161,12 @@ export default function ManutencaoBoletim() {
     return () => { cancelled = true; };
   }, [clienteId, clientes]);
 
+  // Sempre que trocar cliente/mês/ano, limpa overrides manuais para não misturar contextos
+  useEffect(() => {
+    setSetoresOverride(null);
+    setDataOverrides({});
+  }, [clienteId, mes, ano]);
+
   async function carregarDados() {
     if (!clienteId) return null;
     setLoading(true);
@@ -178,8 +202,14 @@ export default function ManutencaoBoletim() {
   const clienteSel = clientes.find(c => c.id === clienteId);
   const clienteNome = clienteSel?.nome || "";
   const clienteLogo = clienteLogoUrl;
-  const temClinica = clienteSel?.tem_engenharia_clinica ?? true;
-  const temPredial = clienteSel?.tem_predial ?? true;
+  const temClinicaBase = clienteSel?.tem_engenharia_clinica ?? true;
+  const temPredialBase = clienteSel?.tem_predial ?? true;
+  const temClinica = setoresOverride ? setoresOverride.clinica : temClinicaBase;
+  const temPredial = setoresOverride ? setoresOverride.predial : temPredialBase;
+  const toggleSetor = (setor: "clinica" | "predial", checked: boolean) => {
+    const atual = { clinica: temClinica, predial: temPredial };
+    setSetoresOverride({ ...atual, [setor]: checked });
+  };
   const soClinica = temClinica && !temPredial;
   const soPredial = temPredial && !temClinica;
   const ambosSetores = temClinica && temPredial;
@@ -214,22 +244,22 @@ export default function ManutencaoBoletim() {
 
     // Fonte primária: indicadores_manutencao (mesma que o dashboard). Fallback: OS.
     const eng = {
-      corretivasAbertas: nOrNull(indicador?.eng_corretivas_abertas) ?? engFallback.corretivasAbertas,
-      corretivasFechadas: nOrNull(indicador?.eng_corretivas_fechadas) ?? engFallback.corretivasFechadas,
-      preventivasAbertas: nOrNull(indicador?.eng_preventivas_abertas) ?? engFallback.preventivasAbertas,
-      preventivasFechadas: nOrNull(indicador?.eng_preventivas_fechadas) ?? engFallback.preventivasFechadas,
+      corretivasAbertas: ov("eng.corretivasAbertas", nOrNull(indicador?.eng_corretivas_abertas) ?? engFallback.corretivasAbertas),
+      corretivasFechadas: ov("eng.corretivasFechadas", nOrNull(indicador?.eng_corretivas_fechadas) ?? engFallback.corretivasFechadas),
+      preventivasAbertas: ov("eng.preventivasAbertas", nOrNull(indicador?.eng_preventivas_abertas) ?? engFallback.preventivasAbertas),
+      preventivasFechadas: ov("eng.preventivasFechadas", nOrNull(indicador?.eng_preventivas_fechadas) ?? engFallback.preventivasFechadas),
     };
     const pred = {
-      corretivasAbertas: nOrNull(indicador?.pred_corretivas_abertas) ?? predFallback.corretivasAbertas,
-      corretivasFechadas: nOrNull(indicador?.pred_corretivas_fechadas) ?? predFallback.corretivasFechadas,
-      preventivasAbertas: nOrNull(indicador?.pred_preventivas_abertas) ?? predFallback.preventivasAbertas,
-      preventivasFechadas: nOrNull(indicador?.pred_preventivas_fechadas) ?? predFallback.preventivasFechadas,
+      corretivasAbertas: ov("pred.corretivasAbertas", nOrNull(indicador?.pred_corretivas_abertas) ?? predFallback.corretivasAbertas),
+      corretivasFechadas: ov("pred.corretivasFechadas", nOrNull(indicador?.pred_corretivas_fechadas) ?? predFallback.corretivasFechadas),
+      preventivasAbertas: ov("pred.preventivasAbertas", nOrNull(indicador?.pred_preventivas_abertas) ?? predFallback.preventivasAbertas),
+      preventivasFechadas: ov("pred.preventivasFechadas", nOrNull(indicador?.pred_preventivas_fechadas) ?? predFallback.preventivasFechadas),
     };
 
     // pendentes por estado (corretivas gerais)
     const pendentesPorEstado = PENDENTES_ESTADOS.map(name => ({
       estado: name,
-      qtd: corretivas.filter(o => (o.estado || "").trim().toLowerCase() === name.toLowerCase()).length,
+      qtd: ov(`pend.${name}`, corretivas.filter(o => (o.estado || "").trim().toLowerCase() === name.toLowerCase()).length),
     }));
 
     // Reincidências eng clínica (>= 3 corretivas no mesmo equipamento)
@@ -241,7 +271,7 @@ export default function ManutencaoBoletim() {
       if (!k) return;
       counts[k] = (counts[k] || 0) + 1;
     });
-    const reincidencias = Object.values(counts).filter(n => n >= 3).length;
+    const reincidencias = ov("reincidencias", Object.values(counts).filter(n => n >= 3).length);
 
     // Parque tecnológico: 100% automático a partir das OS do setor
     // Total = TAG/nº série únicos que aparecem em qualquer OS do setor
@@ -256,13 +286,20 @@ export default function ManutencaoBoletim() {
         tagsUnicas.add(k);
         if (isCorretiva(o.tipo_servico) && estaAberta(o)) emManutSet.add(k);
       });
-      const total = tagsUnicas.size;
-      const emManutencao = emManutSet.size;
-      const ativos = Math.max(0, total - emManutencao);
-      return { total, ativos, emManutencao };
+      return { total: tagsUnicas.size, ativos: Math.max(0, tagsUnicas.size - emManutSet.size), emManutencao: emManutSet.size };
     };
-    const engParque = parqueSetor(isClinica);
-    const predParque = parqueSetor(isPredial);
+    const engRaw = parqueSetor(isClinica);
+    const predRaw = parqueSetor(isPredial);
+    const engParque = {
+      total: ov("engParque.total", engRaw.total),
+      ativos: ov("engParque.ativos", engRaw.ativos),
+      emManutencao: ov("engParque.emManutencao", engRaw.emManutencao),
+    };
+    const predParque = {
+      total: ov("predParque.total", predRaw.total),
+      ativos: ov("predParque.ativos", predRaw.ativos),
+      emManutencao: ov("predParque.emManutencao", predRaw.emManutencao),
+    };
 
     // OS por unidade (localização)
     const groupByLoc = (list: OS[]) => {
@@ -283,7 +320,7 @@ export default function ManutencaoBoletim() {
       corretivasPorUnidade: groupByLoc(corretivas),
       preventivasPorUnidade: groupByLoc(preventivas),
     };
-  }, [ordens, indicador]);
+  }, [ordens, indicador, dataOverrides]);
 
   const toggleSection = (k: keyof typeof sections) =>
     setSections(s => ({ ...s, [k]: !s[k] }));
@@ -364,9 +401,9 @@ export default function ManutencaoBoletim() {
       rightBlocks.push(
         <div key="plan" className="rounded-lg p-5 text-white" style={{ backgroundColor: "#2563eb" }}>
           <h2 className="text-sm font-bold tracking-wider mb-4 border-b border-white/30 pb-2">PLANEJAMENTO PRÓXIMO MÊS</h2>
-          <LinhaValor label="Preventivas de Eng. Clínica" value={0} />
-          <LinhaValor label="Calibrações" value={0} />
-          <LinhaValor label="Teste de Segurança Elétrica" value={0} />
+          <LinhaValor label="Preventivas de Eng. Clínica" value={ov("plan.preventivas", 0)} />
+          <LinhaValor label="Calibrações" value={ov("plan.calibracoes", 0)} />
+          <LinhaValor label="Teste de Segurança Elétrica" value={ov("plan.testeSegEletrica", 0)} />
         </div>
       );
     }
