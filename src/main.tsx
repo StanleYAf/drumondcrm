@@ -4,11 +4,42 @@ import "./index.css";
 
 const BUILD_STORAGE_KEY = "drumond:last-build-id";
 const BUILD_RELOAD_KEY = "drumond:build-reload-id";
+const BUILD_CLEANUP_KEY = "drumond:build-cleanup-id";
+
+async function cleanupRuntimeCaches() {
+  if ("caches" in window) {
+    const keys = await window.caches.keys();
+    await Promise.all(keys.map((key) => window.caches.delete(key)));
+  }
+
+  if ("serviceWorker" in navigator) {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(
+      registrations.map((registration) => {
+        if (registration.active?.scriptURL.includes("OneSignalSDKWorker.js")) {
+          return registration.update();
+        }
+        return registration.unregister();
+      }),
+    );
+  }
+}
 
 async function refreshStaleRuntime(buildId: string) {
   if (typeof window === "undefined" || import.meta.env.DEV) return;
 
   const previousBuildId = window.localStorage.getItem(BUILD_STORAGE_KEY);
+  const previousCleanupId = window.localStorage.getItem(BUILD_CLEANUP_KEY);
+
+  if (previousCleanupId !== buildId) {
+    try {
+      await cleanupRuntimeCaches();
+      window.localStorage.setItem(BUILD_CLEANUP_KEY, buildId);
+    } catch (error) {
+      console.warn("[runtime-refresh] cache cleanup failed", error);
+    }
+  }
+
   if (!previousBuildId || previousBuildId === buildId) {
     window.localStorage.setItem(BUILD_STORAGE_KEY, buildId);
     return;
@@ -17,22 +48,7 @@ async function refreshStaleRuntime(buildId: string) {
   window.localStorage.setItem(BUILD_STORAGE_KEY, buildId);
 
   try {
-    if ("caches" in window) {
-      const keys = await window.caches.keys();
-      await Promise.all(keys.map((key) => window.caches.delete(key)));
-    }
-
-    if ("serviceWorker" in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(
-        registrations.map((registration) => {
-          if (registration.active?.scriptURL.includes("OneSignalSDKWorker.js")) {
-            return registration.update();
-          }
-          return registration.unregister();
-        }),
-      );
-    }
+    await cleanupRuntimeCaches();
   } catch (error) {
     console.warn("[runtime-refresh] cache cleanup failed", error);
   }
