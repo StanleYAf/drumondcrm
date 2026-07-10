@@ -111,6 +111,34 @@ export default function ControleART() {
     vencidas: enriched.filter(a => a.status === "vencido").length,
   }), [enriched]);
 
+  // Cria avisos no sino de notificações para ARTs vencendo em até 30 dias
+  // ou já vencidas. Deduplica por usuário + ART + bucket semanal via localStorage.
+  useEffect(() => {
+    if (!user || enriched.length === 0) return;
+    const alvos = enriched.filter(a => a.status === "a_vencer" || a.status === "vencido");
+    if (alvos.length === 0) return;
+    const weekBucket = Math.floor(Date.now() / (7 * 86400000));
+    (async () => {
+      for (const a of alvos) {
+        const key = `art_notif:${user.id}:${a.id}:${a.status}:${weekBucket}`;
+        if (localStorage.getItem(key)) continue;
+        const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+        const dias = Math.floor((parseDate(a.data_vencimento).getTime() - hoje.getTime()) / 86400000);
+        const title = a.status === "vencido" ? "ART vencida" : "ART a vencer";
+        const message = a.status === "vencido"
+          ? `ART ${a.numero_art}${a.cliente ? ` (${a.cliente})` : ""} venceu em ${fmtDate(a.data_vencimento)}.`
+          : `ART ${a.numero_art}${a.cliente ? ` (${a.cliente})` : ""} vence em ${dias} dia(s) (${fmtDate(a.data_vencimento)}).`;
+        const { error } = await (supabase as any).from("notifications").insert({
+          user_id: user.id,
+          title,
+          message,
+          link: "/administrativo/art",
+        });
+        if (!error) localStorage.setItem(key, "1");
+      }
+    })();
+  }, [user, enriched]);
+
   function resetForm() {
     setShowForm(false); setEditItem(null);
     setFNumero(""); setFResp(""); setFCrea(""); setFCliente("");
