@@ -476,6 +476,64 @@ export default function Dashboard() {
         })}
       </div>
 
+      {/* Ticket Médio + Comissões (KPIs comerciais) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="glass-card p-6" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" style={{ color: '#0A84FF' }} />
+              <span className="text-base font-semibold text-foreground/70">Ticket Médio — {MESES[currentMonth]}</span>
+            </div>
+          </div>
+          <p className="text-[2.5rem] font-extrabold text-foreground mb-1 leading-tight">{formatCurrency(ticketMedio)}</p>
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="text-[0.85rem] text-foreground/70">
+              <Hash className="h-3.5 w-3.5 inline mr-0.5" />
+              {qtdLancamentos} lançamento{qtdLancamentos !== 1 ? 's' : ''}
+            </span>
+            <VariationBadge current={ticketMedio} previous={ticketMedioComp} showLabel />
+          </div>
+        </div>
+
+        <div className="glass-card p-6" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Banknote className="h-5 w-5" style={{ color: '#30D158' }} />
+              <span className="text-base font-semibold text-foreground/70">Comissões Recebidas — {MESES[currentMonth]}</span>
+            </div>
+          </div>
+          <p className="text-[2.5rem] font-extrabold text-foreground mb-1 leading-tight">{formatCurrency(comissoesRecebidasMes)}</p>
+          <span className="text-[0.85rem] text-foreground/70">
+            Acumulado em {currentYear}: <span className="font-semibold text-foreground">{formatCurrency(comissoesRecebidasAno)}</span>
+          </span>
+        </div>
+      </div>
+
+      {/* Comissões — evolução mensal */}
+      <div className="glass-card p-6" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+        <div className="flex items-center gap-2 mb-5">
+          <Banknote className="h-5 w-5" style={{ color: '#30D158' }} />
+          <h3 className="text-base font-semibold text-foreground">Evolução das Comissões — {currentYear}</h3>
+        </div>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={comissoesChartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+            <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fill: '#AEAEB2', fontSize: 13 }} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#AEAEB2', fontSize: 13 }} width={70} />
+            <Tooltip
+              contentStyle={{ background: 'rgba(30,30,30,0.95)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, color: 'white', fontSize: 14 }}
+              formatter={(value: number) => formatCurrency(value)}
+              cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
+            />
+            <Legend wrapperStyle={{ fontSize: 13, color: '#AEAEB2' }} />
+            <Line type="monotone" dataKey="Recebidas" stroke="#30D158" strokeWidth={3} dot={{ r: 4, fill: '#30D158' }} activeDot={{ r: 6 }} />
+            <Line type="monotone" dataKey="Previstas" stroke="#0A84FF" strokeWidth={2} strokeDasharray="6 4" dot={{ r: 3, fill: '#0A84FF' }} />
+          </LineChart>
+        </ResponsiveContainer>
+        <p className="text-[0.8rem] text-foreground/60 mt-3">
+          "Recebidas" considera lançamentos marcados como pagos. "Previstas" inclui todas as comissões geradas no período.
+        </p>
+      </div>
 
       {/* Client Ranking */}
       <div className="glass-card p-6 space-y-5" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
