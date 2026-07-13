@@ -37,7 +37,7 @@ const groups: ModuleDef[] = [
     icon: Briefcase,
     subs: [
       { title: "Dashboard", url: "/comercial", icon: LayoutDashboard, perm: "com_dashboard" },
-      { title: "Demandas", url: "/demandas/comercial", icon: KanbanSquare, perm: "com_dashboard" },
+      { title: "Demandas", url: "/demandas/comercial", icon: KanbanSquare, perm: "com_demandas" },
       { title: "Indicadores", url: "/indicadores", icon: BarChart2, perm: "com_indicadores" },
       { title: "Lançamentos", url: "/lancamentos", icon: BookOpen, perm: "com_lancamentos" },
       { title: "Pós-venda", url: "/pos-venda", icon: Headphones, perm: "com_posvenda" },
@@ -53,9 +53,9 @@ const groups: ModuleDef[] = [
       { title: "ART", url: "/administrativo/art", icon: FileBadge, perm: "adm_art" },
       { title: "Boletim", url: "/manutencao/boletim", icon: FileText, perm: "eng_boletim" },
       { title: "Clientes", url: "/manutencao/clientes", icon: Building2, perm: "eng_clientes" },
-      { title: "Cronograma", url: "/manutencao/cronograma", icon: CalendarClock, perm: "eng_dashboard" },
+      { title: "Cronograma", url: "/manutencao/cronograma", icon: CalendarClock, perm: "eng_cronograma" },
       { title: "Dash Engenharia", url: "/manutencao", icon: LayoutDashboard, perm: "eng_dashboard" },
-      { title: "Demandas", url: "/demandas/engenharia", icon: KanbanSquare, perm: "eng_dashboard" },
+      { title: "Demandas", url: "/demandas/engenharia", icon: KanbanSquare, perm: "eng_demandas" },
       { title: "Indicadores", url: "/manutencao/os", icon: ClipboardList, perm: "eng_os" },
       { title: "Logs de Sincronização", url: "/manutencao/sync-logs", icon: RefreshCw, perm: "eng_synclogs" },
     ],
@@ -74,7 +74,7 @@ const groups: ModuleDef[] = [
     icon: DollarSign,
     subs: [
       { title: "Dashboard", url: "/financeiro", icon: LayoutDashboard, perm: "fin_dashboard" },
-      { title: "Demandas", url: "/demandas/financeiro", icon: KanbanSquare, perm: "fin_dashboard" },
+      { title: "Demandas", url: "/demandas/financeiro", icon: KanbanSquare, perm: "fin_demandas" },
     ],
   },
 ];
