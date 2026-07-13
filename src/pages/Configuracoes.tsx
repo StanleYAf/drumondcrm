@@ -511,6 +511,18 @@ export default function Configuracoes() {
                 className="flex-1 text-sm bg-transparent outline-none text-foreground placeholder-muted-foreground"
               />
             </div>
+            <div className="ios-list-item gap-2">
+              <Shield className="h-4 w-4 text-muted-foreground" />
+              <input
+                value={permSearch}
+                onChange={e => setPermSearch(e.target.value)}
+                placeholder="Filtrar permissões (ex: contratos, ART, cronograma)"
+                className="flex-1 text-sm bg-transparent outline-none text-foreground placeholder-muted-foreground"
+              />
+              {permSearch && (
+                <button onClick={() => setPermSearch("")} className="text-[11px] text-muted-foreground hover:text-foreground">Limpar</button>
+              )}
+            </div>
 
             {usersLoading ? (
               <div className="p-6 text-center text-sm text-muted-foreground">Carregando usuários...</div>
