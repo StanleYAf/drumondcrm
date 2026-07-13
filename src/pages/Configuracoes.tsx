@@ -536,7 +536,7 @@ export default function Configuracoes() {
                         </div>
                       )}
                       {pending.map(u => (
-                        <UserRow key={u.id} u={u} user={user} savingUserId={savingUserId}
+                        <UserRow key={u.id} u={u} user={user} savingUserId={savingUserId} permQuery={permSearch}
                           onApprove={approveUser} onRevoke={revokeUser} onReject={rejectUser} onToggleCargo={toggleUserCargo} />
                       ))}
                       {approved.length > 0 && (
@@ -547,7 +547,7 @@ export default function Configuracoes() {
                         </div>
                       )}
                       {approved.map(u => (
-                        <UserRow key={u.id} u={u} user={user} savingUserId={savingUserId}
+                        <UserRow key={u.id} u={u} user={user} savingUserId={savingUserId} permQuery={permSearch}
                           onApprove={approveUser} onRevoke={revokeUser} onReject={rejectUser} onToggleCargo={toggleUserCargo} />
                       ))}
                     </>
