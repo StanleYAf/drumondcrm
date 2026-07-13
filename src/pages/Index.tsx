@@ -478,7 +478,6 @@ export default function Dashboard() {
 
 
       {/* Client Ranking */}
-      {/* placeholder */}
       <div className="glass-card p-6 space-y-5" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
