@@ -262,16 +262,20 @@ export default function ManutencaoBoletim() {
       qtd: ov(`pend.${name}`, corretivas.filter(o => (o.estado || "").trim().toLowerCase() === name.toLowerCase()).length),
     }));
 
-    // Reincidências eng clínica (>= 3 corretivas no mesmo equipamento)
-    const clinicas = corretivas.filter(isClinica);
+    // Reincidências por setor (>= 3 corretivas no mesmo equipamento)
     const groupKey = (o: OS) => o.tag || o.numero_serie || "";
-    const counts: Record<string, number> = {};
-    clinicas.forEach(o => {
-      const k = groupKey(o);
-      if (!k) return;
-      counts[k] = (counts[k] || 0) + 1;
-    });
-    const reincidencias = ov("reincidencias", Object.values(counts).filter(n => n >= 3).length);
+    const reincidenciasSetor = (filtroSetor: (o: OS) => boolean) => {
+      const counts: Record<string, number> = {};
+      corretivas.filter(filtroSetor).forEach(o => {
+        const k = groupKey(o);
+        if (!k) return;
+        counts[k] = (counts[k] || 0) + 1;
+      });
+      return Object.values(counts).filter(n => n >= 3).length;
+    };
+    const reincidenciasEng = reincidenciasSetor(isClinica);
+    const reincidenciasPred = reincidenciasSetor(isPredial);
+    const reincidencias = ov("reincidencias", reincidenciasEng + reincidenciasPred);
 
     // Parque tecnológico: 100% automático a partir das OS do setor
     // Total = TAG/nº série únicos que aparecem em qualquer OS do setor
@@ -315,6 +319,8 @@ export default function ManutencaoBoletim() {
       eng, pred,
       pendentesPorEstado,
       reincidencias,
+      reincidenciasEng,
+      reincidenciasPred,
       engParque,
       predParque,
       corretivasPorUnidade: groupByLoc(corretivas),
@@ -401,17 +407,30 @@ export default function ManutencaoBoletim() {
       rightBlocks.push(
         <div key="plan" className="rounded-lg p-5 text-white" style={{ backgroundColor: "#2563eb" }}>
           <h2 className="text-sm font-bold tracking-wider mb-4 border-b border-white/30 pb-2">PLANEJAMENTO PRÓXIMO MÊS</h2>
-          <LinhaValor label="Preventivas de Eng. Clínica" value={ov("plan.preventivas", 0)} />
+          <LinhaValor
+            label={soPredial ? "Preventivas de Eng. Predial" : "Preventivas de Eng. Clínica"}
+            value={ov("plan.preventivas", 0)}
+          />
           <LinhaValor label="Calibrações" value={ov("plan.calibracoes", 0)} />
           <LinhaValor label="Teste de Segurança Elétrica" value={ov("plan.testeSegEletrica", 0)} />
         </div>
       );
     }
     if (sections.gestao) {
+      const reincLabel = soPredial
+        ? "Reincidências na Eng. Predial"
+        : soClinica
+          ? "Reincidências na Eng. Clínica"
+          : "Reincidências (Clínica + Predial)";
+      const reincValue = soPredial
+        ? stats.reincidenciasPred
+        : soClinica
+          ? stats.reincidenciasEng
+          : stats.reincidencias;
       rightBlocks.push(
         <div key="gs" className="rounded-lg p-5 text-white" style={{ backgroundColor: "#2563eb" }}>
           <h2 className="text-sm font-bold tracking-wider mb-4 border-b border-white/30 pb-2">GESTÃO DE SERVIÇO</h2>
-          <LinhaValor label="Reincidências na Eng. Clínica" value={stats.reincidencias} />
+          <LinhaValor label={reincLabel} value={reincValue} />
           <div className="mt-4 mb-2 text-xs font-semibold opacity-90">OSs de corretiva pendentes {ano}</div>
           {stats.pendentesPorEstado.map(p => (
             <LinhaValor key={p.estado} label={p.estado} value={p.qtd} />
@@ -563,12 +582,20 @@ export default function ManutencaoBoletim() {
                     </AjustesGrupo>
                   )}
                   <AjustesGrupo titulo="Planejamento próximo mês">
-                    <AjusteInput label="Preventivas de Eng. Clínica" k="plan.preventivas" value={Number(ov("plan.preventivas", 0))} overrides={dataOverrides} onChange={setOv} />
+                    <AjusteInput
+                      label={soPredial ? "Preventivas de Eng. Predial" : "Preventivas de Eng. Clínica"}
+                      k="plan.preventivas" value={Number(ov("plan.preventivas", 0))} overrides={dataOverrides} onChange={setOv}
+                    />
                     <AjusteInput label="Calibrações" k="plan.calibracoes" value={Number(ov("plan.calibracoes", 0))} overrides={dataOverrides} onChange={setOv} />
                     <AjusteInput label="Teste de Segurança Elétrica" k="plan.testeSegEletrica" value={Number(ov("plan.testeSegEletrica", 0))} overrides={dataOverrides} onChange={setOv} />
                   </AjustesGrupo>
                   <AjustesGrupo titulo="Gestão de serviço">
-                    <AjusteInput label="Reincidências na Eng. Clínica" k="reincidencias" value={stats.reincidencias} overrides={dataOverrides} onChange={setOv} />
+                    <AjusteInput
+                      label={soPredial ? "Reincidências na Eng. Predial" : soClinica ? "Reincidências na Eng. Clínica" : "Reincidências (Clínica + Predial)"}
+                      k="reincidencias"
+                      value={soPredial ? stats.reincidenciasPred : soClinica ? stats.reincidenciasEng : stats.reincidencias}
+                      overrides={dataOverrides} onChange={setOv}
+                    />
                     {stats.pendentesPorEstado.map((p) => (
                       <AjusteInput key={p.estado} label={`Pendente: ${p.estado}`} k={`pend.${p.estado}`} value={p.qtd} overrides={dataOverrides} onChange={setOv} />
                     ))}
