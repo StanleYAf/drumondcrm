@@ -51,7 +51,7 @@ export default function ManutencaoGeral() {
   // ---------- Dados
   const {
     loading, error,
-    clientes, periodos, tecnicosUnicos,
+    clientes, periodos, periodoAtivo, tecnicosUnicos,
     clientesAgg, tecnicosAgg,
   } = useEngenhariaData(filtros);
 
@@ -110,7 +110,7 @@ export default function ManutencaoGeral() {
             <PendenciasTecnicoBar tecnicos={tecnicosAgg} />
           </div>
 
-          <SatisfacaoCliente />
+          <SatisfacaoCliente mes={periodoAtivo?.mes} ano={periodoAtivo?.ano} />
         </>
       )}
     </div>

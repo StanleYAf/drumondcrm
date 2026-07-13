@@ -368,7 +368,7 @@ export default function Manutencao() {
           </div>
         </TabsContent>
       </Tabs>
-      <SatisfacaoCliente clienteId={clienteId} />
+      <SatisfacaoCliente clienteId={clienteId} mes={mesSel} ano={anoSel} />
     </div>
   );
 }
@@ -773,9 +773,13 @@ function _notaFill(n: number) {
 
 export function SatisfacaoCliente({
   clienteId,
+  mes,
+  ano,
   initialItems,
 }: {
   clienteId?: string | null;
+  mes?: string | null;
+  ano?: number | null;
   initialItems?: _AvaliacaoRow[];
 }) {
   const [loading, setLoading] = useState(!initialItems);
@@ -794,17 +798,27 @@ export function SatisfacaoCliente({
         .from("avaliacoes_chamados")
         .select("numero_os, nota, comentario, responsavel_tecnico, arquivado_em, created_at");
       let list = ((avals ?? []) as unknown) as _AvaliacaoRow[];
-      if (clienteId && list.length) {
+
+      // Filtra por cliente e/ou período (mes/ano) via join com ordens_servico
+      const precisaFiltrarOS = Boolean(clienteId || mes || ano);
+      if (precisaFiltrarOS && list.length) {
         const numeros = Array.from(new Set(list.map((a) => a.numero_os)));
-        const { data: os } = await supabase
-          .from("ordens_servico")
-          .select("numero, cliente_id")
-          .eq("cliente_id", clienteId)
-          .in("numero", numeros);
-        const allowed = new Set(((os ?? []) as Array<{ numero: string }>).map((o) => o.numero));
+        // paginar in() para evitar limites do PostgREST
+        const CHUNK = 500;
+        const allowed = new Set<string>();
+        for (let i = 0; i < numeros.length; i += CHUNK) {
+          const slice = numeros.slice(i, i + CHUNK);
+          let q = supabase
+            .from("ordens_servico")
+            .select("numero, cliente_id, mes, ano")
+            .in("numero", slice);
+          if (clienteId) q = q.eq("cliente_id", clienteId);
+          if (mes) q = q.eq("mes", mes);
+          if (ano) q = q.eq("ano", ano);
+          const { data: os } = await q;
+          ((os ?? []) as Array<{ numero: string }>).forEach((o) => allowed.add(o.numero));
+        }
         list = list.filter((a) => allowed.has(a.numero_os));
-      } else if (!clienteId && list.length) {
-        // Visão geral: mantém todas
       }
       if (!cancelled) {
         setItems(list);
@@ -814,7 +828,7 @@ export function SatisfacaoCliente({
     return () => {
       cancelled = true;
     };
-  }, [clienteId, initialItems]);
+  }, [clienteId, mes, ano, initialItems]);
 
   if (loading) {
     return (
@@ -825,17 +839,26 @@ export function SatisfacaoCliente({
     );
   }
 
-  // Filtra apenas avaliações do mês atual (usa arquivado_em, senão created_at)
+  // Quando mes/ano vêm do seletor da página, a filtragem já foi feita no join com ordens_servico.
+  // Caso contrário (nenhum período informado), mantém o comportamento antigo (mês atual pela data da avaliação).
   const now = new Date();
-  const mesAtual = now.getMonth();
-  const anoAtual = now.getFullYear();
-  const itemsMes = items.filter((a) => {
-    const dt = a.arquivado_em ?? a.created_at;
-    if (!dt) return false;
-    const d = new Date(dt);
-    return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
-  });
-  const nomeMes = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  let itemsMes: _AvaliacaoRow[];
+  let nomeMes: string;
+  if (mes || ano) {
+    itemsMes = items;
+    const mesLabel = mes ? mes.charAt(0).toUpperCase() + mes.slice(1) : "";
+    nomeMes = [mesLabel, ano].filter(Boolean).join(" / ");
+  } else {
+    const mesAtual = now.getMonth();
+    const anoAtual = now.getFullYear();
+    itemsMes = items.filter((a) => {
+      const dt = a.arquivado_em ?? a.created_at;
+      if (!dt) return false;
+      const d = new Date(dt);
+      return d.getMonth() === mesAtual && d.getFullYear() === anoAtual;
+    });
+    nomeMes = now.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+  }
 
   if (itemsMes.length === 0) {
     return (
@@ -845,7 +868,7 @@ export function SatisfacaoCliente({
           <p className="text-xs text-muted-foreground capitalize">{nomeMes}</p>
         </CardHeader>
         <CardContent className="py-10 text-center text-sm text-muted-foreground">
-          Nenhuma avaliação neste mês.
+          Nenhuma avaliação registrada em {nomeMes}.
         </CardContent>
       </Card>
     );
