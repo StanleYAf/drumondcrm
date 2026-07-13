@@ -407,17 +407,30 @@ export default function ManutencaoBoletim() {
       rightBlocks.push(
         <div key="plan" className="rounded-lg p-5 text-white" style={{ backgroundColor: "#2563eb" }}>
           <h2 className="text-sm font-bold tracking-wider mb-4 border-b border-white/30 pb-2">PLANEJAMENTO PRÓXIMO MÊS</h2>
-          <LinhaValor label="Preventivas de Eng. Clínica" value={ov("plan.preventivas", 0)} />
+          <LinhaValor
+            label={soPredial ? "Preventivas de Eng. Predial" : "Preventivas de Eng. Clínica"}
+            value={ov("plan.preventivas", 0)}
+          />
           <LinhaValor label="Calibrações" value={ov("plan.calibracoes", 0)} />
           <LinhaValor label="Teste de Segurança Elétrica" value={ov("plan.testeSegEletrica", 0)} />
         </div>
       );
     }
     if (sections.gestao) {
+      const reincLabel = soPredial
+        ? "Reincidências na Eng. Predial"
+        : soClinica
+          ? "Reincidências na Eng. Clínica"
+          : "Reincidências (Clínica + Predial)";
+      const reincValue = soPredial
+        ? stats.reincidenciasPred
+        : soClinica
+          ? stats.reincidenciasEng
+          : stats.reincidencias;
       rightBlocks.push(
         <div key="gs" className="rounded-lg p-5 text-white" style={{ backgroundColor: "#2563eb" }}>
           <h2 className="text-sm font-bold tracking-wider mb-4 border-b border-white/30 pb-2">GESTÃO DE SERVIÇO</h2>
-          <LinhaValor label="Reincidências na Eng. Clínica" value={stats.reincidencias} />
+          <LinhaValor label={reincLabel} value={reincValue} />
           <div className="mt-4 mb-2 text-xs font-semibold opacity-90">OSs de corretiva pendentes {ano}</div>
           {stats.pendentesPorEstado.map(p => (
             <LinhaValor key={p.estado} label={p.estado} value={p.qtd} />
