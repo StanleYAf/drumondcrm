@@ -262,16 +262,20 @@ export default function ManutencaoBoletim() {
       qtd: ov(`pend.${name}`, corretivas.filter(o => (o.estado || "").trim().toLowerCase() === name.toLowerCase()).length),
     }));
 
-    // Reincidências eng clínica (>= 3 corretivas no mesmo equipamento)
-    const clinicas = corretivas.filter(isClinica);
+    // Reincidências por setor (>= 3 corretivas no mesmo equipamento)
     const groupKey = (o: OS) => o.tag || o.numero_serie || "";
-    const counts: Record<string, number> = {};
-    clinicas.forEach(o => {
-      const k = groupKey(o);
-      if (!k) return;
-      counts[k] = (counts[k] || 0) + 1;
-    });
-    const reincidencias = ov("reincidencias", Object.values(counts).filter(n => n >= 3).length);
+    const reincidenciasSetor = (filtroSetor: (o: OS) => boolean) => {
+      const counts: Record<string, number> = {};
+      corretivas.filter(filtroSetor).forEach(o => {
+        const k = groupKey(o);
+        if (!k) return;
+        counts[k] = (counts[k] || 0) + 1;
+      });
+      return Object.values(counts).filter(n => n >= 3).length;
+    };
+    const reincidenciasEng = reincidenciasSetor(isClinica);
+    const reincidenciasPred = reincidenciasSetor(isPredial);
+    const reincidencias = ov("reincidencias", reincidenciasEng + reincidenciasPred);
 
     // Parque tecnológico: 100% automático a partir das OS do setor
     // Total = TAG/nº série únicos que aparecem em qualquer OS do setor
@@ -315,6 +319,8 @@ export default function ManutencaoBoletim() {
       eng, pred,
       pendentesPorEstado,
       reincidencias,
+      reincidenciasEng,
+      reincidenciasPred,
       engParque,
       predParque,
       corretivasPorUnidade: groupByLoc(corretivas),
