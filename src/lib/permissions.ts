@@ -9,13 +9,17 @@ export type PermCode =
   | "com_vendas"
   | "com_posvenda"
   | "com_relatorios"
+  | "com_demandas"
   | "eng_dashboard"
   | "eng_clientes"
   | "eng_os"
   | "eng_boletim"
   | "eng_synclogs"
+  | "eng_cronograma"
+  | "eng_demandas"
   | "est_estoque"
   | "fin_dashboard"
+  | "fin_demandas"
   | "adm_contratos"
   | "adm_art";
 
@@ -44,6 +48,7 @@ export const PERM_GROUPS: PermGroup[] = [
       { code: "com_vendas",      label: "Vendas",       desc: "Pipeline e leads" },
       { code: "com_posvenda",    label: "Pós-venda",    desc: "Contatos pós-venda" },
       { code: "com_relatorios",  label: "Relatórios",   desc: "Exportações e análises" },
+      { code: "com_demandas",    label: "Demandas",     desc: "Kanban de demandas comerciais" },
     ],
   },
   {
@@ -55,6 +60,9 @@ export const PERM_GROUPS: PermGroup[] = [
       { code: "eng_os",        label: "OS",         desc: "Ordens de serviço" },
       { code: "eng_boletim",   label: "Boletim",    desc: "Boletim técnico" },
       { code: "eng_synclogs",  label: "Sync Logs",  desc: "Logs de sincronização" },
+      { code: "eng_cronograma",label: "Cronograma", desc: "Cronograma de equipamentos" },
+      { code: "eng_demandas",  label: "Demandas",   desc: "Kanban de demandas de engenharia" },
+      { code: "adm_art",       label: "ART",        desc: "Controle de vencimento de ART" },
     ],
   },
   {
@@ -69,6 +77,7 @@ export const PERM_GROUPS: PermGroup[] = [
     title: "Financeiro",
     items: [
       { code: "fin_dashboard", label: "Dashboard", desc: "Painel financeiro" },
+      { code: "fin_demandas",  label: "Demandas",  desc: "Kanban de demandas financeiras" },
     ],
   },
   {
@@ -76,16 +85,15 @@ export const PERM_GROUPS: PermGroup[] = [
     title: "Administrativo",
     items: [
       { code: "adm_contratos", label: "Contratos", desc: "Gestão de contratos" },
-      { code: "adm_art", label: "ART", desc: "Controle de vencimento de ART" },
     ],
   },
 ];
 
 const COMERCIAL_PERMS: PermCode[] = [
-  "com_dashboard", "com_lancamentos", "com_indicadores", "com_vendas", "com_posvenda", "com_relatorios",
+  "com_dashboard", "com_lancamentos", "com_indicadores", "com_vendas", "com_posvenda", "com_relatorios", "com_demandas",
 ];
 const ENGENHARIA_PERMS: PermCode[] = [
-  "eng_dashboard", "eng_os", "eng_boletim",
+  "eng_dashboard", "eng_os", "eng_boletim", "eng_clientes", "eng_synclogs", "eng_cronograma", "eng_demandas", "adm_art",
 ];
 const ALL_PERMS: PermCode[] = PERM_GROUPS.flatMap(g => g.items.map(i => i.code));
 
