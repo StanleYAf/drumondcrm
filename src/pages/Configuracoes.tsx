@@ -5,12 +5,21 @@ import { useTheme, accentMap, type AccentColor, type ThemeMode } from "@/lib/the
 import { CATEGORIA_LABELS, type Categoria, type AppData } from "@/lib/types";
 import { applyCurrencyMask, parseCurrencyMask, numberToCurrencyMask } from "@/lib/currencyMask";
 import { supabase } from "@/integrations/supabase/client";
-import { Trash2, Plus, Download, Upload, AlertTriangle, Sun, Moon, Check, User, Shield, Users, Search, Clock, CheckCircle, XCircle } from "lucide-react";
+import { Trash2, Plus, Download, Upload, AlertTriangle, Sun, Moon, Check, User, Shield, Users, Search, Clock, CheckCircle, XCircle, Briefcase, Stethoscope, Boxes, DollarSign, Landmark } from "lucide-react";
 import { ConfigSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { PushNotificationsCard } from "@/components/PushNotificationsCard";
 import { toast } from "sonner";
 import { PERM_GROUPS } from "@/lib/permissions";
+import type { PermGroupKey } from "@/lib/permissions";
+
+const GROUP_ICONS: Record<PermGroupKey, any> = {
+  comercial: Briefcase,
+  engenharia: Stethoscope,
+  estoque: Boxes,
+  financeiro: DollarSign,
+  administrativo: Landmark,
+};
 
 const SPECIAL_CARGOS = [
   { value: "admin", label: "Admin", desc: "Acesso completo a todos os módulos" },
@@ -40,13 +49,29 @@ interface ProfileRow {
   created_at: string;
 }
 
-function UserRow({ u, user, savingUserId, onApprove, onRevoke, onReject, onToggleCargo }: {
+function UserRow({ u, user, savingUserId, permQuery, onApprove, onRevoke, onReject, onToggleCargo }: {
   u: ProfileRow; user: any; savingUserId: string | null;
+  permQuery: string;
   onApprove: (id: string) => void; onRevoke: (id: string) => void; onReject: (id: string) => void;
   onToggleCargo: (id: string, cargo: string) => void;
 }) {
   const userCargos = u.cargo ? u.cargo.split(",").map(c => c.trim()) : [];
   const isUserAdmin = userCargos.includes("admin");
+  const q = permQuery.trim().toLowerCase();
+  const filteredGroups = PERM_GROUPS.map(g => ({
+    ...g,
+    items: q
+      ? g.items.filter(i =>
+          i.label.toLowerCase().includes(q) ||
+          i.desc.toLowerCase().includes(q) ||
+          i.code.toLowerCase().includes(q) ||
+          g.title.toLowerCase().includes(q))
+      : g.items,
+  })).filter(g => g.items.length > 0);
+  const totalPerms = PERM_GROUPS.reduce((acc, g) => acc + g.items.length, 0);
+  const activePerms = isUserAdmin
+    ? totalPerms
+    : PERM_GROUPS.reduce((acc, g) => acc + g.items.filter(i => userCargos.includes(i.code)).length, 0);
   return (
     <div className="p-4 border-b border-border/30 last:border-0 space-y-3">
       <div className="flex items-center justify-between">
@@ -63,8 +88,8 @@ function UserRow({ u, user, savingUserId, onApprove, onRevoke, onReject, onToggl
             </p>
             <p className="text-[11px] text-muted-foreground">
               Desde {new Date(u.created_at).toLocaleDateString("pt-BR")}
-              {userCargos.length > 0 && (
-                <span className="ml-1.5">· {userCargos.length} permissão{userCargos.length > 1 ? "ões" : ""}</span>
+              {u.aprovado && (
+                <span className="ml-1.5">· {activePerms}/{totalPerms} permissões{isUserAdmin ? " (admin)" : ""}</span>
               )}
             </p>
           </div>
@@ -115,9 +140,21 @@ function UserRow({ u, user, savingUserId, onApprove, onRevoke, onReject, onToggl
             </p>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {PERM_GROUPS.map(g => (
+            {filteredGroups.map(g => {
+              const Icon = GROUP_ICONS[g.key];
+              const groupTotal = PERM_GROUPS.find(x => x.key === g.key)!.items.length;
+              const groupActive = isUserAdmin
+                ? groupTotal
+                : PERM_GROUPS.find(x => x.key === g.key)!.items.filter(i => userCargos.includes(i.code)).length;
+              return (
               <div key={g.key} className="rounded-xl border border-border/40 p-3 bg-muted/30">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{g.title}</p>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Icon className="h-3.5 w-3.5 text-primary" />
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{g.title}</p>
+                  </div>
+                  <span className="text-[10px] font-semibold text-muted-foreground tabular-nums">{groupActive}/{groupTotal}</span>
+                </div>
                 <div className="space-y-1.5">
                   {g.items.map(item => {
                     const isSelected = isUserAdmin || userCargos.includes(item.code);
@@ -132,13 +169,19 @@ function UserRow({ u, user, savingUserId, onApprove, onRevoke, onReject, onToggl
                           onChange={() => onToggleCargo(u.user_id, item.code)}
                           className="h-3.5 w-3.5 rounded border-border accent-primary"
                         />
-                        <span className={isSelected ? "font-medium" : ""}>{item.label}</span>
+                        <span className={isSelected ? "font-medium" : ""} title={item.desc}>{item.label}</span>
                       </label>
                     );
                   })}
                 </div>
               </div>
-            ))}
+              );
+            })}
+            {filteredGroups.length === 0 && (
+              <p className="col-span-full text-[12px] text-muted-foreground italic text-center py-2">
+                Nenhuma permissão corresponde à busca.
+              </p>
+            )}
           </div>
         </div>
       )}
@@ -166,6 +209,7 @@ export default function Configuracoes() {
   const [allUsers, setAllUsers] = useState<ProfileRow[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [userSearch, setUserSearch] = useState("");
+  const [permSearch, setPermSearch] = useState("");
   const [savingUserId, setSavingUserId] = useState<string | null>(null);
 
   const isAdmin = hasCargo("admin");
