@@ -582,12 +582,20 @@ export default function ManutencaoBoletim() {
                     </AjustesGrupo>
                   )}
                   <AjustesGrupo titulo="Planejamento próximo mês">
-                    <AjusteInput label="Preventivas de Eng. Clínica" k="plan.preventivas" value={Number(ov("plan.preventivas", 0))} overrides={dataOverrides} onChange={setOv} />
+                    <AjusteInput
+                      label={soPredial ? "Preventivas de Eng. Predial" : "Preventivas de Eng. Clínica"}
+                      k="plan.preventivas" value={Number(ov("plan.preventivas", 0))} overrides={dataOverrides} onChange={setOv}
+                    />
                     <AjusteInput label="Calibrações" k="plan.calibracoes" value={Number(ov("plan.calibracoes", 0))} overrides={dataOverrides} onChange={setOv} />
                     <AjusteInput label="Teste de Segurança Elétrica" k="plan.testeSegEletrica" value={Number(ov("plan.testeSegEletrica", 0))} overrides={dataOverrides} onChange={setOv} />
                   </AjustesGrupo>
                   <AjustesGrupo titulo="Gestão de serviço">
-                    <AjusteInput label="Reincidências na Eng. Clínica" k="reincidencias" value={stats.reincidencias} overrides={dataOverrides} onChange={setOv} />
+                    <AjusteInput
+                      label={soPredial ? "Reincidências na Eng. Predial" : soClinica ? "Reincidências na Eng. Clínica" : "Reincidências (Clínica + Predial)"}
+                      k="reincidencias"
+                      value={soPredial ? stats.reincidenciasPred : soClinica ? stats.reincidenciasEng : stats.reincidencias}
+                      overrides={dataOverrides} onChange={setOv}
+                    />
                     {stats.pendentesPorEstado.map((p) => (
                       <AjusteInput key={p.estado} label={`Pendente: ${p.estado}`} k={`pend.${p.estado}`} value={p.qtd} overrides={dataOverrides} onChange={setOv} />
                     ))}
