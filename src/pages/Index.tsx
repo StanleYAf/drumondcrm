@@ -255,6 +255,49 @@ export default function Dashboard() {
     return row;
   });
 
+  // ===== Ticket Médio (mês selecionado) =====
+  const allItemsMonth = [
+    ...itemsByMonth(data.lancamentos.produtos, currentMonth, currentYear, vendedorParam),
+    ...itemsByMonth(data.lancamentos.servicos, currentMonth, currentYear, vendedorParam),
+    ...itemsByMonth(data.lancamentos.contratos, currentMonth, currentYear, vendedorParam),
+    ...itemsByMonth(data.lancamentos.acessorios, currentMonth, currentYear, vendedorParam),
+  ];
+  const qtdLancamentos = allItemsMonth.length;
+  const ticketMedio = qtdLancamentos > 0 ? totalGeral / qtdLancamentos : 0;
+
+  const allItemsCompMonth = compareMode !== "none" ? [
+    ...itemsByMonth(data.lancamentos.produtos, compMonth, compYear, vendedorParam),
+    ...itemsByMonth(data.lancamentos.servicos, compMonth, compYear, vendedorParam),
+    ...itemsByMonth(data.lancamentos.contratos, compMonth, compYear, vendedorParam),
+    ...itemsByMonth(data.lancamentos.acessorios, compMonth, compYear, vendedorParam),
+  ] : [];
+  const ticketMedioComp = allItemsCompMonth.length > 0
+    ? allItemsCompMonth.reduce((s, i) => s + i.valor, 0) / allItemsCompMonth.length
+    : 0;
+
+  // ===== Comissões: evolução mensal (apenas lançamentos pagos = recebidas) =====
+  const CAT_KEYS: { cat: Categoria; arr: keyof typeof data.lancamentos }[] = [
+    { cat: "produto", arr: "produtos" },
+    { cat: "servico", arr: "servicos" },
+    { cat: "contrato", arr: "contratos" },
+    { cat: "acessorio", arr: "acessorios" },
+  ];
+  const comissoesChartData = MESES.map((mesNome, i) => {
+    let recebidas = 0;
+    let previstas = 0;
+    CAT_KEYS.forEach(({ cat, arr }) => {
+      const items = itemsByMonth(data.lancamentos[arr] as Lancamento[], i, currentYear, vendedorParam);
+      items.forEach((l) => {
+        const c = calcularComissao(cat, l.valor, l.custos ?? 0);
+        previstas += c;
+        if (l.paid) recebidas += c;
+      });
+    });
+    return { mes: mesNome.substring(0, 3), Recebidas: recebidas, Previstas: previstas };
+  });
+  const comissoesRecebidasMes = comissoesChartData[currentMonth]?.Recebidas ?? 0;
+  const comissoesRecebidasAno = comissoesChartData.reduce((s, r) => s + r.Recebidas, 0);
+
   if (loading) return <DashboardSkeleton />;
   if (error) return <ErrorState message={error} onRetry={() => window.location.reload()} />;
 
