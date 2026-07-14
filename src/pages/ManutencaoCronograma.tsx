@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/authContext";
 import { toast } from "sonner";
 import {
-  Plus, Pencil, Power, X, CalendarClock, ListChecks, Clock, CheckCircle2, Trash2,
+  Plus, Pencil, Power, X, CalendarClock, ListChecks, Clock, CheckCircle2, Trash2, Printer, LayoutGrid, List,
 } from "lucide-react";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
@@ -78,6 +78,8 @@ export default function ManutencaoCronograma() {
   const [filtroStatus, setFiltroStatus] = useState<"" | "Ativo" | "Desativado">("");
   const [filtroPeriodicidade, setFiltroPeriodicidade] = useState<string>("");
   const [filtroTipo, setFiltroTipo] = useState<"" | TipoServico>("");
+  const [filtroMes, setFiltroMes] = useState<number>(0); // 0 = todos
+  const [viewMode, setViewMode] = useState<"grade" | "lista">("grade");
 
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState<Equipamento | null>(null);
@@ -160,6 +162,19 @@ export default function ManutencaoCronograma() {
 
   const kpis = useMemo(() => {
     const ativos = equipamentos.filter(e => e.status !== "Desativado");
+    if (filtroMes > 0) {
+      const doMes = planejamentos.filter(p => p.mes === filtroMes);
+      const planejadosMes = doMes.filter(p => p.status === "planejado").length;
+      const adiadosMes = doMes.filter(p => p.status === "adiada").length;
+      const execMes = doMes.filter(p => p.status === "executado").length;
+      const pctMes = doMes.length === 0 ? 0 : Math.round((execMes / doMes.length) * 100);
+      return {
+        equipamentos: ativos.length,
+        modo: "mes" as const,
+        planejadosMes, adiadosMes, execMes, pctMes,
+        noMes: 0, adiados: 0, pct: 0,
+      };
+    }
     const mesAtual = new Date().getMonth() + 1;
     const anoAtual = new Date().getFullYear();
     const noMes = ano === anoAtual
@@ -169,8 +184,8 @@ export default function ManutencaoCronograma() {
     const totalAno = planejamentos.length;
     const execAno = planejamentos.filter(p => p.status === "executado").length;
     const pct = totalAno === 0 ? 0 : Math.round((execAno / totalAno) * 100);
-    return { equipamentos: ativos.length, noMes, adiados, pct };
-  }, [equipamentos, planejamentos, ano]);
+    return { equipamentos: ativos.length, modo: "ano" as const, noMes, adiados, pct, planejadosMes: 0, adiadosMes: 0, execMes: 0, pctMes: 0 };
+  }, [equipamentos, planejamentos, ano, filtroMes]);
 
   function resetForm() {
     setShowForm(false); setEditItem(null);
@@ -253,6 +268,14 @@ export default function ManutencaoCronograma() {
     if (error) { toast.error("Erro ao adicionar: " + error.message); return; }
     await fetchGrade();
   }
+  async function addPlans(equipamento_id: string, mes: number, tipos: TipoServico[], status: StatusPlan) {
+    if (tipos.length === 0) return;
+    const rows = tipos.map(tipo_servico => ({ equipamento_id, ano, mes, tipo_servico, status }));
+    const { error } = await supabase.from("cronograma_planejamento").insert(rows);
+    if (error) { toast.error("Erro ao adicionar: " + error.message); return; }
+    toast.success(tipos.length === 1 ? "Serviço adicionado" : `${tipos.length} serviços adicionados`);
+    await fetchGrade();
+  }
   async function updatePlanStatus(id: string, status: StatusPlan) {
     const { error } = await supabase.from("cronograma_planejamento").update({ status }).eq("id", id);
     if (error) { toast.error("Erro ao atualizar"); return; }
@@ -271,6 +294,13 @@ export default function ManutencaoCronograma() {
 
   const anoAtual = new Date().getFullYear();
   const anosOptions = Array.from({ length: 7 }, (_, i) => anoAtual - 3 + i);
+  const mesAtualIdx = new Date().getMonth(); // 0-11
+  const MESES_FULL = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  function handleSetFiltroMes(m: number) {
+    setFiltroMes(m);
+    if (m > 0) setViewMode("lista");
+    else setViewMode("grade");
+  }
 
   return (
     <div className="p-6 space-y-6 bg-[#F8FAFC] min-h-screen">
@@ -293,6 +323,24 @@ export default function ManutencaoCronograma() {
             <select value={ano} onChange={e => setAno(Number(e.target.value))} className="h-10 px-3 rounded-[10px] text-sm border border-[#E2E8F0] bg-white text-[#0F172A]">
               {anosOptions.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
+          </div>
+          <div>
+            <div className="text-[11px] uppercase tracking-wider text-[#64748B] mb-1">Mês</div>
+            <select value={filtroMes} onChange={e => handleSetFiltroMes(Number(e.target.value))} className="h-10 px-3 rounded-[10px] text-sm border border-[#E2E8F0] bg-white text-[#0F172A]">
+              <option value={0}>Todos os meses</option>
+              {MESES_FULL.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+            </select>
+          </div>
+          <div>
+            <div className="text-[11px] uppercase tracking-wider text-[#64748B] mb-1">Visualização</div>
+            <div className="inline-flex h-10 rounded-[10px] border border-[#E2E8F0] bg-white overflow-hidden">
+              <button type="button" onClick={() => setViewMode("grade")} className={`px-3 text-xs font-medium inline-flex items-center gap-1.5 ${viewMode === "grade" ? "bg-[#1F4E79] text-white" : "text-[#475569] hover:bg-[#F1F5F9]"}`}>
+                <LayoutGrid className="h-3.5 w-3.5" /> Grade Anual
+              </button>
+              <button type="button" onClick={() => setViewMode("lista")} className={`px-3 text-xs font-medium inline-flex items-center gap-1.5 ${viewMode === "lista" ? "bg-[#1F4E79] text-white" : "text-[#475569] hover:bg-[#F1F5F9]"}`}>
+                <List className="h-3.5 w-3.5" /> Lista Mensal
+              </button>
+            </div>
           </div>
           <button onClick={openNew} className="h-10 px-5 rounded-[10px] text-sm font-medium text-white inline-flex items-center gap-2 hover:brightness-110" style={{ background: "#1F4E79" }}>
             <Plus className="h-4 w-4" /> Novo Equipamento
@@ -322,9 +370,19 @@ export default function ManutencaoCronograma() {
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard icon={<ListChecks className="h-5 w-5" />} color="#1F4E79" label="Equipamentos Ativos" value={kpis.equipamentos} />
-        <KpiCard icon={<CalendarClock className="h-5 w-5" />} color="#0F766E" label="Planejados no Mês" value={kpis.noMes} />
-        <KpiCard icon={<Clock className="h-5 w-5" />} color="#C2410C" label="Adiados no Ano" value={kpis.adiados} />
-        <KpiCard icon={<CheckCircle2 className="h-5 w-5" />} color="#15803D" label="% Executado no Ano" value={`${kpis.pct}%`} />
+        {kpis.modo === "mes" ? (
+          <>
+            <KpiCard icon={<CalendarClock className="h-5 w-5" />} color="#0F766E" label={`Planejados em ${MESES_FULL[filtroMes - 1]}`} value={kpis.planejadosMes} />
+            <KpiCard icon={<Clock className="h-5 w-5" />} color="#C2410C" label={`Adiados em ${MESES_FULL[filtroMes - 1]}`} value={kpis.adiadosMes} />
+            <KpiCard icon={<CheckCircle2 className="h-5 w-5" />} color="#15803D" label={`% Executado em ${MESES_FULL[filtroMes - 1]}`} value={`${kpis.pctMes}%`} />
+          </>
+        ) : (
+          <>
+            <KpiCard icon={<CalendarClock className="h-5 w-5" />} color="#0F766E" label="Planejados no Mês" value={kpis.noMes} />
+            <KpiCard icon={<Clock className="h-5 w-5" />} color="#C2410C" label="Adiados no Ano" value={kpis.adiados} />
+            <KpiCard icon={<CheckCircle2 className="h-5 w-5" />} color="#15803D" label="% Executado no Ano" value={`${kpis.pct}%`} />
+          </>
+        )}
       </div>
 
       {/* Filtros */}
@@ -351,8 +409,18 @@ export default function ManutencaoCronograma() {
       {/* Grade */}
       <div className="rounded-2xl bg-white border border-[#E2E8F0] overflow-hidden">
         <div className="px-5 py-4 border-b border-[#E2E8F0] flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[#0F172A]">Cronograma {ano}</h2>
-          <span className="text-xs text-[#64748B]">{filtered.length} equipamento(s)</span>
+          <h2 className="text-sm font-semibold text-[#0F172A]">
+            Cronograma {ano}
+            {viewMode === "lista" && filtroMes > 0 && <span className="text-[#64748B] font-normal"> — {MESES_FULL[filtroMes - 1]}</span>}
+          </h2>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-[#64748B]">{filtered.length} equipamento(s)</span>
+            {viewMode === "lista" && (
+              <button onClick={() => window.print()} className="h-8 px-3 rounded-md text-xs font-medium text-white inline-flex items-center gap-1.5 print:hidden" style={{ background: "#1F4E79" }}>
+                <Printer className="h-3.5 w-3.5" /> Exportar PDF
+              </button>
+            )}
+          </div>
         </div>
         {loadingGrade ? (
           <div className="p-10 text-center text-sm text-[#64748B]">Carregando...</div>
@@ -370,6 +438,16 @@ export default function ManutencaoCronograma() {
               </button>
             )}
           </div>
+        ) : viewMode === "lista" ? (
+          <ListaMensal
+            equipamentos={filtered}
+            planejamentos={planejamentos}
+            mes={filtroMes > 0 ? filtroMes : mesAtualIdx + 1}
+            ano={ano}
+            onAddPlans={addPlans}
+            onUpdate={updatePlanStatus}
+            onRemove={removePlan}
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-separate" style={{ borderSpacing: 0 }}>
@@ -378,11 +456,14 @@ export default function ManutencaoCronograma() {
                   <th className="text-left px-3 py-3 sticky left-0 z-20 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[220px]">Equipamento</th>
                   <th className="text-left px-3 py-3 sticky z-20 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[160px]" style={{ left: 220 }}>Localização</th>
                   <th className="text-left px-3 py-3 sticky z-20 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[120px]" style={{ left: 380 }}>Periodicidade</th>
-                  {MESES.map((m, i) => (
-                    <th key={m} className="text-center px-2 py-3 border-b border-[#E2E8F0] min-w-[80px]">
-                      {m}{(new Date().getMonth() === i && ano === anoAtual) && <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-[#50B9EC]" />}
-                    </th>
-                  ))}
+                  {MESES.map((m, i) => {
+                    const isCurrent = i === mesAtualIdx && ano === anoAtual;
+                    return (
+                      <th key={m} className={`text-center px-2 py-3 border-b border-[#E2E8F0] min-w-[80px] ${isCurrent ? "bg-[#EAF4FD]" : ""}`}>
+                        {m}{isCurrent && <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-[#50B9EC]" />}
+                      </th>
+                    );
+                  })}
                   <th className="text-right px-3 py-3 sticky right-0 z-20 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[90px]">Ações</th>
                 </tr>
               </thead>
@@ -404,14 +485,15 @@ export default function ManutencaoCronograma() {
                       {MESES.map((_, i) => {
                         const mes = i + 1;
                         const items = plansByCell.get(`${eq.id}:${mes}`) || [];
+                        const isCurrent = i === mesAtualIdx && ano === anoAtual;
                         return (
-                          <td key={mes} className="px-1 py-1 border-b border-[#F1F5F9] align-middle">
+                          <td key={mes} className={`px-1 py-1 border-b border-[#F1F5F9] align-middle ${isCurrent ? "bg-[#EAF4FD]/40" : ""}`}>
                             <CellPopover
                               equipamentoId={eq.id}
                               mes={mes}
                               items={items}
                               destaqueTipo={filtroTipo || null}
-                              onAdd={addPlan}
+                              onAddPlans={addPlans}
                               onUpdate={updatePlanStatus}
                               onRemove={removePlan}
                             />
@@ -485,6 +567,12 @@ export default function ManutencaoCronograma() {
         .form-input { width: 100%; height: 40px; padding: 0 12px; border: 1px solid #E2E8F0; border-radius: 10px; background: white; font-size: 14px; color: #0F172A; outline: none; transition: border-color .15s; }
         select.form-input { appearance: auto; }
         .form-input:focus { border-color: #50B9EC; box-shadow: 0 0 0 3px rgba(80,185,236,0.15); }
+        @media print {
+          body * { visibility: hidden; }
+          .print-area, .print-area * { visibility: visible; }
+          .print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+          .print\\:hidden { display: none !important; }
+        }
       `}</style>
     </div>
   );
@@ -523,25 +611,40 @@ function ToggleField({ label, checked, onChange }: { label: string; checked: boo
 }
 
 function CellPopover({
-  equipamentoId, mes, items, destaqueTipo, onAdd, onUpdate, onRemove,
+  equipamentoId, mes, items, destaqueTipo, onAddPlans, onUpdate, onRemove,
 }: {
   equipamentoId: string;
   mes: number;
   items: Planejamento[];
   destaqueTipo: TipoServico | null;
-  onAdd: (eq: string, mes: number, tipo: TipoServico, status: StatusPlan) => void;
+  onAddPlans: (eq: string, mes: number, tipos: TipoServico[], status: StatusPlan) => void;
   onUpdate: (id: string, status: StatusPlan) => void;
   onRemove: (id: string) => void;
 }) {
-  const [tipo, setTipo] = useState<TipoServico>("P");
   const [status, setStatus] = useState<StatusPlan>("planejado");
+  const [selecionados, setSelecionados] = useState<Record<TipoServico, boolean>>({
+    P: false, C: false, T: false, Q: false, AA: false, V: false,
+  });
+  const toggle = (k: TipoServico) => setSelecionados(prev => ({ ...prev, [k]: !prev[k] }));
+  const setCombo = (keys: TipoServico[]) => {
+    const next = { P: false, C: false, T: false, Q: false, AA: false, V: false } as Record<TipoServico, boolean>;
+    keys.forEach(k => { next[k] = true; });
+    setSelecionados(next);
+  };
+  const handleAdd = () => {
+    const tipos = (Object.keys(selecionados) as TipoServico[]).filter(k => selecionados[k]);
+    if (tipos.length === 0) return;
+    onAddPlans(equipamentoId, mes, tipos, status);
+    setSelecionados({ P: false, C: false, T: false, Q: false, AA: false, V: false });
+  };
+  const anySel = (Object.keys(selecionados) as TipoServico[]).some(k => selecionados[k]);
 
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button className="group w-full min-h-[36px] rounded-md hover:bg-[#EAF4FD] transition flex items-center justify-center gap-1 flex-wrap px-1 py-1">
           {items.length === 0 ? (
-            <span className="text-[#CBD5E1] opacity-0 group-hover:opacity-100 text-lg leading-none">+</span>
+            <span className="text-[#94A3B8] opacity-40 group-hover:opacity-100 text-lg leading-none">+</span>
           ) : (
             items.map(p => {
               const t = TIPO_MAP[p.tipo_servico];
@@ -566,7 +669,7 @@ function CellPopover({
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="center" className="w-[280px] p-3">
+      <PopoverContent align="center" className="w-[320px] p-3">
         <div className="text-[11px] uppercase tracking-wider text-[#64748B] font-semibold mb-2">
           {MESES[mes - 1]} — Serviços
         </div>
@@ -591,18 +694,168 @@ function CellPopover({
           </ul>
         )}
         <div className="border-t border-[#E2E8F0] pt-3">
-          <div className="text-[11px] uppercase tracking-wider text-[#64748B] font-semibold mb-2">Adicionar serviço</div>
+          <div className="text-[11px] uppercase tracking-wider text-[#64748B] font-semibold mb-2">Adicionar serviço(s)</div>
+          <div className="flex flex-wrap gap-1 mb-2">
+            {[
+              { label: "P",   keys: ["P"] as TipoServico[] },
+              { label: "PT",  keys: ["P", "T"] as TipoServico[] },
+              { label: "PC",  keys: ["P", "C"] as TipoServico[] },
+              { label: "PTC", keys: ["P", "T", "C"] as TipoServico[] },
+            ].map(c => (
+              <button key={c.label} type="button" onClick={() => setCombo(c.keys)} className="h-7 px-2 rounded-md text-[11px] font-semibold border border-[#E2E8F0] bg-[#F8FAFC] text-[#1F4E79] hover:bg-[#EAF4FD]">
+                {c.label}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-1.5 mb-2">
+            {TIPOS.map(t => (
+              <label key={t.key} className={`flex items-center gap-1.5 h-8 px-2 rounded-md border cursor-pointer text-[11px] ${selecionados[t.key] ? "border-[#1F4E79] bg-[#EAF4FD]" : "border-[#E2E8F0] bg-white"}`}>
+                <input type="checkbox" checked={selecionados[t.key]} onChange={() => toggle(t.key)} className="h-3.5 w-3.5 accent-[#1F4E79]" />
+                <span className="font-bold" style={{ color: t.color }}>{t.key}</span>
+              </label>
+            ))}
+          </div>
           <div className="flex items-center gap-1.5">
-            <select value={tipo} onChange={e => setTipo(e.target.value as TipoServico)} className="h-8 px-2 rounded-md text-xs border border-[#E2E8F0] bg-white text-[#0F172A]">
-              {TIPOS.map(t => <option key={t.key} value={t.key}>{t.key} — {t.label}</option>)}
-            </select>
-            <select value={status} onChange={e => setStatus(e.target.value as StatusPlan)} className="h-8 px-2 rounded-md text-xs border border-[#E2E8F0] bg-white text-[#0F172A]">
+            <select value={status} onChange={e => setStatus(e.target.value as StatusPlan)} className="flex-1 h-8 px-2 rounded-md text-xs border border-[#E2E8F0] bg-white text-[#0F172A]">
               {STATUS_PLAN.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
             </select>
-            <button onClick={() => onAdd(equipamentoId, mes, tipo, status)} className="h-8 px-3 rounded-md text-xs font-medium text-white" style={{ background: "#1F4E79" }}>
-              Add
+            <button onClick={handleAdd} disabled={!anySel} className="h-8 px-3 rounded-md text-xs font-medium text-white disabled:opacity-40" style={{ background: "#1F4E79" }}>
+              Adicionar
             </button>
           </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ListaMensal({
+  equipamentos, planejamentos, mes, ano, onAddPlans, onUpdate, onRemove,
+}: {
+  equipamentos: Equipamento[];
+  planejamentos: Planejamento[];
+  mes: number;
+  ano: number;
+  onAddPlans: (eq: string, mes: number, tipos: TipoServico[], status: StatusPlan) => void;
+  onUpdate: (id: string, status: StatusPlan) => void;
+  onRemove: (id: string) => void;
+}) {
+  const MESES_FULL = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  const byEq = new Map<string, Planejamento[]>();
+  for (const p of planejamentos) {
+    if (p.mes !== mes) continue;
+    if (!byEq.has(p.equipamento_id)) byEq.set(p.equipamento_id, []);
+    byEq.get(p.equipamento_id)!.push(p);
+  }
+  return (
+    <div className="print-area">
+      <div className="hidden print:block px-5 py-4 border-b border-[#E2E8F0]">
+        <h1 className="text-lg font-bold text-[#0F172A]">Cronograma de Manutenções — {MESES_FULL[mes - 1]} / {ano}</h1>
+      </div>
+      <div className="divide-y divide-[#F1F5F9]">
+        {equipamentos.map(eq => {
+          const items = byEq.get(eq.id) || [];
+          const desat = eq.status === "Desativado";
+          return (
+            <div key={eq.id} className={`px-5 py-3 flex flex-wrap items-center gap-4 ${desat ? "text-[#94A3B8]" : "text-[#0F172A]"}`}>
+              <div className="min-w-[240px] flex-1">
+                <div className={`text-sm font-medium ${desat ? "line-through" : ""}`}>{eq.equipamento}</div>
+                {(eq.marca || eq.modelo) && <div className="text-[11px] text-[#94A3B8]">{[eq.marca, eq.modelo].filter(Boolean).join(" • ")}</div>}
+              </div>
+              <div className="min-w-[140px] text-xs text-[#475569]">
+                <div className="text-[10px] uppercase tracking-wider text-[#94A3B8]">Localização</div>
+                {eq.localizacao || "—"}
+              </div>
+              <div className="min-w-[110px] text-xs text-[#475569]">
+                <div className="text-[10px] uppercase tracking-wider text-[#94A3B8]">Periodicidade</div>
+                {eq.periodicidade || "—"}
+              </div>
+              <div className="flex-1 min-w-[240px] flex flex-wrap items-center gap-1.5">
+                {items.length === 0 ? (
+                  <span className="text-xs text-[#94A3B8] italic">Sem serviços neste mês</span>
+                ) : items.map(p => {
+                  const t = TIPO_MAP[p.tipo_servico];
+                  const s = STATUS_MAP[p.status];
+                  return (
+                    <span key={p.id} className="inline-flex items-center gap-1 h-7 pl-1.5 pr-1 rounded-md border" style={{ background: t.bg, borderColor: `${t.color}33` }}>
+                      <span className="text-[11px] font-bold" style={{ color: t.color }}>{p.tipo_servico}</span>
+                      <span className="text-[10px] font-medium px-1.5 h-5 rounded inline-flex items-center" style={{ background: s.color, color: "#fff" }}>{s.label}</span>
+                      <select value={p.status} onChange={e => onUpdate(p.id, e.target.value as StatusPlan)} className="h-6 text-[10px] bg-transparent border-0 outline-none print:hidden">
+                        {STATUS_PLAN.map(st => <option key={st.key} value={st.key}>{st.label}</option>)}
+                      </select>
+                      <button onClick={() => onRemove(p.id)} className="h-5 w-5 grid place-items-center rounded text-[#64748B] hover:text-[#EF4444] print:hidden">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+                <div className="print:hidden">
+                  <QuickAddButton onAdd={(tipos, status) => onAddPlans(eq.id, mes, tipos, status)} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function QuickAddButton({ onAdd }: { onAdd: (tipos: TipoServico[], status: StatusPlan) => void }) {
+  const [open, setOpen] = useState(false);
+  const [selecionados, setSelecionados] = useState<Record<TipoServico, boolean>>({
+    P: false, C: false, T: false, Q: false, AA: false, V: false,
+  });
+  const [status, setStatus] = useState<StatusPlan>("planejado");
+  const toggle = (k: TipoServico) => setSelecionados(prev => ({ ...prev, [k]: !prev[k] }));
+  const setCombo = (keys: TipoServico[]) => {
+    const next = { P: false, C: false, T: false, Q: false, AA: false, V: false } as Record<TipoServico, boolean>;
+    keys.forEach(k => { next[k] = true; });
+    setSelecionados(next);
+  };
+  const handleAdd = () => {
+    const tipos = (Object.keys(selecionados) as TipoServico[]).filter(k => selecionados[k]);
+    if (tipos.length === 0) return;
+    onAdd(tipos, status);
+    setSelecionados({ P: false, C: false, T: false, Q: false, AA: false, V: false });
+    setOpen(false);
+  };
+  const anySel = (Object.keys(selecionados) as TipoServico[]).some(k => selecionados[k]);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button className="h-7 px-2 rounded-md text-[11px] font-medium border border-dashed border-[#CBD5E1] text-[#64748B] hover:bg-[#EAF4FD] hover:text-[#1F4E79] inline-flex items-center gap-1">
+          <Plus className="h-3 w-3" /> Adicionar
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[320px] p-3">
+        <div className="flex flex-wrap gap-1 mb-2">
+          {[
+            { label: "P",   keys: ["P"] as TipoServico[] },
+            { label: "PT",  keys: ["P", "T"] as TipoServico[] },
+            { label: "PC",  keys: ["P", "C"] as TipoServico[] },
+            { label: "PTC", keys: ["P", "T", "C"] as TipoServico[] },
+          ].map(c => (
+            <button key={c.label} type="button" onClick={() => setCombo(c.keys)} className="h-7 px-2 rounded-md text-[11px] font-semibold border border-[#E2E8F0] bg-[#F8FAFC] text-[#1F4E79] hover:bg-[#EAF4FD]">
+              {c.label}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-3 gap-1.5 mb-2">
+          {TIPOS.map(t => (
+            <label key={t.key} className={`flex items-center gap-1.5 h-8 px-2 rounded-md border cursor-pointer text-[11px] ${selecionados[t.key] ? "border-[#1F4E79] bg-[#EAF4FD]" : "border-[#E2E8F0] bg-white"}`}>
+              <input type="checkbox" checked={selecionados[t.key]} onChange={() => toggle(t.key)} className="h-3.5 w-3.5 accent-[#1F4E79]" />
+              <span className="font-bold" style={{ color: t.color }}>{t.key}</span>
+            </label>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <select value={status} onChange={e => setStatus(e.target.value as StatusPlan)} className="flex-1 h-8 px-2 rounded-md text-xs border border-[#E2E8F0] bg-white text-[#0F172A]">
+            {STATUS_PLAN.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+          </select>
+          <button onClick={handleAdd} disabled={!anySel} className="h-8 px-3 rounded-md text-xs font-medium text-white disabled:opacity-40" style={{ background: "#1F4E79" }}>
+            Adicionar
+          </button>
         </div>
       </PopoverContent>
     </Popover>
