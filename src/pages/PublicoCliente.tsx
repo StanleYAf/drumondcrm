@@ -342,7 +342,11 @@ export default function PublicoCliente() {
               <OsPorEstado os={osPeriodo} />
               <OsPorSetor os={osPeriodo} />
             </div>
-            <SatisfacaoCliente initialItems={avaliacoes} />
+            <SatisfacaoCliente
+              initialItems={avaliacoesPeriodo}
+              mes={periodoAtivo?.mes}
+              ano={periodoAtivo?.ano}
+            />
           </>
         )}
 
