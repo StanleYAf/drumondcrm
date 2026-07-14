@@ -611,25 +611,40 @@ function ToggleField({ label, checked, onChange }: { label: string; checked: boo
 }
 
 function CellPopover({
-  equipamentoId, mes, items, destaqueTipo, onAdd, onUpdate, onRemove,
+  equipamentoId, mes, items, destaqueTipo, onAddPlans, onUpdate, onRemove,
 }: {
   equipamentoId: string;
   mes: number;
   items: Planejamento[];
   destaqueTipo: TipoServico | null;
-  onAdd: (eq: string, mes: number, tipo: TipoServico, status: StatusPlan) => void;
+  onAddPlans: (eq: string, mes: number, tipos: TipoServico[], status: StatusPlan) => void;
   onUpdate: (id: string, status: StatusPlan) => void;
   onRemove: (id: string) => void;
 }) {
-  const [tipo, setTipo] = useState<TipoServico>("P");
   const [status, setStatus] = useState<StatusPlan>("planejado");
+  const [selecionados, setSelecionados] = useState<Record<TipoServico, boolean>>({
+    P: false, C: false, T: false, Q: false, AA: false, V: false,
+  });
+  const toggle = (k: TipoServico) => setSelecionados(prev => ({ ...prev, [k]: !prev[k] }));
+  const setCombo = (keys: TipoServico[]) => {
+    const next = { P: false, C: false, T: false, Q: false, AA: false, V: false } as Record<TipoServico, boolean>;
+    keys.forEach(k => { next[k] = true; });
+    setSelecionados(next);
+  };
+  const handleAdd = () => {
+    const tipos = (Object.keys(selecionados) as TipoServico[]).filter(k => selecionados[k]);
+    if (tipos.length === 0) return;
+    onAddPlans(equipamentoId, mes, tipos, status);
+    setSelecionados({ P: false, C: false, T: false, Q: false, AA: false, V: false });
+  };
+  const anySel = (Object.keys(selecionados) as TipoServico[]).some(k => selecionados[k]);
 
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button className="group w-full min-h-[36px] rounded-md hover:bg-[#EAF4FD] transition flex items-center justify-center gap-1 flex-wrap px-1 py-1">
           {items.length === 0 ? (
-            <span className="text-[#CBD5E1] opacity-0 group-hover:opacity-100 text-lg leading-none">+</span>
+            <span className="text-[#94A3B8] opacity-40 group-hover:opacity-100 text-lg leading-none">+</span>
           ) : (
             items.map(p => {
               const t = TIPO_MAP[p.tipo_servico];
@@ -654,7 +669,7 @@ function CellPopover({
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="center" className="w-[280px] p-3">
+      <PopoverContent align="center" className="w-[320px] p-3">
         <div className="text-[11px] uppercase tracking-wider text-[#64748B] font-semibold mb-2">
           {MESES[mes - 1]} — Serviços
         </div>
@@ -679,18 +694,168 @@ function CellPopover({
           </ul>
         )}
         <div className="border-t border-[#E2E8F0] pt-3">
-          <div className="text-[11px] uppercase tracking-wider text-[#64748B] font-semibold mb-2">Adicionar serviço</div>
+          <div className="text-[11px] uppercase tracking-wider text-[#64748B] font-semibold mb-2">Adicionar serviço(s)</div>
+          <div className="flex flex-wrap gap-1 mb-2">
+            {[
+              { label: "P",   keys: ["P"] as TipoServico[] },
+              { label: "PT",  keys: ["P", "T"] as TipoServico[] },
+              { label: "PC",  keys: ["P", "C"] as TipoServico[] },
+              { label: "PTC", keys: ["P", "T", "C"] as TipoServico[] },
+            ].map(c => (
+              <button key={c.label} type="button" onClick={() => setCombo(c.keys)} className="h-7 px-2 rounded-md text-[11px] font-semibold border border-[#E2E8F0] bg-[#F8FAFC] text-[#1F4E79] hover:bg-[#EAF4FD]">
+                {c.label}
+              </button>
+            ))}
+          </div>
+          <div className="grid grid-cols-3 gap-1.5 mb-2">
+            {TIPOS.map(t => (
+              <label key={t.key} className={`flex items-center gap-1.5 h-8 px-2 rounded-md border cursor-pointer text-[11px] ${selecionados[t.key] ? "border-[#1F4E79] bg-[#EAF4FD]" : "border-[#E2E8F0] bg-white"}`}>
+                <input type="checkbox" checked={selecionados[t.key]} onChange={() => toggle(t.key)} className="h-3.5 w-3.5 accent-[#1F4E79]" />
+                <span className="font-bold" style={{ color: t.color }}>{t.key}</span>
+              </label>
+            ))}
+          </div>
           <div className="flex items-center gap-1.5">
-            <select value={tipo} onChange={e => setTipo(e.target.value as TipoServico)} className="h-8 px-2 rounded-md text-xs border border-[#E2E8F0] bg-white text-[#0F172A]">
-              {TIPOS.map(t => <option key={t.key} value={t.key}>{t.key} — {t.label}</option>)}
-            </select>
-            <select value={status} onChange={e => setStatus(e.target.value as StatusPlan)} className="h-8 px-2 rounded-md text-xs border border-[#E2E8F0] bg-white text-[#0F172A]">
+            <select value={status} onChange={e => setStatus(e.target.value as StatusPlan)} className="flex-1 h-8 px-2 rounded-md text-xs border border-[#E2E8F0] bg-white text-[#0F172A]">
               {STATUS_PLAN.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
             </select>
-            <button onClick={() => onAdd(equipamentoId, mes, tipo, status)} className="h-8 px-3 rounded-md text-xs font-medium text-white" style={{ background: "#1F4E79" }}>
-              Add
+            <button onClick={handleAdd} disabled={!anySel} className="h-8 px-3 rounded-md text-xs font-medium text-white disabled:opacity-40" style={{ background: "#1F4E79" }}>
+              Adicionar
             </button>
           </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ListaMensal({
+  equipamentos, planejamentos, mes, ano, onAddPlans, onUpdate, onRemove,
+}: {
+  equipamentos: Equipamento[];
+  planejamentos: Planejamento[];
+  mes: number;
+  ano: number;
+  onAddPlans: (eq: string, mes: number, tipos: TipoServico[], status: StatusPlan) => void;
+  onUpdate: (id: string, status: StatusPlan) => void;
+  onRemove: (id: string) => void;
+}) {
+  const MESES_FULL = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  const byEq = new Map<string, Planejamento[]>();
+  for (const p of planejamentos) {
+    if (p.mes !== mes) continue;
+    if (!byEq.has(p.equipamento_id)) byEq.set(p.equipamento_id, []);
+    byEq.get(p.equipamento_id)!.push(p);
+  }
+  return (
+    <div className="print-area">
+      <div className="hidden print:block px-5 py-4 border-b border-[#E2E8F0]">
+        <h1 className="text-lg font-bold text-[#0F172A]">Cronograma de Manutenções — {MESES_FULL[mes - 1]} / {ano}</h1>
+      </div>
+      <div className="divide-y divide-[#F1F5F9]">
+        {equipamentos.map(eq => {
+          const items = byEq.get(eq.id) || [];
+          const desat = eq.status === "Desativado";
+          return (
+            <div key={eq.id} className={`px-5 py-3 flex flex-wrap items-center gap-4 ${desat ? "text-[#94A3B8]" : "text-[#0F172A]"}`}>
+              <div className="min-w-[240px] flex-1">
+                <div className={`text-sm font-medium ${desat ? "line-through" : ""}`}>{eq.equipamento}</div>
+                {(eq.marca || eq.modelo) && <div className="text-[11px] text-[#94A3B8]">{[eq.marca, eq.modelo].filter(Boolean).join(" • ")}</div>}
+              </div>
+              <div className="min-w-[140px] text-xs text-[#475569]">
+                <div className="text-[10px] uppercase tracking-wider text-[#94A3B8]">Localização</div>
+                {eq.localizacao || "—"}
+              </div>
+              <div className="min-w-[110px] text-xs text-[#475569]">
+                <div className="text-[10px] uppercase tracking-wider text-[#94A3B8]">Periodicidade</div>
+                {eq.periodicidade || "—"}
+              </div>
+              <div className="flex-1 min-w-[240px] flex flex-wrap items-center gap-1.5">
+                {items.length === 0 ? (
+                  <span className="text-xs text-[#94A3B8] italic">Sem serviços neste mês</span>
+                ) : items.map(p => {
+                  const t = TIPO_MAP[p.tipo_servico];
+                  const s = STATUS_MAP[p.status];
+                  return (
+                    <span key={p.id} className="inline-flex items-center gap-1 h-7 pl-1.5 pr-1 rounded-md border" style={{ background: t.bg, borderColor: `${t.color}33` }}>
+                      <span className="text-[11px] font-bold" style={{ color: t.color }}>{p.tipo_servico}</span>
+                      <span className="text-[10px] font-medium px-1.5 h-5 rounded inline-flex items-center" style={{ background: s.color, color: "#fff" }}>{s.label}</span>
+                      <select value={p.status} onChange={e => onUpdate(p.id, e.target.value as StatusPlan)} className="h-6 text-[10px] bg-transparent border-0 outline-none print:hidden">
+                        {STATUS_PLAN.map(st => <option key={st.key} value={st.key}>{st.label}</option>)}
+                      </select>
+                      <button onClick={() => onRemove(p.id)} className="h-5 w-5 grid place-items-center rounded text-[#64748B] hover:text-[#EF4444] print:hidden">
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </span>
+                  );
+                })}
+                <div className="print:hidden">
+                  <QuickAddButton onAdd={(tipos, status) => onAddPlans(eq.id, mes, tipos, status)} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function QuickAddButton({ onAdd }: { onAdd: (tipos: TipoServico[], status: StatusPlan) => void }) {
+  const [open, setOpen] = useState(false);
+  const [selecionados, setSelecionados] = useState<Record<TipoServico, boolean>>({
+    P: false, C: false, T: false, Q: false, AA: false, V: false,
+  });
+  const [status, setStatus] = useState<StatusPlan>("planejado");
+  const toggle = (k: TipoServico) => setSelecionados(prev => ({ ...prev, [k]: !prev[k] }));
+  const setCombo = (keys: TipoServico[]) => {
+    const next = { P: false, C: false, T: false, Q: false, AA: false, V: false } as Record<TipoServico, boolean>;
+    keys.forEach(k => { next[k] = true; });
+    setSelecionados(next);
+  };
+  const handleAdd = () => {
+    const tipos = (Object.keys(selecionados) as TipoServico[]).filter(k => selecionados[k]);
+    if (tipos.length === 0) return;
+    onAdd(tipos, status);
+    setSelecionados({ P: false, C: false, T: false, Q: false, AA: false, V: false });
+    setOpen(false);
+  };
+  const anySel = (Object.keys(selecionados) as TipoServico[]).some(k => selecionados[k]);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button className="h-7 px-2 rounded-md text-[11px] font-medium border border-dashed border-[#CBD5E1] text-[#64748B] hover:bg-[#EAF4FD] hover:text-[#1F4E79] inline-flex items-center gap-1">
+          <Plus className="h-3 w-3" /> Adicionar
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[320px] p-3">
+        <div className="flex flex-wrap gap-1 mb-2">
+          {[
+            { label: "P",   keys: ["P"] as TipoServico[] },
+            { label: "PT",  keys: ["P", "T"] as TipoServico[] },
+            { label: "PC",  keys: ["P", "C"] as TipoServico[] },
+            { label: "PTC", keys: ["P", "T", "C"] as TipoServico[] },
+          ].map(c => (
+            <button key={c.label} type="button" onClick={() => setCombo(c.keys)} className="h-7 px-2 rounded-md text-[11px] font-semibold border border-[#E2E8F0] bg-[#F8FAFC] text-[#1F4E79] hover:bg-[#EAF4FD]">
+              {c.label}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-3 gap-1.5 mb-2">
+          {TIPOS.map(t => (
+            <label key={t.key} className={`flex items-center gap-1.5 h-8 px-2 rounded-md border cursor-pointer text-[11px] ${selecionados[t.key] ? "border-[#1F4E79] bg-[#EAF4FD]" : "border-[#E2E8F0] bg-white"}`}>
+              <input type="checkbox" checked={selecionados[t.key]} onChange={() => toggle(t.key)} className="h-3.5 w-3.5 accent-[#1F4E79]" />
+              <span className="font-bold" style={{ color: t.color }}>{t.key}</span>
+            </label>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <select value={status} onChange={e => setStatus(e.target.value as StatusPlan)} className="flex-1 h-8 px-2 rounded-md text-xs border border-[#E2E8F0] bg-white text-[#0F172A]">
+            {STATUS_PLAN.map(s => <option key={s.key} value={s.key}>{s.label}</option>)}
+          </select>
+          <button onClick={handleAdd} disabled={!anySel} className="h-8 px-3 rounded-md text-xs font-medium text-white disabled:opacity-40" style={{ background: "#1F4E79" }}>
+            Adicionar
+          </button>
         </div>
       </PopoverContent>
     </Popover>
