@@ -102,6 +102,10 @@ export default function PublicoCliente() {
     if (!periodoAtivo) return [] as OSOperacaoRow[];
     return ordens.filter(o => o.ano === periodoAtivo.ano && (o.mes || "").toLowerCase() === periodoAtivo.mes.toLowerCase());
   }, [ordens, periodoAtivo]);
+  const avaliacoesPeriodo = useMemo(() => {
+    if (!periodoAtivo) return [] as any[];
+    return avaliacoes.filter(a => a.ano === periodoAtivo.ano && (a.mes || "").toLowerCase() === periodoAtivo.mes.toLowerCase());
+  }, [avaliacoes, periodoAtivo]);
   const equipamentosTotais = useMemo(() => {
     const set = new Set<string>();
     for (const o of ordens) {
@@ -338,7 +342,11 @@ export default function PublicoCliente() {
               <OsPorEstado os={osPeriodo} />
               <OsPorSetor os={osPeriodo} />
             </div>
-            <SatisfacaoCliente initialItems={avaliacoes} />
+            <SatisfacaoCliente
+              initialItems={avaliacoesPeriodo}
+              mes={periodoAtivo?.mes}
+              ano={periodoAtivo?.ano}
+            />
           </>
         )}
 
