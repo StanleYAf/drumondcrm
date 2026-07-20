@@ -4,12 +4,13 @@ import { NavLink } from "@/components/NavLink";
 import {
   LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings,
   Boxes, LogOut, Briefcase, Building2, ClipboardList, DollarSign, RefreshCw, KanbanSquare,
-  Stethoscope, Plus, Landmark, FileSignature, FileBadge, CalendarClock,
+  Stethoscope, Plus, Landmark, FileSignature, FileBadge, CalendarClock, Menu,
 } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 import type { PermCode } from "@/lib/permissions";
 import { NotificationsBell } from "@/components/NotificationsBell";
 import { OneSignalInit } from "@/components/OneSignalInit";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 
 type SubItem = { title: string; url: string; icon: any; perm?: PermCode | string; adminOnly?: boolean };
@@ -152,11 +153,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const currentGroup = visibleGroups.find((g) => g.key === activeModule) ?? visibleGroups[0];
   const info = pageInfo(location.pathname);
 
-  // Mobile flat list for bottom bar
-  const mobileItems = visibleGroups.flatMap(g => g.subs).slice(0, 5);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  useEffect(() => { setMobileNavOpen(false); }, [location.pathname]);
 
   return (
     <div className="min-h-screen w-full bg-[#F4F8FB]">
+      <OneSignalInit />
       {/* ===== Top Header ===== */}
       <header
         className="hidden md:flex fixed top-0 inset-x-0 h-20 z-50 items-center justify-between px-6 text-white overflow-hidden"
@@ -214,7 +216,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         <div className="relative flex items-center gap-3">
-          <OneSignalInit />
           <NotificationsBell />
           <button
             onClick={signOut}
@@ -225,6 +226,124 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </button>
           <div
             className="h-10 w-10 rounded-full grid place-items-center text-white text-sm font-semibold border-2"
+            style={{ background: "#25598C", borderColor: "#50B9EC" }}
+            title={user?.email || ""}
+          >
+            {(user?.email || "?").charAt(0).toUpperCase()}
+          </div>
+        </div>
+      </header>
+
+      {/* ===== Mobile Top Header ===== */}
+      <header
+        className="md:hidden fixed top-0 inset-x-0 h-14 z-50 flex items-center justify-between px-3 text-white"
+        style={{ background: "linear-gradient(90deg, #1F4E79 0%, #25598C 100%)" }}
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+            <SheetTrigger asChild>
+              <button
+                className="h-10 w-10 grid place-items-center rounded-lg text-white/90 hover:bg-white/10 transition -ml-1"
+                aria-label="Abrir menu"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[86vw] max-w-[320px] p-0 bg-white flex flex-col">
+              <div
+                className="px-4 py-4 text-white"
+                style={{ background: "linear-gradient(90deg, #1F4E79 0%, #25598C 100%)" }}
+              >
+                <div className="flex items-center gap-2.5" translate="no">
+                  <svg width="32" height="32" viewBox="0 0 38 38" fill="none">
+                    <path d="M19 33C19 33 5 23.5 5 13.5C5 9.36 8.36 6 12.5 6C15.1 6 17.4 7.3 19 9.3C20.6 7.3 22.9 6 25.5 6C29.64 6 33 9.36 33 13.5C33 23.5 19 33 19 33Z" stroke="#50B9EC" strokeWidth="1.8" fill="none" />
+                    <path d="M9 17h4l2-4 3 8 2-5 2 3h7" stroke="#50B9EC" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  </svg>
+                  <div className="leading-tight">
+                    <div className="text-lg font-bold tracking-tight">
+                      <span className="text-white">DSH</span>
+                      <span style={{ color: "#50B9EC" }}>Hub</span>
+                    </div>
+                    <div className="text-[10px] text-white/70">Sistema de gestão integrada</div>
+                  </div>
+                </div>
+                {user && (
+                  <div className="mt-3 pt-3 border-t border-white/15">
+                    <p className="text-[12px] font-medium truncate">{user.email}</p>
+                  </div>
+                )}
+              </div>
+
+              <nav translate="no" className="flex-1 overflow-y-auto px-2 py-3 space-y-4">
+                {visibleGroups.map((g) => {
+                  const groupActive = isGroupActive(g, location.pathname);
+                  return (
+                    <div key={g.key}>
+                      <div className="flex items-center gap-2 px-3 pb-1.5">
+                        <g.icon className="h-3.5 w-3.5 text-[#94A3B8]" />
+                        <span className="text-[10px] uppercase tracking-wider font-semibold text-[#94A3B8]">
+                          {g.title}
+                        </span>
+                      </div>
+                      <div className="space-y-0.5">
+                        {[...g.subs].sort((a, b) => a.title.localeCompare(b.title, "pt-BR")).map((s) => {
+                          const active = location.pathname === s.url;
+                          return (
+                            <NavLink
+                              key={s.url}
+                              to={s.url}
+                              end
+                              className="flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[14px] text-[#475569] hover:bg-[#F1F5F9] transition-colors"
+                              activeClassName="!bg-[#EAF4FD] !text-[#25598C] font-semibold"
+                            >
+                              <s.icon className="h-4 w-4 flex-shrink-0" />
+                              <span className="truncate">{s.title}</span>
+                            </NavLink>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div className="border-t border-[#E2E8F0] pt-3 space-y-0.5">
+                  <NavLink
+                    to="/configuracoes"
+                    end
+                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[14px] text-[#475569] hover:bg-[#F1F5F9] transition-colors"
+                    activeClassName="!bg-[#EAF4FD] !text-[#25598C] font-semibold"
+                  >
+                    <Settings className="h-4 w-4 flex-shrink-0" />
+                    <span>Configurações</span>
+                  </NavLink>
+                  <button
+                    onClick={() => { setMobileNavOpen(false); signOut(); }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] text-[14px] text-[#475569] hover:bg-[#F1F5F9] transition-colors"
+                  >
+                    <LogOut className="h-4 w-4 flex-shrink-0" />
+                    <span>Sair</span>
+                  </button>
+                </div>
+              </nav>
+            </SheetContent>
+          </Sheet>
+
+          <Link to="/manutencao" className="flex items-center gap-1.5 min-w-0" translate="no">
+            <div className="text-[15px] font-bold tracking-tight leading-none">
+              <span className="text-white">DSH</span>
+              <span style={{ color: "#50B9EC" }}>Hub</span>
+            </div>
+          </Link>
+        </div>
+
+        <div className="flex-1 min-w-0 px-2 text-center" translate="no">
+          <div className="text-[13px] font-semibold truncate">{info.title}</div>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <NotificationsBell />
+          <div
+            className="h-8 w-8 rounded-full grid place-items-center text-white text-xs font-semibold border-2"
             style={{ background: "#25598C", borderColor: "#50B9EC" }}
             title={user?.email || ""}
           >
@@ -326,36 +445,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
       )}
 
       {/* ===== Main content ===== */}
-      <main className="pb-24 md:pb-6 md:pl-[340px] md:pt-20">
-        <div className="max-w-[1400px] mx-auto px-4 py-5 md:px-6 md:py-6">
+      <main className="pt-14 pb-6 md:pt-20 md:pb-6 md:pl-[340px]">
+        <div className="max-w-[1400px] mx-auto px-4 py-4 md:px-6 md:py-6">
           {children}
         </div>
       </main>
-
-      {/* Mobile Bottom Tab Bar */}
-      <nav translate="no" className="md:hidden fixed bottom-0 inset-x-0 z-50 glass-nav safe-area-bottom">
-        <div className="flex items-center justify-around px-2 py-1.5">
-          {mobileItems.map((item) => {
-            const isActive = item.url === '/' ? location.pathname === '/' : location.pathname.startsWith(item.url);
-            return (
-              <NavLink
-                key={item.url}
-                to={item.url}
-                end={item.url === "/"}
-                className="flex flex-col items-center gap-0.5 py-1 px-2 min-w-[3.5rem]"
-                activeClassName=""
-              >
-                <item.icon
-                  className={`h-5 w-5 transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
-                />
-                <span className={`text-[10px] font-medium transition-colors ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
-                  {item.title}
-                </span>
-              </NavLink>
-            );
-          })}
-        </div>
-      </nav>
     </div>
   );
 }
