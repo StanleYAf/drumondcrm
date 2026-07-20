@@ -64,189 +64,191 @@ const App = () => (
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <AuthProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/login" element={<Auth />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/publico/cliente/:token" element={<PublicoCliente />} />
-                  <Route
-                    path="/*"
-                    element={
-                      <ProtectedRoute>
-                        <DataProvider>
-                          <Layout>
-                            <ErrorBoundary fallbackTitle="Erro ao carregar a página">
-                              <Routes>
-                                <Route path="/" element={<SmartRedirect />} />
-                                <Route
-                                  path="/comercial"
-                                  element={
-                                    <RoleGuard perm="com_dashboard">
-                                      <Index />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/lancamentos"
-                                  element={
-                                    <RoleGuard perm="com_lancamentos">
-                                      <Lancamentos />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/indicadores"
-                                  element={
-                                    <RoleGuard perm="com_indicadores">
-                                      <Indicadores />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/pos-venda"
-                                  element={
-                                    <RoleGuard perm="com_posvenda">
-                                      <PosVenda />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route path="/configuracoes" element={<Configuracoes />} />
-                                <Route
-                                  path="/relatorios"
-                                  element={
-                                    <RoleGuard perm="com_relatorios">
-                                      <Relatorios />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/estoque"
-                                  element={
-                                    <RoleGuard perm="est_estoque">
-                                      <Estoque />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/fornecedores"
-                                  element={
-                                    <RoleGuard perm="est_estoque">
-                                      <Fornecedores />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/vendas"
-                                  element={
-                                    <RoleGuard perm="com_vendas">
-                                      <Vendas />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/manutencao"
-                                  element={
-                                    <RoleGuard perm="eng_dashboard">
-                                      <ManutencaoGeral />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/manutencao/upload"
-                                  element={
-                                    <RoleGuard perm="eng_dashboard">
-                                      <ManutencaoUpload />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/manutencao/clientes"
-                                  element={
-                                    <RoleGuard perm="eng_clientes">
-                                      <ManutencaoClientes />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/manutencao/os"
-                                  element={
-                                    <RoleGuard perm="eng_os">
-                                      <ManutencaoOS />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/manutencao/boletim"
-                                  element={
-                                    <RoleGuard perm="eng_boletim">
-                                      <ManutencaoBoletim />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/manutencao/cronograma"
-                                  element={
-                                    <RoleGuard perm="eng_cronograma">
-                                      <ManutencaoCronograma />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/manutencao/sync-logs"
-                                  element={
-                                    <RoleGuard perm="eng_synclogs">
-                                      <SyncLogs />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/manutencao/cliente/:clienteId"
-                                  element={
-                                    <RoleGuard perm="eng_dashboard">
-                                      <Manutencao />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/financeiro"
-                                  element={
-                                    <RoleGuard perm="fin_dashboard">
-                                      <Financeiro />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/administrativo/contratos"
-                                  element={
-                                    <RoleGuard perm="adm_contratos">
-                                      <Contratos />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route
-                                  path="/administrativo/art"
-                                  element={
-                                    <RoleGuard perm="adm_art">
-                                      <ControleART />
-                                    </RoleGuard>
-                                  }
-                                />
-                                <Route path="/demandas/:setor" element={<Demandas />} />
-                                <Route path="*" element={<NotFound />} />
-                              </Routes>
-                            </ErrorBoundary>
-                          </Layout>
-                          <UndoToast />
-                        </DataProvider>
-                      </ProtectedRoute>
-                    }
-                  />
-                </Routes>
-              </BrowserRouter>
-            </TooltipProvider>
+            <NotificationsProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/login" element={<Auth />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/publico/cliente/:token" element={<PublicoCliente />} />
+                    <Route
+                      path="/*"
+                      element={
+                        <ProtectedRoute>
+                          <DataProvider>
+                            <Layout>
+                              <ErrorBoundary fallbackTitle="Erro ao carregar a página">
+                                <Routes>
+                                  <Route path="/" element={<SmartRedirect />} />
+                                  <Route
+                                    path="/comercial"
+                                    element={
+                                      <RoleGuard perm="com_dashboard">
+                                        <Index />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/lancamentos"
+                                    element={
+                                      <RoleGuard perm="com_lancamentos">
+                                        <Lancamentos />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/indicadores"
+                                    element={
+                                      <RoleGuard perm="com_indicadores">
+                                        <Indicadores />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/pos-venda"
+                                    element={
+                                      <RoleGuard perm="com_posvenda">
+                                        <PosVenda />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route path="/configuracoes" element={<Configuracoes />} />
+                                  <Route
+                                    path="/relatorios"
+                                    element={
+                                      <RoleGuard perm="com_relatorios">
+                                        <Relatorios />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/estoque"
+                                    element={
+                                      <RoleGuard perm="est_estoque">
+                                        <Estoque />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/fornecedores"
+                                    element={
+                                      <RoleGuard perm="est_estoque">
+                                        <Fornecedores />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/vendas"
+                                    element={
+                                      <RoleGuard perm="com_vendas">
+                                        <Vendas />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/manutencao"
+                                    element={
+                                      <RoleGuard perm="eng_dashboard">
+                                        <ManutencaoGeral />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/manutencao/upload"
+                                    element={
+                                      <RoleGuard perm="eng_dashboard">
+                                        <ManutencaoUpload />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/manutencao/clientes"
+                                    element={
+                                      <RoleGuard perm="eng_clientes">
+                                        <ManutencaoClientes />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/manutencao/os"
+                                    element={
+                                      <RoleGuard perm="eng_os">
+                                        <ManutencaoOS />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/manutencao/boletim"
+                                    element={
+                                      <RoleGuard perm="eng_boletim">
+                                        <ManutencaoBoletim />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/manutencao/cronograma"
+                                    element={
+                                      <RoleGuard perm="eng_cronograma">
+                                        <ManutencaoCronograma />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/manutencao/sync-logs"
+                                    element={
+                                      <RoleGuard perm="eng_synclogs">
+                                        <SyncLogs />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/manutencao/cliente/:clienteId"
+                                    element={
+                                      <RoleGuard perm="eng_dashboard">
+                                        <Manutencao />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/financeiro"
+                                    element={
+                                      <RoleGuard perm="fin_dashboard">
+                                        <Financeiro />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/administrativo/contratos"
+                                    element={
+                                      <RoleGuard perm="adm_contratos">
+                                        <Contratos />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/administrativo/art"
+                                    element={
+                                      <RoleGuard perm="adm_art">
+                                        <ControleART />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route path="/demandas/:setor" element={<Demandas />} />
+                                  <Route path="*" element={<NotFound />} />
+                                </Routes>
+                              </ErrorBoundary>
+                            </Layout>
+                            <UndoToast />
+                          </DataProvider>
+                        </ProtectedRoute>
+                      }
+                    />
+                  </Routes>
+                </BrowserRouter>
+              </TooltipProvider>
+            </NotificationsProvider>
           </AuthProvider>
         </ThemeProvider>
       </QueryClientProvider>
