@@ -1782,6 +1782,15 @@ export type Database = {
       is_controlador: { Args: { _user_id: string }; Returns: boolean }
       pode_gerenciar_usuarios: { Args: { _user_id: string }; Returns: boolean }
       pode_ver_todas_demandas: { Args: { _user_id: string }; Returns: boolean }
+      send_push_async: {
+        Args: {
+          _message: string
+          _title: string
+          _url?: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       categoria_lancamento:
