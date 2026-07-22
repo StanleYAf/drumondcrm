@@ -489,6 +489,12 @@ export default function ManutencaoCronograma() {
                   <th className="text-left px-3 py-3 sticky left-0 z-20 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[220px]">Equipamento</th>
                   <th className="text-left px-3 py-3 sticky z-20 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[160px]" style={{ left: 220 }}>Localização</th>
                   <th className="text-left px-3 py-3 sticky z-20 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[120px]" style={{ left: 380 }}>Periodicidade</th>
+                  {colunasExtras && (
+                    <>
+                      <th className="text-left px-3 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[140px]">Unidade</th>
+                      <th className="text-left px-3 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[140px]">Setor</th>
+                    </>
+                  )}
                   {MESES.map((m, i) => {
                     const isCurrent = i === mesAtualIdx && ano === anoAtual;
                     return (
@@ -506,7 +512,20 @@ export default function ManutencaoCronograma() {
                   return (
                     <tr key={eq.id} className={`border-t border-[#F1F5F9] ${desat ? "text-[#94A3B8]" : "text-[#0F172A]"}`}>
                       <td className={`px-3 py-2 sticky left-0 z-10 bg-white border-b border-[#F1F5F9] font-medium ${desat ? "line-through" : ""}`}>
-                        <div>{eq.equipamento}</div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span>{eq.equipamento}</span>
+                          {eq.tipo_posse && eq.tipo_posse !== "Próprio" && POSSE_BADGE[eq.tipo_posse as Exclude<TipoPosse,"Próprio">] && (
+                            <span
+                              className="inline-flex items-center px-1.5 h-[18px] rounded text-[10px] font-semibold"
+                              style={{
+                                background: POSSE_BADGE[eq.tipo_posse as Exclude<TipoPosse,"Próprio">].bg,
+                                color: POSSE_BADGE[eq.tipo_posse as Exclude<TipoPosse,"Próprio">].color,
+                              }}
+                            >
+                              {eq.tipo_posse}
+                            </span>
+                          )}
+                        </div>
                         {(eq.marca || eq.modelo) && <div className="text-[11px] text-[#94A3B8]">{[eq.marca, eq.modelo].filter(Boolean).join(" • ")}</div>}
                       </td>
                       <td className={`px-3 py-2 sticky z-10 bg-white border-b border-[#F1F5F9] ${desat ? "line-through" : ""}`} style={{ left: 220 }}>
@@ -515,6 +534,12 @@ export default function ManutencaoCronograma() {
                       <td className={`px-3 py-2 sticky z-10 bg-white border-b border-[#F1F5F9] ${desat ? "line-through" : ""}`} style={{ left: 380 }}>
                         {eq.periodicidade || "—"}
                       </td>
+                      {colunasExtras && (
+                        <>
+                          <td className={`px-3 py-2 bg-white border-b border-[#F1F5F9] ${desat ? "line-through" : ""}`}>{eq.unidade || "—"}</td>
+                          <td className={`px-3 py-2 bg-white border-b border-[#F1F5F9] ${desat ? "line-through" : ""}`}>{eq.setor || "—"}</td>
+                        </>
+                      )}
                       {MESES.map((_, i) => {
                         const mes = i + 1;
                         const items = plansByCell.get(`${eq.id}:${mes}`) || [];
