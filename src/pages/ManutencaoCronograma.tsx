@@ -502,6 +502,8 @@ export default function ManutencaoCronograma() {
                     <>
                       <th className="text-left px-3 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[140px]">Unidade</th>
                       <th className="text-left px-3 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[140px]">Setor</th>
+                      <th className="text-left px-3 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[130px]">Marca</th>
+                      <th className="text-left px-3 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[130px]">Modelo</th>
                       <th className="text-left px-3 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[140px]">Nº de Série</th>
                     </>
                   )}
@@ -548,6 +550,8 @@ export default function ManutencaoCronograma() {
                         <>
                           <td className={`px-3 py-2 bg-white border-b border-[#F1F5F9] ${desat ? "line-through" : ""}`}>{eq.unidade || "—"}</td>
                           <td className={`px-3 py-2 bg-white border-b border-[#F1F5F9] ${desat ? "line-through" : ""}`}>{eq.setor || "—"}</td>
+                          <td className={`px-3 py-2 bg-white border-b border-[#F1F5F9] ${desat ? "line-through" : ""}`}>{eq.marca || "—"}</td>
+                          <td className={`px-3 py-2 bg-white border-b border-[#F1F5F9] ${desat ? "line-through" : ""}`}>{eq.modelo || "—"}</td>
                           <td className={`px-3 py-2 bg-white border-b border-[#F1F5F9] ${desat ? "line-through" : ""}`}>{eq.numero_serie || "—"}</td>
                         </>
                       )}
@@ -848,6 +852,14 @@ function ListaMensal({
               <div className="min-w-[110px] text-xs text-[#475569]">
                 <div className="text-[10px] uppercase tracking-wider text-[#94A3B8]">Periodicidade</div>
                 {eq.periodicidade || "—"}
+              </div>
+              <div className="min-w-[120px] text-xs text-[#475569]">
+                <div className="text-[10px] uppercase tracking-wider text-[#94A3B8]">Marca</div>
+                {eq.marca || "—"}
+              </div>
+              <div className="min-w-[120px] text-xs text-[#475569]">
+                <div className="text-[10px] uppercase tracking-wider text-[#94A3B8]">Modelo</div>
+                {eq.modelo || "—"}
               </div>
               <div className="min-w-[130px] text-xs text-[#475569]">
                 <div className="text-[10px] uppercase tracking-wider text-[#94A3B8]">Nº de Série</div>
