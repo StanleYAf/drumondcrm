@@ -286,6 +286,15 @@ export default function ManutencaoCronograma() {
     await fetchGrade();
   }
 
+  async function removeEquipamento(e: Equipamento) {
+    if (!confirm(`Excluir definitivamente "${e.equipamento}"?\n\nTodos os serviços planejados desse equipamento também serão removidos. Esta ação não pode ser desfeita.`)) return;
+    await supabase.from("cronograma_planejamento").delete().eq("equipamento_id", e.id);
+    const { error } = await supabase.from("cronograma_equipamentos").delete().eq("id", e.id);
+    if (error) { toast.error("Erro ao excluir: " + error.message); return; }
+    toast.success("Equipamento excluído");
+    await fetchGrade();
+  }
+
   async function addPlan(equipamento_id: string, mes: number, tipo_servico: TipoServico, status: StatusPlan) {
     const { error } = await supabase.from("cronograma_planejamento").insert({
       equipamento_id, ano, mes, tipo_servico, status,
@@ -565,6 +574,9 @@ export default function ManutencaoCronograma() {
                           </button>
                           <button onClick={() => toggleAtivo(eq)} title={desat ? "Ativar" : "Desativar"} className="h-8 w-8 grid place-items-center rounded-md text-[#64748B] hover:bg-[#EAF4FD] hover:text-[#25598C]">
                             <Power className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => removeEquipamento(eq)} title="Excluir equipamento" className="h-8 w-8 grid place-items-center rounded-md text-[#64748B] hover:bg-red-50 hover:text-[#EF4444]">
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       </td>
