@@ -298,8 +298,11 @@ export type Database = {
           patrimonio: string | null
           periodicidade: string | null
           registro_anvisa: string | null
+          setor: string | null
           status: string
           tem_contrato_terceiro: boolean
+          tipo_posse: string
+          unidade: string | null
         }
         Insert: {
           ativo?: boolean
@@ -317,8 +320,11 @@ export type Database = {
           patrimonio?: string | null
           periodicidade?: string | null
           registro_anvisa?: string | null
+          setor?: string | null
           status?: string
           tem_contrato_terceiro?: boolean
+          tipo_posse?: string
+          unidade?: string | null
         }
         Update: {
           ativo?: boolean
@@ -336,8 +342,11 @@ export type Database = {
           patrimonio?: string | null
           periodicidade?: string | null
           registro_anvisa?: string | null
+          setor?: string | null
           status?: string
           tem_contrato_terceiro?: boolean
+          tipo_posse?: string
+          unidade?: string | null
         }
         Relationships: [
           {

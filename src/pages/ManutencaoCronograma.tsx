@@ -30,6 +30,9 @@ interface Equipamento {
   descontinuidade: boolean;
   periodicidade: string | null;
   ativo: boolean;
+  unidade: string | null;
+  setor: string | null;
+  tipo_posse: string | null;
 }
 interface Planejamento {
   id: string;
@@ -62,6 +65,13 @@ const STATUS_MAP = Object.fromEntries(STATUS_PLAN.map(s => [s.key, s])) as Recor
 
 const MESES = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
 const PERIODICIDADES = ["Mensal", "Trimestral", "Semestral", "Anual"];
+const TIPOS_POSSE = ["Próprio", "Locado", "Comodato", "Empréstimo"] as const;
+type TipoPosse = typeof TIPOS_POSSE[number];
+const POSSE_BADGE: Record<Exclude<TipoPosse, "Próprio">, { bg: string; color: string }> = {
+  Locado: { bg: "#DBEAFE", color: "#1D4ED8" },
+  Comodato: { bg: "#EDE9FE", color: "#7C3AED" },
+  "Empréstimo": { bg: "#FFEDD5", color: "#C2410C" },
+};
 
 export default function ManutencaoCronograma() {
   const { user } = useAuth();
@@ -79,6 +89,8 @@ export default function ManutencaoCronograma() {
   const [filtroPeriodicidade, setFiltroPeriodicidade] = useState<string>("");
   const [filtroTipo, setFiltroTipo] = useState<"" | TipoServico>("");
   const [filtroMes, setFiltroMes] = useState<number>(0); // 0 = todos
+  const [filtroPosse, setFiltroPosse] = useState<"" | TipoPosse>("");
+  const [colunasExtras, setColunasExtras] = useState(false);
   const [viewMode, setViewMode] = useState<"grade" | "lista">("grade");
 
   const [showForm, setShowForm] = useState(false);
@@ -98,6 +110,9 @@ export default function ManutencaoCronograma() {
   const [fFornec, setFFornec] = useState("");
   const [fDescont, setFDescont] = useState(false);
   const [fPeriod, setFPeriod] = useState("Mensal");
+  const [fUnidade, setFUnidade] = useState("");
+  const [fSetor, setFSetor] = useState("");
+  const [fPosse, setFPosse] = useState<TipoPosse>("Próprio");
 
   // Load clientes
   useEffect(() => {
@@ -147,8 +162,9 @@ export default function ManutencaoCronograma() {
     if (q && !((e.equipamento || "").toLowerCase().includes(q) || (e.localizacao || "").toLowerCase().includes(q))) return false;
     if (filtroStatus && e.status !== filtroStatus) return false;
     if (filtroPeriodicidade && (e.periodicidade || "") !== filtroPeriodicidade) return false;
+    if (filtroPosse && (e.tipo_posse || "Próprio") !== filtroPosse) return false;
     return true;
-  }), [equipamentos, busca, filtroStatus, filtroPeriodicidade]);
+  }), [equipamentos, busca, filtroStatus, filtroPeriodicidade, filtroPosse]);
 
   const plansByCell = useMemo(() => {
     const map = new Map<string, Planejamento[]>();
@@ -162,6 +178,7 @@ export default function ManutencaoCronograma() {
 
   const kpis = useMemo(() => {
     const ativos = equipamentos.filter(e => e.status !== "Desativado");
+    const terceiros = equipamentos.filter(e => (e.tipo_posse || "Próprio") !== "Próprio").length;
     if (filtroMes > 0) {
       const doMes = planejamentos.filter(p => p.mes === filtroMes);
       const planejadosMes = doMes.filter(p => p.status === "planejado").length;
@@ -170,6 +187,7 @@ export default function ManutencaoCronograma() {
       const pctMes = doMes.length === 0 ? 0 : Math.round((execMes / doMes.length) * 100);
       return {
         equipamentos: ativos.length,
+        terceiros,
         modo: "mes" as const,
         planejadosMes, adiadosMes, execMes, pctMes,
         noMes: 0, adiados: 0, pct: 0,
@@ -184,7 +202,7 @@ export default function ManutencaoCronograma() {
     const totalAno = planejamentos.length;
     const execAno = planejamentos.filter(p => p.status === "executado").length;
     const pct = totalAno === 0 ? 0 : Math.round((execAno / totalAno) * 100);
-    return { equipamentos: ativos.length, modo: "ano" as const, noMes, adiados, pct, planejadosMes: 0, adiadosMes: 0, execMes: 0, pctMes: 0 };
+    return { equipamentos: ativos.length, terceiros, modo: "ano" as const, noMes, adiados, pct, planejadosMes: 0, adiadosMes: 0, execMes: 0, pctMes: 0 };
   }, [equipamentos, planejamentos, ano, filtroMes]);
 
   function resetForm() {
@@ -193,6 +211,7 @@ export default function ManutencaoCronograma() {
     setFIdent(""); setFAnvisa(""); setFSerie(""); setFPatri("");
     setFTerceiro(false); setFStatus("Ativo"); setFFornec("");
     setFDescont(false); setFPeriod("Mensal");
+    setFUnidade(""); setFSetor(""); setFPosse("Próprio");
   }
 
   function openNew() {
@@ -215,6 +234,9 @@ export default function ManutencaoCronograma() {
     setFFornec(e.fornecedor || "");
     setFDescont(!!e.descontinuidade);
     setFPeriod(e.periodicidade || "Mensal");
+    setFUnidade(e.unidade || "");
+    setFSetor(e.setor || "");
+    setFPosse(((e.tipo_posse as TipoPosse) || "Próprio"));
     setShowForm(true);
   }
 
@@ -237,6 +259,9 @@ export default function ManutencaoCronograma() {
       fornecedor: fFornec || null,
       descontinuidade: fDescont,
       periodicidade: fPeriod || null,
+      unidade: fUnidade || null,
+      setor: fSetor || null,
+      tipo_posse: fPosse || "Próprio",
     };
     let err: any = null;
     if (editItem) {
@@ -368,7 +393,7 @@ export default function ManutencaoCronograma() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <KpiCard icon={<ListChecks className="h-5 w-5" />} color="#1F4E79" label="Equipamentos Ativos" value={kpis.equipamentos} />
         {kpis.modo === "mes" ? (
           <>
@@ -383,6 +408,7 @@ export default function ManutencaoCronograma() {
             <KpiCard icon={<CheckCircle2 className="h-5 w-5" />} color="#15803D" label="% Executado no Ano" value={`${kpis.pct}%`} />
           </>
         )}
+        <KpiCard icon={<ListChecks className="h-5 w-5" />} color="#7C3AED" label="Equipamentos de Terceiros" value={kpis.terceiros} />
       </div>
 
       {/* Filtros */}
@@ -401,7 +427,14 @@ export default function ManutencaoCronograma() {
           <option value="">Tipo: Todos</option>
           {TIPOS.map(t => <option key={t.key} value={t.key}>{t.key} — {t.label}</option>)}
         </select>
-        <button onClick={() => { setBusca(""); setFiltroStatus(""); setFiltroPeriodicidade(""); setFiltroTipo(""); }} className="h-9 px-4 rounded-[10px] text-sm font-medium text-white" style={{ background: "#25598C" }}>
+        <select value={filtroPosse} onChange={e => setFiltroPosse(e.target.value as any)} className="h-9 px-3 rounded-[10px] text-sm border border-[#E2E8F0] bg-white text-[#0F172A]">
+          <option value="">Posse: Todos</option>
+          {TIPOS_POSSE.map(p => <option key={p} value={p}>{p}</option>)}
+        </select>
+        <button onClick={() => setColunasExtras(v => !v)} className="h-9 px-3 rounded-[10px] text-sm font-medium border border-[#E2E8F0] bg-white text-[#475569] hover:bg-[#F1F5F9]">
+          {colunasExtras ? "Ocultar colunas extras" : "Mostrar colunas extras"}
+        </button>
+        <button onClick={() => { setBusca(""); setFiltroStatus(""); setFiltroPeriodicidade(""); setFiltroTipo(""); setFiltroPosse(""); }} className="h-9 px-4 rounded-[10px] text-sm font-medium text-white" style={{ background: "#25598C" }}>
           Limpar
         </button>
       </div>
@@ -456,6 +489,12 @@ export default function ManutencaoCronograma() {
                   <th className="text-left px-3 py-3 sticky left-0 z-20 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[220px]">Equipamento</th>
                   <th className="text-left px-3 py-3 sticky z-20 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[160px]" style={{ left: 220 }}>Localização</th>
                   <th className="text-left px-3 py-3 sticky z-20 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[120px]" style={{ left: 380 }}>Periodicidade</th>
+                  {colunasExtras && (
+                    <>
+                      <th className="text-left px-3 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[140px]">Unidade</th>
+                      <th className="text-left px-3 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[140px]">Setor</th>
+                    </>
+                  )}
                   {MESES.map((m, i) => {
                     const isCurrent = i === mesAtualIdx && ano === anoAtual;
                     return (
@@ -473,7 +512,20 @@ export default function ManutencaoCronograma() {
                   return (
                     <tr key={eq.id} className={`border-t border-[#F1F5F9] ${desat ? "text-[#94A3B8]" : "text-[#0F172A]"}`}>
                       <td className={`px-3 py-2 sticky left-0 z-10 bg-white border-b border-[#F1F5F9] font-medium ${desat ? "line-through" : ""}`}>
-                        <div>{eq.equipamento}</div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span>{eq.equipamento}</span>
+                          {eq.tipo_posse && eq.tipo_posse !== "Próprio" && POSSE_BADGE[eq.tipo_posse as Exclude<TipoPosse,"Próprio">] && (
+                            <span
+                              className="inline-flex items-center px-1.5 h-[18px] rounded text-[10px] font-semibold"
+                              style={{
+                                background: POSSE_BADGE[eq.tipo_posse as Exclude<TipoPosse,"Próprio">].bg,
+                                color: POSSE_BADGE[eq.tipo_posse as Exclude<TipoPosse,"Próprio">].color,
+                              }}
+                            >
+                              {eq.tipo_posse}
+                            </span>
+                          )}
+                        </div>
                         {(eq.marca || eq.modelo) && <div className="text-[11px] text-[#94A3B8]">{[eq.marca, eq.modelo].filter(Boolean).join(" • ")}</div>}
                       </td>
                       <td className={`px-3 py-2 sticky z-10 bg-white border-b border-[#F1F5F9] ${desat ? "line-through" : ""}`} style={{ left: 220 }}>
@@ -482,6 +534,12 @@ export default function ManutencaoCronograma() {
                       <td className={`px-3 py-2 sticky z-10 bg-white border-b border-[#F1F5F9] ${desat ? "line-through" : ""}`} style={{ left: 380 }}>
                         {eq.periodicidade || "—"}
                       </td>
+                      {colunasExtras && (
+                        <>
+                          <td className={`px-3 py-2 bg-white border-b border-[#F1F5F9] ${desat ? "line-through" : ""}`}>{eq.unidade || "—"}</td>
+                          <td className={`px-3 py-2 bg-white border-b border-[#F1F5F9] ${desat ? "line-through" : ""}`}>{eq.setor || "—"}</td>
+                        </>
+                      )}
                       {MESES.map((_, i) => {
                         const mes = i + 1;
                         const items = plansByCell.get(`${eq.id}:${mes}`) || [];
@@ -539,6 +597,13 @@ export default function ManutencaoCronograma() {
               <Field label="Número de Série"><input value={fSerie} onChange={e => setFSerie(e.target.value)} className="form-input" /></Field>
               <Field label="Patrimônio"><input value={fPatri} onChange={e => setFPatri(e.target.value)} className="form-input" /></Field>
               <Field label="Fornecedor"><input value={fFornec} onChange={e => setFFornec(e.target.value)} className="form-input" /></Field>
+              <Field label="Unidade"><input value={fUnidade} onChange={e => setFUnidade(e.target.value)} placeholder="Ex: Sede, Prédio A" className="form-input" /></Field>
+              <Field label="Setor"><input value={fSetor} onChange={e => setFSetor(e.target.value)} placeholder="Ex: CME, Centro Cirúrgico" className="form-input" /></Field>
+              <Field label="Tipo de Posse">
+                <select value={fPosse} onChange={e => setFPosse(e.target.value as TipoPosse)} className="form-input">
+                  {TIPOS_POSSE.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </Field>
               <Field label="Periodicidade">
                 <select value={fPeriod} onChange={e => setFPeriod(e.target.value)} className="form-input">
                   {PERIODICIDADES.map(p => <option key={p} value={p}>{p}</option>)}
