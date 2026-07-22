@@ -502,6 +502,7 @@ export default function ManutencaoCronograma() {
                     <>
                       <th className="text-left px-3 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[140px]">Unidade</th>
                       <th className="text-left px-3 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[140px]">Setor</th>
+                      <th className="text-left px-3 py-3 bg-[#F8FAFC] border-b border-[#E2E8F0] min-w-[140px]">Nº de Série</th>
                     </>
                   )}
                   {MESES.map((m, i) => {
@@ -547,6 +548,7 @@ export default function ManutencaoCronograma() {
                         <>
                           <td className={`px-3 py-2 bg-white border-b border-[#F1F5F9] ${desat ? "line-through" : ""}`}>{eq.unidade || "—"}</td>
                           <td className={`px-3 py-2 bg-white border-b border-[#F1F5F9] ${desat ? "line-through" : ""}`}>{eq.setor || "—"}</td>
+                          <td className={`px-3 py-2 bg-white border-b border-[#F1F5F9] ${desat ? "line-through" : ""}`}>{eq.numero_serie || "—"}</td>
                         </>
                       )}
                       {MESES.map((_, i) => {
