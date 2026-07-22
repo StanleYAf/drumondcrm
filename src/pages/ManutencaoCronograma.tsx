@@ -597,6 +597,13 @@ export default function ManutencaoCronograma() {
               <Field label="Número de Série"><input value={fSerie} onChange={e => setFSerie(e.target.value)} className="form-input" /></Field>
               <Field label="Patrimônio"><input value={fPatri} onChange={e => setFPatri(e.target.value)} className="form-input" /></Field>
               <Field label="Fornecedor"><input value={fFornec} onChange={e => setFFornec(e.target.value)} className="form-input" /></Field>
+              <Field label="Unidade"><input value={fUnidade} onChange={e => setFUnidade(e.target.value)} placeholder="Ex: Sede, Prédio A" className="form-input" /></Field>
+              <Field label="Setor"><input value={fSetor} onChange={e => setFSetor(e.target.value)} placeholder="Ex: CME, Centro Cirúrgico" className="form-input" /></Field>
+              <Field label="Tipo de Posse">
+                <select value={fPosse} onChange={e => setFPosse(e.target.value as TipoPosse)} className="form-input">
+                  {TIPOS_POSSE.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </Field>
               <Field label="Periodicidade">
                 <select value={fPeriod} onChange={e => setFPeriod(e.target.value)} className="form-input">
                   {PERIODICIDADES.map(p => <option key={p} value={p}>{p}</option>)}
