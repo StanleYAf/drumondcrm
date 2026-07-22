@@ -393,7 +393,7 @@ export default function ManutencaoCronograma() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <KpiCard icon={<ListChecks className="h-5 w-5" />} color="#1F4E79" label="Equipamentos Ativos" value={kpis.equipamentos} />
         {kpis.modo === "mes" ? (
           <>
@@ -408,6 +408,7 @@ export default function ManutencaoCronograma() {
             <KpiCard icon={<CheckCircle2 className="h-5 w-5" />} color="#15803D" label="% Executado no Ano" value={`${kpis.pct}%`} />
           </>
         )}
+        <KpiCard icon={<ListChecks className="h-5 w-5" />} color="#7C3AED" label="Equipamentos de Terceiros" value={kpis.terceiros} />
       </div>
 
       {/* Filtros */}
@@ -426,7 +427,14 @@ export default function ManutencaoCronograma() {
           <option value="">Tipo: Todos</option>
           {TIPOS.map(t => <option key={t.key} value={t.key}>{t.key} — {t.label}</option>)}
         </select>
-        <button onClick={() => { setBusca(""); setFiltroStatus(""); setFiltroPeriodicidade(""); setFiltroTipo(""); }} className="h-9 px-4 rounded-[10px] text-sm font-medium text-white" style={{ background: "#25598C" }}>
+        <select value={filtroPosse} onChange={e => setFiltroPosse(e.target.value as any)} className="h-9 px-3 rounded-[10px] text-sm border border-[#E2E8F0] bg-white text-[#0F172A]">
+          <option value="">Posse: Todos</option>
+          {TIPOS_POSSE.map(p => <option key={p} value={p}>{p}</option>)}
+        </select>
+        <button onClick={() => setColunasExtras(v => !v)} className="h-9 px-3 rounded-[10px] text-sm font-medium border border-[#E2E8F0] bg-white text-[#475569] hover:bg-[#F1F5F9]">
+          {colunasExtras ? "Ocultar colunas extras" : "Mostrar colunas extras"}
+        </button>
+        <button onClick={() => { setBusca(""); setFiltroStatus(""); setFiltroPeriodicidade(""); setFiltroTipo(""); setFiltroPosse(""); }} className="h-9 px-4 rounded-[10px] text-sm font-medium text-white" style={{ background: "#25598C" }}>
           Limpar
         </button>
       </div>
