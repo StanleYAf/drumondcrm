@@ -30,6 +30,9 @@ interface Equipamento {
   descontinuidade: boolean;
   periodicidade: string | null;
   ativo: boolean;
+  unidade: string | null;
+  setor: string | null;
+  tipo_posse: string | null;
 }
 interface Planejamento {
   id: string;
@@ -62,6 +65,13 @@ const STATUS_MAP = Object.fromEntries(STATUS_PLAN.map(s => [s.key, s])) as Recor
 
 const MESES = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
 const PERIODICIDADES = ["Mensal", "Trimestral", "Semestral", "Anual"];
+const TIPOS_POSSE = ["Próprio", "Locado", "Comodato", "Empréstimo"] as const;
+type TipoPosse = typeof TIPOS_POSSE[number];
+const POSSE_BADGE: Record<Exclude<TipoPosse, "Próprio">, { bg: string; color: string }> = {
+  Locado: { bg: "#DBEAFE", color: "#1D4ED8" },
+  Comodato: { bg: "#EDE9FE", color: "#7C3AED" },
+  "Empréstimo": { bg: "#FFEDD5", color: "#C2410C" },
+};
 
 export default function ManutencaoCronograma() {
   const { user } = useAuth();
@@ -79,6 +89,8 @@ export default function ManutencaoCronograma() {
   const [filtroPeriodicidade, setFiltroPeriodicidade] = useState<string>("");
   const [filtroTipo, setFiltroTipo] = useState<"" | TipoServico>("");
   const [filtroMes, setFiltroMes] = useState<number>(0); // 0 = todos
+  const [filtroPosse, setFiltroPosse] = useState<"" | TipoPosse>("");
+  const [colunasExtras, setColunasExtras] = useState(false);
   const [viewMode, setViewMode] = useState<"grade" | "lista">("grade");
 
   const [showForm, setShowForm] = useState(false);
@@ -98,6 +110,9 @@ export default function ManutencaoCronograma() {
   const [fFornec, setFFornec] = useState("");
   const [fDescont, setFDescont] = useState(false);
   const [fPeriod, setFPeriod] = useState("Mensal");
+  const [fUnidade, setFUnidade] = useState("");
+  const [fSetor, setFSetor] = useState("");
+  const [fPosse, setFPosse] = useState<TipoPosse>("Próprio");
 
   // Load clientes
   useEffect(() => {
@@ -147,8 +162,9 @@ export default function ManutencaoCronograma() {
     if (q && !((e.equipamento || "").toLowerCase().includes(q) || (e.localizacao || "").toLowerCase().includes(q))) return false;
     if (filtroStatus && e.status !== filtroStatus) return false;
     if (filtroPeriodicidade && (e.periodicidade || "") !== filtroPeriodicidade) return false;
+    if (filtroPosse && (e.tipo_posse || "Próprio") !== filtroPosse) return false;
     return true;
-  }), [equipamentos, busca, filtroStatus, filtroPeriodicidade]);
+  }), [equipamentos, busca, filtroStatus, filtroPeriodicidade, filtroPosse]);
 
   const plansByCell = useMemo(() => {
     const map = new Map<string, Planejamento[]>();
@@ -162,6 +178,7 @@ export default function ManutencaoCronograma() {
 
   const kpis = useMemo(() => {
     const ativos = equipamentos.filter(e => e.status !== "Desativado");
+    const terceiros = equipamentos.filter(e => (e.tipo_posse || "Próprio") !== "Próprio").length;
     if (filtroMes > 0) {
       const doMes = planejamentos.filter(p => p.mes === filtroMes);
       const planejadosMes = doMes.filter(p => p.status === "planejado").length;
@@ -170,6 +187,7 @@ export default function ManutencaoCronograma() {
       const pctMes = doMes.length === 0 ? 0 : Math.round((execMes / doMes.length) * 100);
       return {
         equipamentos: ativos.length,
+        terceiros,
         modo: "mes" as const,
         planejadosMes, adiadosMes, execMes, pctMes,
         noMes: 0, adiados: 0, pct: 0,
@@ -184,7 +202,7 @@ export default function ManutencaoCronograma() {
     const totalAno = planejamentos.length;
     const execAno = planejamentos.filter(p => p.status === "executado").length;
     const pct = totalAno === 0 ? 0 : Math.round((execAno / totalAno) * 100);
-    return { equipamentos: ativos.length, modo: "ano" as const, noMes, adiados, pct, planejadosMes: 0, adiadosMes: 0, execMes: 0, pctMes: 0 };
+    return { equipamentos: ativos.length, terceiros, modo: "ano" as const, noMes, adiados, pct, planejadosMes: 0, adiadosMes: 0, execMes: 0, pctMes: 0 };
   }, [equipamentos, planejamentos, ano, filtroMes]);
 
   function resetForm() {
@@ -193,6 +211,7 @@ export default function ManutencaoCronograma() {
     setFIdent(""); setFAnvisa(""); setFSerie(""); setFPatri("");
     setFTerceiro(false); setFStatus("Ativo"); setFFornec("");
     setFDescont(false); setFPeriod("Mensal");
+    setFUnidade(""); setFSetor(""); setFPosse("Próprio");
   }
 
   function openNew() {
@@ -215,6 +234,9 @@ export default function ManutencaoCronograma() {
     setFFornec(e.fornecedor || "");
     setFDescont(!!e.descontinuidade);
     setFPeriod(e.periodicidade || "Mensal");
+    setFUnidade(e.unidade || "");
+    setFSetor(e.setor || "");
+    setFPosse(((e.tipo_posse as TipoPosse) || "Próprio"));
     setShowForm(true);
   }
 
@@ -237,6 +259,9 @@ export default function ManutencaoCronograma() {
       fornecedor: fFornec || null,
       descontinuidade: fDescont,
       periodicidade: fPeriod || null,
+      unidade: fUnidade || null,
+      setor: fSetor || null,
+      tipo_posse: fPosse || "Próprio",
     };
     let err: any = null;
     if (editItem) {
