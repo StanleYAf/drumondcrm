@@ -849,6 +849,10 @@ function ListaMensal({
                 <div className="text-[10px] uppercase tracking-wider text-[#94A3B8]">Periodicidade</div>
                 {eq.periodicidade || "—"}
               </div>
+              <div className="min-w-[130px] text-xs text-[#475569]">
+                <div className="text-[10px] uppercase tracking-wider text-[#94A3B8]">Nº de Série</div>
+                {eq.numero_serie || "—"}
+              </div>
               <div className="flex-1 min-w-[240px] flex flex-wrap items-center gap-1.5">
                 {items.length === 0 ? (
                   <span className="text-xs text-[#94A3B8] italic">Sem serviços neste mês</span>
