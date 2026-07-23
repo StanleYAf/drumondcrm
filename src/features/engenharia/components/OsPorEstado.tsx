@@ -5,6 +5,16 @@ import type { OSOperacaoRow } from "../hooks/useClienteOperacaoData";
 
 interface Props { os: OSOperacaoRow[]; }
 
+// Mesmo critério usado em DisponibilidadeEquipamentos.tsx
+function isAberta(estado: string | null) {
+  const s = (estado || "").toLowerCase();
+  if (!s) return false;
+  if (s === "fechada" || s === "fechado" || s === "concluída" || s === "concluida" || s === "serviço finalizado") return false;
+  if (s === "cancelada" || s === "cancelado") return false;
+  return true;
+}
+function isCorretiva(t: string | null) { return (t || "").toLowerCase().includes("corret"); }
+
 // Paleta determinística — qualquer estado novo recebe cor por hash, sem alterar código.
 const PALETTE = [
   "hsl(217 91% 60%)", "hsl(142 71% 45%)", "hsl(38 92% 50%)", "hsl(0 84% 60%)",
@@ -16,6 +26,8 @@ function colorFor(label: string, idx: number) { return PALETTE[idx % PALETTE.len
 export function OsPorEstado({ os }: Props) {
   const counts = new Map<string, number>();
   for (const r of os) {
+    if (!isCorretiva(r.tipo_servico)) continue;
+    if (!isAberta(r.estado)) continue;
     const k = (r.estado || "Sem estado").trim() || "Sem estado";
     counts.set(k, (counts.get(k) || 0) + 1);
   }
@@ -28,13 +40,13 @@ export function OsPorEstado({ os }: Props) {
     <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
-          <ListChecks className="h-4 w-4 text-primary" /> OS por Estado
+          <ListChecks className="h-4 w-4 text-primary" /> Corretivas Pendentes por Estado
         </CardTitle>
       </CardHeader>
       <CardContent>
         {total === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">
-            Nenhum dado disponível para o período selecionado.
+            Nenhuma corretiva pendente no período selecionado.
           </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
