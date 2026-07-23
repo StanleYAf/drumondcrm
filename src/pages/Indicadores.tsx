@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAppData } from "@/lib/dataContext";
-import { MESES, indicadorSchema, type IndicadorSemanal } from "@/lib/types";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { Plus, Target, FileText, MapPin, Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, Pencil, BarChart3, Trash2 } from "lucide-react";
+import { MESES, indicadorSchema, formatCurrency, calcularComissao, type IndicadorSemanal, type Categoria, type Lancamento } from "@/lib/types";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from "recharts";
+import { Plus, Target, FileText, MapPin, Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, Pencil, BarChart3, Trash2, Receipt, Banknote, Trophy, Users, Hash, TrendingUp } from "lucide-react";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { EmptyState } from "@/components/EmptyState";
@@ -20,7 +20,23 @@ function pctValue(val: number, meta: number) {
   return meta > 0 ? ((val / meta) * 100).toFixed(0) : "0";
 }
 
+function parseLocalDate(dateStr: string) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return { month: m - 1, year: y };
+}
+
+function filterByVendedor(items: Lancamento[], vendedor: string | null) {
+  if (!vendedor) return items;
+  return items.filter(i => i.vendedor === vendedor);
+}
+
+function itemsByMonth(items: Lancamento[], month: number, year: number, vendedor: string | null = null) {
+  return filterByVendedor(items, vendedor)
+    .filter((i) => { const d = parseLocalDate(i.data); return d.month === month && d.year === year; });
+}
+
 type SortKey = "semana" | "vendedor" | "captacoes" | "orcamentos" | "visitas";
+type RankSort = "valor" | "count";
 const ITEMS_PER_PAGE = 10;
 
 export default function Indicadores() {
@@ -57,6 +73,68 @@ export default function Indicadores() {
   const [editOrcamentos, setEditOrcamentos] = useState("");
   const [editVisitas, setEditVisitas] = useState("");
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [rankSort, setRankSort] = useState<RankSort>("valor");
+
+  const currentMonthIdx = MESES.indexOf(mesParam);
+  const vendedorFilter = vendedorParam === "Todos" ? null : vendedorParam;
+
+  // ===== Indicadores Comerciais (mesmo cálculo do Dashboard) =====
+  const allItemsMonth = useMemo(() => [
+    ...itemsByMonth(data.lancamentos.produtos, currentMonthIdx, anoParam, vendedorFilter),
+    ...itemsByMonth(data.lancamentos.servicos, currentMonthIdx, anoParam, vendedorFilter),
+    ...itemsByMonth(data.lancamentos.contratos, currentMonthIdx, anoParam, vendedorFilter),
+    ...itemsByMonth(data.lancamentos.acessorios, currentMonthIdx, anoParam, vendedorFilter),
+  ], [data.lancamentos, currentMonthIdx, anoParam, vendedorFilter]);
+  const qtdLancamentos = allItemsMonth.length;
+  const totalGeralMes = allItemsMonth.reduce((s, i) => s + i.valor, 0);
+  const ticketMedio = qtdLancamentos > 0 ? totalGeralMes / qtdLancamentos : 0;
+
+  const CAT_KEYS: { cat: Categoria; arr: keyof typeof data.lancamentos }[] = [
+    { cat: "produto", arr: "produtos" },
+    { cat: "servico", arr: "servicos" },
+    { cat: "contrato", arr: "contratos" },
+    { cat: "acessorio", arr: "acessorios" },
+  ];
+  const comissoesChartData = useMemo(() => MESES.map((mesNome, i) => {
+    let recebidas = 0;
+    let previstas = 0;
+    CAT_KEYS.forEach(({ cat, arr }) => {
+      const items = itemsByMonth(data.lancamentos[arr] as Lancamento[], i, anoParam, vendedorFilter);
+      items.forEach((l) => {
+        const c = calcularComissao(cat, l.valor, l.custos ?? 0);
+        previstas += c;
+        if (l.paid) recebidas += c;
+      });
+    });
+    return { mes: mesNome.substring(0, 3), Recebidas: recebidas, Previstas: previstas };
+  }), [data.lancamentos, anoParam, vendedorFilter]);
+  const comissoesRecebidasMes = comissoesChartData[currentMonthIdx]?.Recebidas ?? 0;
+  const comissoesRecebidasAno = comissoesChartData.reduce((s, r) => s + r.Recebidas, 0);
+
+  // Evolução Mensal do Ticket Médio
+  const ticketMedioChartData = useMemo(() => MESES.map((mesNome, i) => {
+    const items = [
+      ...itemsByMonth(data.lancamentos.produtos, i, anoParam, vendedorFilter),
+      ...itemsByMonth(data.lancamentos.servicos, i, anoParam, vendedorFilter),
+      ...itemsByMonth(data.lancamentos.contratos, i, anoParam, vendedorFilter),
+      ...itemsByMonth(data.lancamentos.acessorios, i, anoParam, vendedorFilter),
+    ];
+    const total = items.reduce((s, l) => s + l.valor, 0);
+    return { mes: mesNome.substring(0, 3), "Ticket Médio": items.length > 0 ? total / items.length : 0 };
+  }), [data.lancamentos, anoParam, vendedorFilter]);
+
+  // Ranking de Clientes
+  const clientRanking = useMemo(() => {
+    const map = new Map<string, { cliente: string; valor: number; count: number }>();
+    allItemsMonth.forEach(l => {
+      const existing = map.get(l.cliente);
+      if (existing) { existing.valor += l.valor; existing.count += 1; }
+      else { map.set(l.cliente, { cliente: l.cliente, valor: l.valor, count: 1 }); }
+    });
+    const arr = Array.from(map.values());
+    arr.sort((a, b) => rankSort === "valor" ? b.valor - a.valor : b.count - a.count);
+    return arr;
+  }, [allItemsMonth, rankSort]);
 
   function validate(s: string, m: string, v: string, c: string, o: string, vi: string) {
     const result = indicadorSchema.safeParse({
@@ -355,6 +433,147 @@ export default function Indicadores() {
             </BarChart>
           </ResponsiveContainer>
         )}
+      </div>
+
+      {/* ===== Indicadores Comerciais ===== */}
+      <div className="pt-4">
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-bold text-foreground">Indicadores Comerciais</h2>
+        </div>
+
+        {/* Ticket Médio + Comissões */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="glass-card p-6" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Receipt className="h-5 w-5" style={{ color: '#0A84FF' }} />
+                <span className="text-base font-semibold text-foreground/70">Ticket Médio — {mesParam}</span>
+              </div>
+            </div>
+            <p className="text-[2rem] font-extrabold text-foreground mb-1 leading-tight">{formatCurrency(ticketMedio)}</p>
+            <span className="text-[0.85rem] text-foreground/70">
+              <Hash className="h-3.5 w-3.5 inline mr-0.5" />
+              {qtdLancamentos} lançamento{qtdLancamentos !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          <div className="glass-card p-6" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Banknote className="h-5 w-5" style={{ color: '#30D158' }} />
+                <span className="text-base font-semibold text-foreground/70">Comissões Recebidas — {mesParam}</span>
+              </div>
+            </div>
+            <p className="text-[2rem] font-extrabold text-foreground mb-1 leading-tight">{formatCurrency(comissoesRecebidasMes)}</p>
+            <span className="text-[0.85rem] text-foreground/70">
+              Acumulado em {anoParam}: <span className="font-semibold text-foreground">{formatCurrency(comissoesRecebidasAno)}</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Evolução das Comissões */}
+        <div className="glass-card p-6 mt-5" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+          <div className="flex items-center gap-2 mb-5">
+            <Banknote className="h-5 w-5" style={{ color: '#30D158' }} />
+            <h3 className="text-base font-semibold text-foreground">Evolução das Comissões — {anoParam}</h3>
+          </div>
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={comissoesChartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+              <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fill: '#AEAEB2', fontSize: 12 }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#AEAEB2', fontSize: 12 }} width={70} />
+              <Tooltip
+                contentStyle={{ background: 'rgba(30,30,30,0.95)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, color: 'white', fontSize: 13 }}
+                formatter={(value: number) => formatCurrency(value)}
+                cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
+              />
+              <Legend wrapperStyle={{ fontSize: 12, color: '#AEAEB2' }} />
+              <Line type="monotone" dataKey="Recebidas" stroke="#30D158" strokeWidth={3} dot={{ r: 4, fill: '#30D158' }} activeDot={{ r: 6 }} />
+              <Line type="monotone" dataKey="Previstas" stroke="#0A84FF" strokeWidth={2} strokeDasharray="6 4" dot={{ r: 3, fill: '#0A84FF' }} />
+            </LineChart>
+          </ResponsiveContainer>
+          <p className="text-[0.8rem] text-foreground/60 mt-3">
+            "Recebidas" considera lançamentos marcados como pagos. "Previstas" inclui todas as comissões geradas no período.
+          </p>
+        </div>
+
+        {/* Evolução Mensal do Ticket Médio */}
+        <div className="glass-card p-6 mt-5" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+          <div className="flex items-center gap-2 mb-5">
+            <Receipt className="h-5 w-5" style={{ color: '#0A84FF' }} />
+            <h3 className="text-base font-semibold text-foreground">Evolução Mensal do Ticket Médio — {anoParam}</h3>
+          </div>
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={ticketMedioChartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+              <XAxis dataKey="mes" axisLine={false} tickLine={false} tick={{ fill: '#AEAEB2', fontSize: 12 }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#AEAEB2', fontSize: 12 }} width={70} />
+              <Tooltip
+                contentStyle={{ background: 'rgba(30,30,30,0.95)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12, color: 'white', fontSize: 13 }}
+                formatter={(value: number) => formatCurrency(value)}
+                cursor={{ stroke: 'rgba(255,255,255,0.15)' }}
+              />
+              <Legend wrapperStyle={{ fontSize: 12, color: '#AEAEB2' }} />
+              <Line type="monotone" dataKey="Ticket Médio" stroke="#0A84FF" strokeWidth={3} dot={{ r: 4, fill: '#0A84FF' }} activeDot={{ r: 6 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Ranking de Clientes */}
+        <div className="glass-card p-6 mt-5 space-y-5" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-5 w-5" style={{ color: '#FFD60A' }} />
+              <h3 className="text-base font-semibold text-foreground">Ranking de Clientes — {mesParam}</h3>
+            </div>
+            <div className="segmented-control">
+              <button onClick={() => setRankSort("valor")}
+                className={`segmented-btn text-[0.85rem] ${rankSort === "valor" ? "active" : ""}`}>
+                Valor
+              </button>
+              <button onClick={() => setRankSort("count")}
+                className={`segmented-btn text-[0.85rem] ${rankSort === "count" ? "active" : ""}`}>
+                Qtd
+              </button>
+            </div>
+          </div>
+
+          {clientRanking.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="h-10 w-10 mx-auto mb-2 text-foreground/70" />
+              <p className="text-[0.85rem] text-foreground/70">Nenhum lançamento neste período</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {clientRanking.slice(0, 10).map((c, idx) => (
+                <div key={c.cliente} className="flex items-center gap-3 p-4 rounded-xl transition hover:bg-muted bg-muted/50 border border-foreground/10">
+                  <span className="w-8 h-8 rounded-full flex items-center justify-center text-[0.85rem] font-bold flex-shrink-0"
+                    style={{
+                      background: idx === 0 ? '#FFD60A20' : idx === 1 ? 'rgba(255,255,255,0.08)' : idx === 2 ? '#BF5AF220' : 'rgba(255,255,255,0.04)',
+                      color: idx === 0 ? '#FFD60A' : idx === 1 ? '#AEAEB2' : idx === 2 ? '#BF5AF2' : '#8E8E93',
+                    }}>
+                    {idx + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-base font-semibold text-foreground truncate">{c.cliente}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[0.85rem] text-foreground/70">
+                        <Hash className="h-3.5 w-3.5 inline mr-0.5" />{c.count} lançamento{c.count !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-base font-bold text-foreground flex-shrink-0">{formatCurrency(c.valor)}</span>
+                </div>
+              ))}
+              {clientRanking.length > 10 && (
+                <p className="text-center text-[0.85rem] pt-1 text-foreground/70">
+                  +{clientRanking.length - 10} clientes
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Edit Modal */}
