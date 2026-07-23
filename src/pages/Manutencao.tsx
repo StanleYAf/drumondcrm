@@ -366,9 +366,9 @@ export default function Manutencao() {
               </CardContent>
             </Card>
           </div>
+          <SatisfacaoCliente clienteId={clienteId} mes={mesSel} ano={anoSel} />
         </TabsContent>
       </Tabs>
-      <SatisfacaoCliente clienteId={clienteId} mes={mesSel} ano={anoSel} />
     </div>
   );
 }
