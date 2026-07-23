@@ -52,6 +52,7 @@ export type Database = {
       }
       clientes: {
         Row: {
+          arkmeds_base: string | null
           ativo: boolean
           created_at: string
           id: string
@@ -63,6 +64,7 @@ export type Database = {
           tem_predial: boolean
         }
         Insert: {
+          arkmeds_base?: string | null
           ativo?: boolean
           created_at?: string
           id?: string
@@ -74,6 +76,7 @@ export type Database = {
           tem_predial?: boolean
         }
         Update: {
+          arkmeds_base?: string | null
           ativo?: boolean
           created_at?: string
           id?: string
