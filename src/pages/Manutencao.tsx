@@ -794,9 +794,21 @@ export function SatisfacaoCliente({
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const { data: avals } = await supabase
+      // Descobre a base Arkmeds do cliente para evitar mistura entre bases com numeros de OS coincidentes
+      let arkmedsBase: string | null = null;
+      if (clienteId) {
+        const { data: cli } = await supabase
+          .from("clientes")
+          .select("arkmeds_base")
+          .eq("id", clienteId)
+          .maybeSingle();
+        arkmedsBase = (cli as { arkmeds_base?: string | null } | null)?.arkmeds_base ?? null;
+      }
+      let avalQuery = supabase
         .from("avaliacoes_chamados")
         .select("numero_os, nota, comentario, responsavel_tecnico, arquivado_em, created_at");
+      if (arkmedsBase) avalQuery = avalQuery.eq("base", arkmedsBase);
+      const { data: avals } = await avalQuery;
       let list = ((avals ?? []) as unknown) as _AvaliacaoRow[];
 
       // Filtra por cliente e/ou período (mes/ano) via join com ordens_servico
