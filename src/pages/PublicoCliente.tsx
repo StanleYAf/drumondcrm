@@ -167,11 +167,22 @@ export default function PublicoCliente() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#F4F8FB]">
+    <div
+      className="min-h-screen w-full text-slate-100"
+      style={{
+        backgroundColor: "#0B1220",
+        backgroundImage:
+          "linear-gradient(160deg, #0B1220 0%, #111C2E 50%, #0B1220 100%), linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
+        backgroundSize: "auto, 32px 32px, 32px 32px",
+      }}
+    >
       {/* DSH Hub branded header */}
       <header
-        className="relative flex items-center justify-between px-4 sm:px-8 py-5 text-white overflow-hidden"
-        style={{ background: "linear-gradient(90deg, #1F4E79 0%, #25598C 100%)" }}
+        className="relative flex items-center justify-between px-4 sm:px-8 py-5 text-white overflow-hidden border-b border-[#50B9EC]/30"
+        style={{
+          background: "linear-gradient(90deg, #1F4E79 0%, #25598C 100%)",
+          boxShadow: "0 8px 24px -12px rgba(80, 185, 236, 0.5), 0 1px 0 0 rgba(80, 185, 236, 0.4)",
+        }}
       >
         <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1600 80" preserveAspectRatio="none" aria-hidden>
           <path
@@ -218,14 +229,14 @@ export default function PublicoCliente() {
           )}
         </div>
       </header>
-      <div className="md:hidden px-4 py-3 bg-white border-b border-[#E2E8F0]">
+      <div className="md:hidden px-4 py-3 bg-white/[0.03] backdrop-blur-md border-b border-white/10">
         <div className="flex items-center gap-3">
           {clienteLogoUrl && (
             <img src={clienteLogoUrl} alt={cliente.nome} className="h-12 w-12 rounded-lg object-contain bg-white/10" />
           )}
           <div>
-            <div className="text-base font-bold text-[#1F4E79]">{cliente.nome}</div>
-            {cliente.responsavel && <div className="text-xs text-muted-foreground">{cliente.responsavel}</div>}
+            <div className="text-base font-bold text-white">{cliente.nome}</div>
+            {cliente.responsavel && <div className="text-xs text-slate-400">{cliente.responsavel}</div>}
           </div>
         </div>
       </div>
