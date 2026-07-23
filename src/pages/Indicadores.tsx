@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAppData } from "@/lib/dataContext";
-import { MESES, indicadorSchema, type IndicadorSemanal } from "@/lib/types";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { Plus, Target, FileText, MapPin, Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, Pencil, BarChart3, Trash2 } from "lucide-react";
+import { MESES, indicadorSchema, formatCurrency, calcularComissao, type IndicadorSemanal, type Categoria, type Lancamento } from "@/lib/types";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from "recharts";
+import { Plus, Target, FileText, MapPin, Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, Pencil, BarChart3, Trash2, Receipt, Banknote, Trophy, Users, Hash, TrendingUp } from "lucide-react";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { EmptyState } from "@/components/EmptyState";
@@ -20,7 +20,23 @@ function pctValue(val: number, meta: number) {
   return meta > 0 ? ((val / meta) * 100).toFixed(0) : "0";
 }
 
+function parseLocalDate(dateStr: string) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return { month: m - 1, year: y };
+}
+
+function filterByVendedor(items: Lancamento[], vendedor: string | null) {
+  if (!vendedor) return items;
+  return items.filter(i => i.vendedor === vendedor);
+}
+
+function itemsByMonth(items: Lancamento[], month: number, year: number, vendedor: string | null = null) {
+  return filterByVendedor(items, vendedor)
+    .filter((i) => { const d = parseLocalDate(i.data); return d.month === month && d.year === year; });
+}
+
 type SortKey = "semana" | "vendedor" | "captacoes" | "orcamentos" | "visitas";
+type RankSort = "valor" | "count";
 const ITEMS_PER_PAGE = 10;
 
 export default function Indicadores() {
@@ -57,6 +73,68 @@ export default function Indicadores() {
   const [editOrcamentos, setEditOrcamentos] = useState("");
   const [editVisitas, setEditVisitas] = useState("");
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
+  const [rankSort, setRankSort] = useState<RankSort>("valor");
+
+  const currentMonthIdx = MESES.indexOf(mesParam);
+  const vendedorFilter = vendedorParam === "Todos" ? null : vendedorParam;
+
+  // ===== Indicadores Comerciais (mesmo cálculo do Dashboard) =====
+  const allItemsMonth = useMemo(() => [
+    ...itemsByMonth(data.lancamentos.produtos, currentMonthIdx, anoParam, vendedorFilter),
+    ...itemsByMonth(data.lancamentos.servicos, currentMonthIdx, anoParam, vendedorFilter),
+    ...itemsByMonth(data.lancamentos.contratos, currentMonthIdx, anoParam, vendedorFilter),
+    ...itemsByMonth(data.lancamentos.acessorios, currentMonthIdx, anoParam, vendedorFilter),
+  ], [data.lancamentos, currentMonthIdx, anoParam, vendedorFilter]);
+  const qtdLancamentos = allItemsMonth.length;
+  const totalGeralMes = allItemsMonth.reduce((s, i) => s + i.valor, 0);
+  const ticketMedio = qtdLancamentos > 0 ? totalGeralMes / qtdLancamentos : 0;
+
+  const CAT_KEYS: { cat: Categoria; arr: keyof typeof data.lancamentos }[] = [
+    { cat: "produto", arr: "produtos" },
+    { cat: "servico", arr: "servicos" },
+    { cat: "contrato", arr: "contratos" },
+    { cat: "acessorio", arr: "acessorios" },
+  ];
+  const comissoesChartData = useMemo(() => MESES.map((mesNome, i) => {
+    let recebidas = 0;
+    let previstas = 0;
+    CAT_KEYS.forEach(({ cat, arr }) => {
+      const items = itemsByMonth(data.lancamentos[arr] as Lancamento[], i, anoParam, vendedorFilter);
+      items.forEach((l) => {
+        const c = calcularComissao(cat, l.valor, l.custos ?? 0);
+        previstas += c;
+        if (l.paid) recebidas += c;
+      });
+    });
+    return { mes: mesNome.substring(0, 3), Recebidas: recebidas, Previstas: previstas };
+  }), [data.lancamentos, anoParam, vendedorFilter]);
+  const comissoesRecebidasMes = comissoesChartData[currentMonthIdx]?.Recebidas ?? 0;
+  const comissoesRecebidasAno = comissoesChartData.reduce((s, r) => s + r.Recebidas, 0);
+
+  // Evolução Mensal do Ticket Médio
+  const ticketMedioChartData = useMemo(() => MESES.map((mesNome, i) => {
+    const items = [
+      ...itemsByMonth(data.lancamentos.produtos, i, anoParam, vendedorFilter),
+      ...itemsByMonth(data.lancamentos.servicos, i, anoParam, vendedorFilter),
+      ...itemsByMonth(data.lancamentos.contratos, i, anoParam, vendedorFilter),
+      ...itemsByMonth(data.lancamentos.acessorios, i, anoParam, vendedorFilter),
+    ];
+    const total = items.reduce((s, l) => s + l.valor, 0);
+    return { mes: mesNome.substring(0, 3), "Ticket Médio": items.length > 0 ? total / items.length : 0 };
+  }), [data.lancamentos, anoParam, vendedorFilter]);
+
+  // Ranking de Clientes
+  const clientRanking = useMemo(() => {
+    const map = new Map<string, { cliente: string; valor: number; count: number }>();
+    allItemsMonth.forEach(l => {
+      const existing = map.get(l.cliente);
+      if (existing) { existing.valor += l.valor; existing.count += 1; }
+      else { map.set(l.cliente, { cliente: l.cliente, valor: l.valor, count: 1 }); }
+    });
+    const arr = Array.from(map.values());
+    arr.sort((a, b) => rankSort === "valor" ? b.valor - a.valor : b.count - a.count);
+    return arr;
+  }, [allItemsMonth, rankSort]);
 
   function validate(s: string, m: string, v: string, c: string, o: string, vi: string) {
     const result = indicadorSchema.safeParse({
