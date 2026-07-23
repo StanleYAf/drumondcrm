@@ -648,3 +648,376 @@ export default function Indicadores() {
     </div>
   );
 }
+
+// =====================================================================
+// Rotina Tab (checklist diário)
+// =====================================================================
+
+type TipoTarefa = "captacao" | "visita" | "orcamento" | "outro";
+
+interface RotinaTarefa {
+  id: string;
+  user_id: string;
+  vendedor: string;
+  data: string; // YYYY-MM-DD
+  tipo: TipoTarefa;
+  descricao: string;
+  concluida: boolean;
+  concluida_em: string | null;
+  created_at: string;
+}
+
+const TIPO_META: Record<TipoTarefa, { label: string; icon: typeof Phone; color: string }> = {
+  captacao: { label: "Captação", icon: Phone, color: "#0A84FF" },
+  visita: { label: "Visita", icon: MapPin, color: "#FFD60A" },
+  orcamento: { label: "Orçamento", icon: FileText, color: "#30D158" },
+  outro: { label: "Outro", icon: Briefcase, color: "#BF5AF2" },
+};
+
+const DIAS_SEMANA = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+
+function toISODate(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function startOfWeekMonday(base: Date) {
+  const d = new Date(base.getFullYear(), base.getMonth(), base.getDate());
+  const dow = d.getDay(); // 0=Sun..6=Sat
+  const diff = dow === 0 ? -6 : 1 - dow;
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+function isoWeekNumber(date: Date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+function normalize(s: string) {
+  return (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+function RotinaTab() {
+  const { data } = useAppData();
+  const { user, displayName, hasCargo } = useAuth();
+  const isAdmin = hasCargo("admin");
+
+  // Identify logged vendor (match displayName against data.vendedores)
+  const vendedorLogado = useMemo(() => {
+    const n = normalize(displayName || "");
+    if (!n) return data.vendedores[0] || "";
+    const found = data.vendedores.find(v => normalize(v) === n)
+      || data.vendedores.find(v => normalize(v).includes(n) || n.includes(normalize(v)));
+    return found || data.vendedores[0] || "";
+  }, [displayName, data.vendedores]);
+
+  const [vendorFilter, setVendorFilter] = useState<string>(vendedorLogado);
+  useEffect(() => { setVendorFilter(vendedorLogado); }, [vendedorLogado]);
+
+  const [weekOffset, setWeekOffset] = useState(0);
+  const monday = useMemo(() => {
+    const d = startOfWeekMonday(new Date());
+    d.setDate(d.getDate() + weekOffset * 7);
+    return d;
+  }, [weekOffset]);
+
+  const weekDays = useMemo(() => Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
+  }), [monday]);
+
+  const weekStartISO = toISODate(weekDays[0]);
+  const weekEndISO = toISODate(weekDays[weekDays.length - 1]);
+  const weekNum = useMemo(() => isoWeekNumber(monday), [monday]);
+  const anoAtual = monday.getFullYear();
+
+  const [tarefas, setTarefas] = useState<RotinaTarefa[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const targetVendor = vendorFilter === "Todos" ? null : (vendorFilter || vendedorLogado);
+
+  const loadTarefas = useCallback(async () => {
+    setLoading(true);
+    try {
+      let q = (supabase as any).from("rotina_tarefas").select("*")
+        .gte("data", weekStartISO).lte("data", weekEndISO);
+      if (targetVendor) q = q.eq("vendedor", targetVendor);
+      const { data: rows, error } = await q.order("created_at", { ascending: true });
+      if (error) throw error;
+      setTarefas((rows || []) as RotinaTarefa[]);
+    } catch (err: any) {
+      toast.error("Erro ao carregar rotina: " + (err?.message || "desconhecido"));
+      setTarefas([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [weekStartISO, weekEndISO, targetVendor]);
+
+  useEffect(() => { loadTarefas(); }, [loadTarefas]);
+
+  // Realtime subscription
+  useEffect(() => {
+    const ch = supabase
+      .channel("rotina-tarefas-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "rotina_tarefas" }, () => loadTarefas())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [loadTarefas]);
+
+  // --- Resumo da semana (reaproveita indicadores_semanais) ---
+  const resumoVendor = targetVendor || vendedorLogado;
+  const resumoSemana = useMemo(() => {
+    const rows = data.indicadores_semanais.filter(i =>
+      i.ano === anoAtual && i.semana === weekNum
+      && (vendorFilter === "Todos" ? true : i.vendedor === resumoVendor)
+    );
+    return {
+      captacoes: rows.reduce((s, r) => s + (r.captacoes || 0), 0),
+      orcamentos: rows.reduce((s, r) => s + (r.orcamentos || 0), 0),
+      visitas: rows.reduce((s, r) => s + (r.visitas || 0), 0),
+    };
+  }, [data.indicadores_semanais, anoAtual, weekNum, vendorFilter, resumoVendor]);
+
+  // --- Add task dialog ---
+  const [addOpen, setAddOpen] = useState<{ date: string } | null>(null);
+  const [newTipo, setNewTipo] = useState<TipoTarefa>("captacao");
+  const [newDesc, setNewDesc] = useState("");
+
+  async function handleAdd() {
+    if (!addOpen || !user) return;
+    const desc = newDesc.trim();
+    if (!desc) { toast.error("Descreva a tarefa"); return; }
+    const vendorForNew = targetVendor && targetVendor !== vendedorLogado ? vendedorLogado : (vendedorLogado || targetVendor || "");
+    if (!vendorForNew) { toast.error("Vendedor não identificado"); return; }
+    try {
+      const { error } = await (supabase as any).from("rotina_tarefas").insert({
+        user_id: user.id, vendedor: vendorForNew, data: addOpen.date, tipo: newTipo, descricao: desc,
+      });
+      if (error) throw error;
+      toast.success("Tarefa adicionada");
+      setAddOpen(null); setNewDesc(""); setNewTipo("captacao");
+      loadTarefas();
+    } catch (err: any) {
+      toast.error("Erro ao adicionar: " + (err?.message || ""));
+    }
+  }
+
+  async function toggleTarefa(t: RotinaTarefa) {
+    if (user?.id !== t.user_id && !isAdmin) return;
+    if (user?.id !== t.user_id) { toast.error("Somente o dono pode marcar"); return; }
+    const nextVal = !t.concluida;
+    try {
+      const { error } = await (supabase as any).from("rotina_tarefas").update({
+        concluida: nextVal, concluida_em: nextVal ? new Date().toISOString() : null,
+      }).eq("id", t.id);
+      if (error) throw error;
+      setTarefas(prev => prev.map(x => x.id === t.id ? { ...x, concluida: nextVal, concluida_em: nextVal ? new Date().toISOString() : null } : x));
+    } catch (err: any) {
+      toast.error("Erro ao atualizar: " + (err?.message || ""));
+    }
+  }
+
+  async function removeTarefa(t: RotinaTarefa) {
+    if (user?.id !== t.user_id) { toast.error("Somente o dono pode excluir"); return; }
+    if (!confirm("Excluir esta tarefa?")) return;
+    try {
+      const { error } = await (supabase as any).from("rotina_tarefas").delete().eq("id", t.id);
+      if (error) throw error;
+      setTarefas(prev => prev.filter(x => x.id !== t.id));
+      toast.success("Tarefa excluída");
+    } catch (err: any) {
+      toast.error("Erro ao excluir: " + (err?.message || ""));
+    }
+  }
+
+  const metaSem = data.meta_semanal;
+  const totalTarefas = tarefas.length;
+  const concluidas = tarefas.filter(t => t.concluida).length;
+
+  if (loading) return <ListSkeleton />;
+
+  return (
+    <div className="space-y-5">
+      {/* Resumo da semana */}
+      <div className="glass-card p-4 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold text-foreground">
+              Resumo — Semana {weekNum} · {vendorFilter === "Todos" ? "Todos" : resumoVendor}
+            </h3>
+          </div>
+          <span className="text-[11px] text-muted-foreground">
+            {weekDays[0].toLocaleDateString("pt-BR")} — {weekDays[5].toLocaleDateString("pt-BR")}
+          </span>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { label: "Captações", val: resumoSemana.captacoes, meta: metaSem.captacoes, color: "#0A84FF" },
+            { label: "Orçamentos", val: resumoSemana.orcamentos, meta: metaSem.orcamentos, color: "#30D158" },
+            { label: "Visitas", val: resumoSemana.visitas, meta: metaSem.visitas, color: "#FFD60A" },
+          ].map(m => {
+            const pct = m.meta > 0 ? Math.min(100, (m.val / m.meta) * 100) : 0;
+            const barColor = pctColor(m.val, m.meta);
+            return (
+              <div key={m.label} className="p-2.5 rounded-xl bg-muted/40">
+                <div className="flex items-baseline justify-between mb-1">
+                  <span className="text-[11px] text-muted-foreground">{m.label}</span>
+                  <span className="text-[11px] font-semibold" style={{ color: barColor }}>{Math.round(pct)}%</span>
+                </div>
+                <p className="text-base font-bold text-foreground leading-none">
+                  {m.val} <span className="text-[11px] font-normal text-muted-foreground">/ {m.meta}</span>
+                </p>
+                <div className="h-1.5 rounded-full bg-muted mt-2 overflow-hidden">
+                  <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <button onClick={() => setWeekOffset(w => w - 1)}
+            className="p-2 rounded-xl bg-secondary hover:bg-muted">
+            <ChevronLeft className="h-4 w-4 text-foreground" />
+          </button>
+          <span className="text-sm font-medium text-foreground">Semana {weekNum} / {anoAtual}</span>
+          <button onClick={() => setWeekOffset(w => w + 1)}
+            className="p-2 rounded-xl bg-secondary hover:bg-muted">
+            <ChevronRight className="h-4 w-4 text-foreground" />
+          </button>
+          {weekOffset !== 0 && (
+            <button onClick={() => setWeekOffset(0)} className="text-[11px] text-primary ml-1">Semana atual</button>
+          )}
+        </div>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <CheckCircle2 className="h-4 w-4" style={{ color: '#30D158' }} />
+          {concluidas} / {totalTarefas} concluídas
+        </div>
+      </div>
+
+      {isAdmin && (
+        <div className="flex items-center gap-2">
+          <label className="text-[11px] text-muted-foreground">Ver rotina de:</label>
+          <select value={vendorFilter} onChange={e => setVendorFilter(e.target.value)}
+            className="ios-input text-xs w-auto min-w-[140px]">
+            <option value="Todos">Todos</option>
+            {data.vendedores.map(v => <option key={v} value={v}>{v}</option>)}
+          </select>
+        </div>
+      )}
+
+      {/* Checklist grid */}
+      {totalTarefas === 0 ? (
+        <div className="glass-card p-6">
+          <EmptyState icon={ListChecks} title="Sem tarefas" description="Nenhuma tarefa cadastrada para esta semana. Clique em '+ Nova Tarefa' para começar." />
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+        {weekDays.map((day, idx) => {
+          const dayISO = toISODate(day);
+          const dayTasks = tarefas.filter(t => t.data === dayISO);
+          const isToday = toISODate(new Date()) === dayISO;
+          return (
+            <div key={dayISO} className={`glass-card p-3 space-y-2 ${isToday ? 'ring-1 ring-primary' : ''}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[11px] text-muted-foreground leading-none">{DIAS_SEMANA[idx]}</p>
+                  <p className="text-sm font-semibold text-foreground mt-0.5">
+                    {String(day.getDate()).padStart(2, '0')}/{String(day.getMonth() + 1).padStart(2, '0')}
+                  </p>
+                </div>
+                <button onClick={() => setAddOpen({ date: dayISO })}
+                  className="p-1.5 rounded-lg bg-primary/15 hover:bg-primary/25">
+                  <Plus className="h-3.5 w-3.5 text-primary" />
+                </button>
+              </div>
+              <div className="space-y-1.5 min-h-[40px]">
+                {dayTasks.length === 0 ? (
+                  <p className="text-[10px] text-muted-foreground italic py-2 text-center">— sem tarefas —</p>
+                ) : dayTasks.map(t => {
+                  const meta = TIPO_META[t.tipo as TipoTarefa] || TIPO_META.outro;
+                  const Icon = meta.icon;
+                  const isOwner = user?.id === t.user_id;
+                  return (
+                    <div key={t.id}
+                      className={`flex items-start gap-2 p-2 rounded-lg bg-muted/30 border border-border/40 ${t.concluida ? 'opacity-60' : ''}`}>
+                      <Checkbox
+                        checked={t.concluida}
+                        disabled={!isOwner}
+                        onCheckedChange={() => toggleTarefa(t)}
+                        className="mt-0.5"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <Icon className="h-3 w-3 shrink-0" style={{ color: meta.color }} />
+                          <span className="text-[10px] font-medium" style={{ color: meta.color }}>{meta.label}</span>
+                          {vendorFilter === "Todos" && (
+                            <span className="text-[9px] text-muted-foreground truncate">· {t.vendedor}</span>
+                          )}
+                        </div>
+                        <p className={`text-xs text-foreground break-words ${t.concluida ? 'line-through' : ''}`}>
+                          {t.descricao}
+                        </p>
+                      </div>
+                      {isOwner && (
+                        <button onClick={() => removeTarefa(t)}
+                          className="p-1 rounded hover:bg-muted shrink-0">
+                          <Trash2 className="h-3 w-3" style={{ color: '#FF453A' }} />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Add task dialog */}
+      <Dialog open={!!addOpen} onOpenChange={(o) => { if (!o) setAddOpen(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nova Tarefa {addOpen ? `— ${addOpen.date.split('-').reverse().join('/')}` : ''}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Tipo</label>
+              <select value={newTipo} onChange={e => setNewTipo(e.target.value as TipoTarefa)}
+                className="ios-input w-full">
+                <option value="captacao">Captação</option>
+                <option value="visita">Visita</option>
+                <option value="orcamento">Orçamento</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[11px] font-medium block mb-1 text-muted-foreground">Descrição</label>
+              <input value={newDesc} onChange={e => setNewDesc(e.target.value)}
+                className="ios-input w-full" placeholder="Ex: Ligar para cliente X"
+                autoFocus onKeyDown={e => { if (e.key === "Enter") handleAdd(); }} />
+            </div>
+          </div>
+          <DialogFooter>
+            <button onClick={() => setAddOpen(null)}
+              className="px-4 py-2 rounded-xl text-sm bg-secondary text-foreground">Cancelar</button>
+            <button onClick={handleAdd}
+              className="px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-foreground">Adicionar</button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
