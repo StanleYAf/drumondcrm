@@ -2,6 +2,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Activity, CheckCircle2, AlertOctagon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { OSOperacaoRow } from "../hooks/useClienteOperacaoData";
 
 interface Props {
@@ -21,15 +24,38 @@ function isCorretiva(t: string | null) { return (t || "").toLowerCase().includes
 export function DisponibilidadeEquipamentos({ osPeriodo, equipamentosTotais }: Props) {
   const total = equipamentosTotais.size;
   const indisponiveis = new Set<string>();
+  const indispDetalhes: Array<{ key: string; tipo_equipamento: string | null; tag: string | null; numero_serie: string | null; localizacao: string | null; os_id: string | number | null }> = [];
   for (const r of osPeriodo) {
     if (!isCorretiva(r.tipo_servico)) continue;
     if (!isAberta(r.estado)) continue;
     const k = (r.numero_serie || r.tag || "").trim();
-    if (k && equipamentosTotais.has(k)) indisponiveis.add(k);
+    if (k && equipamentosTotais.has(k)) {
+      if (!indisponiveis.has(k)) {
+        indisponiveis.add(k);
+        indispDetalhes.push({
+          key: k,
+          tipo_equipamento: (r as any).tipo_equipamento ?? null,
+          tag: (r as any).tag ?? null,
+          numero_serie: (r as any).numero_serie ?? null,
+          localizacao: (r as any).localizacao ?? null,
+          os_id: (r as any).id ?? null,
+        });
+      }
+    }
   }
   const indispCount = indisponiveis.size;
   const operCount = Math.max(total - indispCount, 0);
   const pct = total > 0 ? (operCount / total) * 100 : 0;
+
+  const [openIndisp, setOpenIndisp] = useState(false);
+  const indispOrdenados = [...indispDetalhes].sort((a, b) => {
+    const la = (a.localizacao || "").toLowerCase();
+    const lb = (b.localizacao || "").toLowerCase();
+    if (la !== lb) return la.localeCompare(lb);
+    const na = (a.tipo_equipamento || "").toLowerCase();
+    const nb = (b.tipo_equipamento || "").toLowerCase();
+    return na.localeCompare(nb);
+  });
 
   const tone = pct >= 95 ? "emerald" : pct >= 85 ? "amber" : "red";
   const stroke = tone === "emerald" ? "hsl(142 71% 45%)" : tone === "amber" ? "hsl(38 92% 50%)" : "hsl(0 84% 60%)";
@@ -72,7 +98,13 @@ export function DisponibilidadeEquipamentos({ osPeriodo, equipamentosTotais }: P
             </div>
             <div className="space-y-3">
               <Row icon={CheckCircle2} label="Operacionais" value={operCount} cls="text-emerald-500" />
-              <Row icon={AlertOctagon} label="Indisponíveis" value={indispCount} cls={cn(indispCount > 0 ? "text-red-500" : "text-muted-foreground")} />
+              <Row
+                icon={AlertOctagon}
+                label="Indisponíveis"
+                value={indispCount}
+                cls={cn(indispCount > 0 ? "text-red-500" : "text-muted-foreground")}
+                onClick={indispCount > 0 ? () => setOpenIndisp(true) : undefined}
+              />
               <div className="pt-2 border-t border-border flex justify-between text-sm">
                 <span className="text-muted-foreground">Total de equipamentos</span>
                 <Badge variant="outline" className="tabular-nums">{total}</Badge>
@@ -84,13 +116,51 @@ export function DisponibilidadeEquipamentos({ osPeriodo, equipamentosTotais }: P
           </div>
         )}
       </CardContent>
+
+      <Dialog open={openIndisp} onOpenChange={setOpenIndisp}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Equipamentos Indisponíveis ({indispCount})</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Equipamento</TableHead>
+                  <TableHead>TAG/Nº Série</TableHead>
+                  <TableHead>Localização</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {indispOrdenados.map((e) => (
+                  <TableRow key={String(e.os_id ?? e.key)}>
+                    <TableCell>{e.tipo_equipamento || "—"}</TableCell>
+                    <TableCell className="tabular-nums">{e.tag || e.numero_serie || "—"}</TableCell>
+                    <TableCell>{e.localizacao || "—"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
 
-function Row({ icon: I, label, value, cls }: { icon: any; label: string; value: number; cls: string }) {
+function Row({ icon: I, label, value, cls, onClick }: { icon: any; label: string; value: number; cls: string; onClick?: () => void }) {
+  const clickable = typeof onClick === "function";
   return (
-    <div className="flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2">
+    <div
+      className={cn(
+        "flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2",
+        clickable && "cursor-pointer hover:bg-secondary/70 transition-colors"
+      )}
+      onClick={onClick}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={clickable ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick?.(); } } : undefined}
+    >
       <span className="inline-flex items-center gap-2 text-sm">
         <I className={cn("h-4 w-4", cls)} /> {label}
       </span>
