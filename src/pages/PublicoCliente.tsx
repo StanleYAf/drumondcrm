@@ -279,7 +279,7 @@ export default function PublicoCliente() {
                           <Icon className="h-4 w-4 text-primary" />
                         </div>
                       </div>
-                      <div className="text-3xl font-bold">{valor}</div>
+                      <div className={`text-3xl font-bold ${pct === null ? "kpi-glow-neutral" : pct > 0 ? "kpi-glow-green" : pct < 0 ? "kpi-glow-red" : "kpi-glow-neutral"}`}>{valor}</div>
                       <div className={`flex items-center gap-1 text-xs font-medium ${corClasse}`}>
                         <TrendIcon className="h-3.5 w-3.5" />
                         <span>{pct === null ? "Sem mês anterior" : `${pct > 0 ? "+" : ""}${pct.toFixed(1)}% vs mês anterior`}</span>
