@@ -167,11 +167,34 @@ export default function PublicoCliente() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#F4F8FB]">
+    <div
+      className="dsh-dark min-h-screen w-full text-slate-100"
+      style={{
+        backgroundColor: "#0B1220",
+        backgroundImage:
+          "linear-gradient(160deg, #0B1220 0%, #111C2E 50%, #0B1220 100%), linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
+        backgroundSize: "auto, 32px 32px, 32px 32px",
+      }}
+    >
+      <style>{`
+        .dsh-dark .bg-card { background-color: rgba(255,255,255,0.04) !important; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-color: rgba(255,255,255,0.10) !important; box-shadow: 0 1px 0 0 rgba(255,255,255,0.04) inset, 0 8px 32px -12px rgba(0,0,0,0.5); }
+        .dsh-dark .text-card-foreground { color: rgb(241 245 249); }
+        .dsh-dark .text-muted-foreground { color: rgb(148 163 184) !important; }
+        .dsh-dark .border-border, .dsh-dark .border { border-color: rgba(255,255,255,0.10); }
+        .dsh-dark .bg-primary\\/10 { background-color: rgba(80,185,236,0.14) !important; }
+        .dsh-dark .text-primary { color: #7dd3fc !important; }
+        .dsh-dark .kpi-glow-green { text-shadow: 0 0 18px rgba(34,197,94,0.55); }
+        .dsh-dark .kpi-glow-amber { text-shadow: 0 0 18px rgba(251,191,36,0.55); }
+        .dsh-dark .kpi-glow-red { text-shadow: 0 0 18px rgba(239,68,68,0.55); }
+        .dsh-dark .kpi-glow-neutral { text-shadow: 0 0 18px rgba(125,211,252,0.45); }
+      `}</style>
       {/* DSH Hub branded header */}
       <header
-        className="relative flex items-center justify-between px-4 sm:px-8 py-5 text-white overflow-hidden"
-        style={{ background: "linear-gradient(90deg, #1F4E79 0%, #25598C 100%)" }}
+        className="relative flex items-center justify-between px-4 sm:px-8 py-5 text-white overflow-hidden border-b border-[#50B9EC]/30"
+        style={{
+          background: "linear-gradient(90deg, #1F4E79 0%, #25598C 100%)",
+          boxShadow: "0 8px 24px -12px rgba(80, 185, 236, 0.5), 0 1px 0 0 rgba(80, 185, 236, 0.4)",
+        }}
       >
         <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 1600 80" preserveAspectRatio="none" aria-hidden>
           <path
@@ -218,14 +241,14 @@ export default function PublicoCliente() {
           )}
         </div>
       </header>
-      <div className="md:hidden px-4 py-3 bg-white border-b border-[#E2E8F0]">
+      <div className="md:hidden px-4 py-3 bg-white/[0.03] backdrop-blur-md border-b border-white/10">
         <div className="flex items-center gap-3">
           {clienteLogoUrl && (
             <img src={clienteLogoUrl} alt={cliente.nome} className="h-12 w-12 rounded-lg object-contain bg-white/10" />
           )}
           <div>
-            <div className="text-base font-bold text-[#1F4E79]">{cliente.nome}</div>
-            {cliente.responsavel && <div className="text-xs text-muted-foreground">{cliente.responsavel}</div>}
+            <div className="text-base font-bold text-white">{cliente.nome}</div>
+            {cliente.responsavel && <div className="text-xs text-slate-400">{cliente.responsavel}</div>}
           </div>
         </div>
       </div>
@@ -256,7 +279,7 @@ export default function PublicoCliente() {
                           <Icon className="h-4 w-4 text-primary" />
                         </div>
                       </div>
-                      <div className="text-3xl font-bold">{valor}</div>
+                      <div className={`text-3xl font-bold ${pct === null ? "kpi-glow-neutral" : pct > 0 ? "kpi-glow-green" : pct < 0 ? "kpi-glow-red" : "kpi-glow-neutral"}`}>{valor}</div>
                       <div className={`flex items-center gap-1 text-xs font-medium ${corClasse}`}>
                         <TrendIcon className="h-3.5 w-3.5" />
                         <span>{pct === null ? "Sem mês anterior" : `${pct > 0 ? "+" : ""}${pct.toFixed(1)}% vs mês anterior`}</span>
