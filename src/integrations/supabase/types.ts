@@ -1654,6 +1654,42 @@ export type Database = {
         }
         Relationships: []
       }
+      rotina_tarefas: {
+        Row: {
+          concluida: boolean
+          concluida_em: string | null
+          created_at: string
+          data: string
+          descricao: string
+          id: string
+          tipo: string
+          user_id: string
+          vendedor: string
+        }
+        Insert: {
+          concluida?: boolean
+          concluida_em?: string | null
+          created_at?: string
+          data: string
+          descricao: string
+          id?: string
+          tipo: string
+          user_id: string
+          vendedor: string
+        }
+        Update: {
+          concluida?: boolean
+          concluida_em?: string | null
+          created_at?: string
+          data?: string
+          descricao?: string
+          id?: string
+          tipo?: string
+          user_id?: string
+          vendedor?: string
+        }
+        Relationships: []
+      }
       sync_logs: {
         Row: {
           ano: number | null
