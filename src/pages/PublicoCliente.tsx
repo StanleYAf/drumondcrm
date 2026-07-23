@@ -168,7 +168,7 @@ export default function PublicoCliente() {
 
   return (
     <div
-      className="min-h-screen w-full text-slate-100"
+      className="dsh-dark min-h-screen w-full text-slate-100"
       style={{
         backgroundColor: "#0B1220",
         backgroundImage:
@@ -176,6 +176,18 @@ export default function PublicoCliente() {
         backgroundSize: "auto, 32px 32px, 32px 32px",
       }}
     >
+      <style>{`
+        .dsh-dark .bg-card { background-color: rgba(255,255,255,0.04) !important; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-color: rgba(255,255,255,0.10) !important; box-shadow: 0 1px 0 0 rgba(255,255,255,0.04) inset, 0 8px 32px -12px rgba(0,0,0,0.5); }
+        .dsh-dark .text-card-foreground { color: rgb(241 245 249); }
+        .dsh-dark .text-muted-foreground { color: rgb(148 163 184) !important; }
+        .dsh-dark .border-border, .dsh-dark .border { border-color: rgba(255,255,255,0.10); }
+        .dsh-dark .bg-primary\\/10 { background-color: rgba(80,185,236,0.14) !important; }
+        .dsh-dark .text-primary { color: #7dd3fc !important; }
+        .dsh-dark .kpi-glow-green { text-shadow: 0 0 18px rgba(34,197,94,0.55); }
+        .dsh-dark .kpi-glow-amber { text-shadow: 0 0 18px rgba(251,191,36,0.55); }
+        .dsh-dark .kpi-glow-red { text-shadow: 0 0 18px rgba(239,68,68,0.55); }
+        .dsh-dark .kpi-glow-neutral { text-shadow: 0 0 18px rgba(125,211,252,0.45); }
+      `}</style>
       {/* DSH Hub branded header */}
       <header
         className="relative flex items-center justify-between px-4 sm:px-8 py-5 text-white overflow-hidden border-b border-[#50B9EC]/30"
