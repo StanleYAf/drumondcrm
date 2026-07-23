@@ -1,12 +1,17 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAppData } from "@/lib/dataContext";
+import { useAuth } from "@/lib/authContext";
+import { supabase } from "@/integrations/supabase/client";
 import { MESES, indicadorSchema, formatCurrency, calcularComissao, type IndicadorSemanal, type Categoria, type Lancamento } from "@/lib/types";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend } from "recharts";
-import { Plus, Target, FileText, MapPin, Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, Pencil, BarChart3, Trash2, Receipt, Banknote, Trophy, Users, Hash, TrendingUp } from "lucide-react";
+import { Plus, Target, FileText, MapPin, Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, X, Pencil, BarChart3, Trash2, Receipt, Banknote, Trophy, Users, Hash, TrendingUp, CheckCircle2, Phone, Briefcase, ListChecks } from "lucide-react";
 import { ListSkeleton } from "@/components/LoadingSkeleton";
 import { ErrorState } from "@/components/ErrorState";
 import { EmptyState } from "@/components/EmptyState";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 function pctColor(val: number, meta: number) {
@@ -255,8 +260,16 @@ export default function Indicadores() {
 
   return (
     <div className="space-y-5 pb-24">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Indicadores</h1>
+      <h1 className="text-2xl font-bold text-foreground">Indicadores</h1>
+
+      <Tabs defaultValue="semanais" className="w-full">
+        <TabsList className="grid w-full grid-cols-2 h-11">
+          <TabsTrigger value="semanais">Indicadores Semanais</TabsTrigger>
+          <TabsTrigger value="rotina">Rotina</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="semanais" className="space-y-5 mt-5">
+      <div className="flex items-center justify-end">
         <button onClick={() => { setShowForm(!showForm); setFormErrors({}); }}
           className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-foreground bg-primary">
           <Plus className="h-4 w-4" />Registrar semana
@@ -575,6 +588,12 @@ export default function Indicadores() {
           )}
         </div>
       </div>
+        </TabsContent>
+
+        <TabsContent value="rotina" className="mt-5">
+          <RotinaTab />
+        </TabsContent>
+      </Tabs>
 
       {/* Edit Modal */}
       {editItem && (
