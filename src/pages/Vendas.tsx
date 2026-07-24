@@ -398,6 +398,31 @@ export default function Vendas() {
       const { error } = await supabase.from("leads").insert({ ...payload, user_id: user!.id, etapa: "novo_lead" as any });
       if (error) { toast.error("Erro ao criar lead"); return; }
       toast.success("Lead criado");
+      // Notificar responsável (busca user_id pelo nome de exibição)
+      if (payload.responsavel) {
+        try {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("user_id")
+            .ilike("display_name", payload.responsavel)
+            .eq("aprovado", true)
+            .maybeSingle();
+          const respId = (prof as any)?.user_id;
+          if (respId) {
+            const title = "Novo lead atribuído";
+            const message = `${payload.nome_cliente}${payload.empresa ? ` — ${payload.empresa}` : ""}`;
+            await (supabase as any).from("notifications").insert({
+              user_id: respId,
+              title,
+              message,
+              link: "/vendas",
+            });
+            supabase.functions.invoke("send-onesignal-push", {
+              body: { user_id: respId, title, message, url: `${window.location.origin}/vendas` },
+            }).catch(() => {});
+          }
+        } catch { /* silencioso */ }
+      }
     }
     setShowModal(false);
     setEditLead(null);
