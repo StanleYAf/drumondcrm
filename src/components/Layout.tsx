@@ -30,6 +30,7 @@ const groups: ModuleDef[] = [
     icon: Landmark,
     subs: [
       { title: "Contratos", url: "/administrativo/contratos", icon: FileSignature, perm: "adm_contratos" },
+      { title: "Patrimônio", url: "/administrativo/patrimonio", icon: Package, perm: "adm_patrimonio" },
     ],
   },
   {
