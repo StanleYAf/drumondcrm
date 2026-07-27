@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { applyCurrencyMask, parseCurrencyMask, numberToCurrencyMask } from "@/lib/currencyMask";
 import {
   Package, Plus, Pencil, Trash2, Search, DollarSign, AlertCircle,
 } from "lucide-react";
@@ -400,8 +401,8 @@ export default function Patrimonio() {
               <Label>Valor (R$)</Label>
               <Input
                 value={form.valor}
-                onChange={(e) => setForm({ ...form, valor: e.target.value })}
-                placeholder="Ex: 930.00"
+                onChange={(e) => setForm({ ...form, valor: applyCurrencyMask(e.target.value) })}
+                placeholder="R$ 0,00"
                 inputMode="decimal"
               />
             </div>
