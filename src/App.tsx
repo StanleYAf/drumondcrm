@@ -33,6 +33,7 @@ import Financeiro from "./pages/Financeiro";
 import Demandas from "./pages/Demandas";
 import Contratos from "./pages/administrativo/Contratos";
 import ControleART from "./pages/administrativo/ControleART";
+import Patrimonio from "./pages/administrativo/Patrimonio";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import PublicoCliente from "./pages/PublicoCliente";
@@ -46,6 +47,7 @@ const MODULE_FALLBACKS = [
   { perm: "fin_dashboard", path: "/financeiro" },
   { perm: "est_estoque", path: "/estoque" },
   { perm: "adm_contratos", path: "/administrativo/contratos" },
+  { perm: "adm_patrimonio", path: "/administrativo/patrimonio" },
 ];
 
 function SmartRedirect() {
@@ -224,6 +226,14 @@ const App = () => (
                                     element={
                                       <RoleGuard perm="adm_contratos">
                                         <Contratos />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="administrativo/patrimonio"
+                                    element={
+                                      <RoleGuard perm="adm_patrimonio">
+                                        <Patrimonio />
                                       </RoleGuard>
                                     }
                                   />
