@@ -4,7 +4,7 @@ import { NavLink } from "@/components/NavLink";
 import {
   LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings,
   Boxes, LogOut, Briefcase, Building2, ClipboardList, DollarSign, RefreshCw, KanbanSquare,
-  Stethoscope, Plus, Landmark, FileSignature, FileBadge, CalendarClock, Menu,
+  Stethoscope, Plus, Landmark, FileSignature, FileBadge, CalendarClock, Menu, Package, 
 } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 import type { PermCode } from "@/lib/permissions";
