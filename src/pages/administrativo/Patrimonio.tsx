@@ -139,7 +139,7 @@ export default function Patrimonio() {
       local: item.local ?? "",
       setor: item.setor ?? "",
       colaborador_responsavel: item.colaborador_responsavel ?? "",
-      valor: item.valor != null ? String(item.valor) : "",
+      valor: item.valor != null ? numberToCurrencyMask(item.valor) : "",
       status: item.status,
       observacao: item.observacao ?? "",
     });
@@ -161,7 +161,7 @@ export default function Patrimonio() {
       local: form.local.trim() || null,
       setor: form.setor.trim() || null,
       colaborador_responsavel: form.colaborador_responsavel.trim() || null,
-      valor: form.valor.trim() ? Number(form.valor.replace(",", ".")) : null,
+      valor: form.valor.trim() ? parseCurrencyMask(form.valor) : null,
       status: form.status,
       observacao: form.observacao.trim() || null,
     };
