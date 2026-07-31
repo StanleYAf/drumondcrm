@@ -366,6 +366,24 @@ export default function Vendas() {
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
 
+  // Tick para atualizar contadores de SLA nos cards
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((v) => v + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Proteção contra bug do Radix Select/Dialog travando o pointer-events do body
+  useEffect(() => {
+    const fix = () => {
+      if (document.body.style.pointerEvents === "none") {
+        document.body.style.pointerEvents = "";
+      }
+    };
+    const timer = setInterval(fix, 300);
+    return () => clearInterval(timer);
+  }, []);
+
   // Fetch vendedores ativos
   useEffect(() => {
     supabase.from("vendedores").select("id, nome").eq("ativo", true).order("nome").then(({ data }) => {
@@ -391,8 +409,7 @@ export default function Vendas() {
   // ── Filtered leads ──
   const filtered = useMemo(() => {
     return leads.filter((l) => {
-      if (!showArquivados && l.arquivado_em) return false;
-      if (showArquivados && !l.arquivado_em) return false;
+      if (!showArquivados && isArquivadoView(l)) return false;
       if (search) {
         const s = search.toLowerCase();
         if (!l.nome_cliente.toLowerCase().includes(s) && !(l.empresa || "").toLowerCase().includes(s)) return false;
@@ -406,7 +423,21 @@ export default function Vendas() {
     });
   }, [leads, search, filterResp, filterOrigem, filterTipo, filterDateStart, filterDateEnd, showArquivados]);
 
-  const arquivadosCount = useMemo(() => leads.filter((l) => l.arquivado_em).length, [leads]);
+  const arquivadosCount = useMemo(() => leads.filter((l) => isArquivadoView(l)).length, [leads]);
+
+  // ── SLA de atendimento (mês atual) ──
+  const slaMes = useMemo(() => {
+    const now = new Date();
+    const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const doMes = leads.filter((l) => new Date(l.created_at).getTime() >= inicioMes);
+    const qualificados = doMes.filter((l) => l.etapa !== "novo_lead");
+    const noPrazo = qualificados.filter((l) => slaCumprido(l));
+    const perdidos = qualificados.filter((l) => !slaCumprido(l));
+    const pct = qualificados.length ? (noPrazo.length / qualificados.length) * 100 : 0;
+    return { pct, total: qualificados.length, noPrazo: noPrazo.length, perdidos };
+  }, [leads]);
+
+  const slaColor = slaMes.pct >= 90 ? "text-emerald-400" : slaMes.pct >= 70 ? "text-yellow-400" : "text-red-400";
 
   const responsaveis = useMemo(() => [...new Set(leads.map((l) => l.responsavel).filter(Boolean))], [leads]);
 
