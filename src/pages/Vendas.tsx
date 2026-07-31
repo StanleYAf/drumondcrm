@@ -601,7 +601,7 @@ export default function Vendas() {
               className="h-9"
             >
               <Archive className="h-4 w-4 mr-2" />
-              {showArquivados ? "Ver ativos" : `Arquivados${arquivadosCount ? ` (${arquivadosCount})` : ""}`}
+              {showArquivados ? "Ocultar arquivados" : `Mostrar arquivados (30+ dias)${arquivadosCount ? ` (${arquivadosCount})` : ""}`}
             </Button>
             <Button onClick={() => { setEditLead(null); setForm(emptyForm); setShowModal(true); }}>
               <Plus className="h-4 w-4 mr-2" /> Novo Lead
@@ -646,6 +646,34 @@ export default function Vendas() {
               </button>
             )}
           </div>
+        </div>
+
+        {/* KPIs de SLA */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Card className="p-3">
+            <p className="text-xs text-muted-foreground">SLA de Atendimento (mês)</p>
+            <p className={`text-2xl font-bold ${slaColor}`}>{slaMes.pct.toFixed(0)}%</p>
+            <p className="text-[11px] text-muted-foreground">
+              {slaMes.noPrazo} de {slaMes.total} leads atendidos em até 1h
+            </p>
+          </Card>
+          <Card className="p-3">
+            <p className="text-xs text-muted-foreground">Leads com SLA Perdido (mês)</p>
+            <p className="text-2xl font-bold text-red-400">{slaMes.perdidos.length}</p>
+            {slaMes.perdidos.length > 0 && (
+              <div className="mt-1 max-h-24 overflow-y-auto space-y-0.5">
+                {slaMes.perdidos.map((l) => (
+                  <button
+                    key={l.id}
+                    onClick={() => setDetailLead(l)}
+                    className="block w-full text-left text-[11px] text-muted-foreground hover:text-foreground truncate"
+                  >
+                    {l.nome_cliente} · {l.responsavel || "—"}
+                  </button>
+                ))}
+              </div>
+            )}
+          </Card>
         </div>
       </div>
 
