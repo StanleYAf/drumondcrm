@@ -57,6 +57,10 @@ export default function PosVendaPage() {
   const [notaTexto, setNotaTexto] = useState("");
 
   const pendentes = data.pos_venda.filter(p => p.status === "Aguardando retorno").length;
+  const arquivadosCount = useMemo(
+    () => data.pos_venda.filter(p => isArquivadoView(p, arquivados)).length,
+    [data.pos_venda, arquivados]
+  );
 
   // Load archived IDs + run auto-archive on mount
   const refreshArquivados = useCallback(async () => {
@@ -177,7 +181,7 @@ export default function PosVendaPage() {
           <button onClick={() => setShowArquivados(v => !v)}
             className={`flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium ${showArquivados ? 'bg-primary text-primary-foreground' : 'bg-secondary text-foreground'}`}>
             <Archive className="h-3.5 w-3.5" />
-            {showArquivados ? `Ativos` : `Arquivados${arquivados.size ? ` (${arquivados.size})` : ''}`}
+            {showArquivados ? 'Ocultar arquivados' : `Mostrar arquivados (30+ dias)${arquivadosCount ? ` (${arquivadosCount})` : ''}`}
           </button>
           <button onClick={() => setSortMode(s => s === "data" ? "status" : s === "status" ? "dias" : "data")}
             className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-medium text-foreground bg-secondary">
@@ -232,6 +236,11 @@ export default function PosVendaPage() {
                 }}>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground">{p.cliente}</p>
+                    {isArquivadoView(p, arquivados) && (
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full mr-1" style={{ background: 'rgba(142,142,147,0.2)', color: '#8E8E93' }}>
+                        Arquivado
+                      </span>
+                    )}
                     <p className="text-xs mt-0.5 text-muted-foreground">
                       {p.vendedor} · {formatDate(p.data)}
                       {(p.notas?.length ?? 0) > 0 && (
