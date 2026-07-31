@@ -106,6 +106,28 @@ const phoneMask = (v: string) => {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 };
 
+// ── SLA (1h para sair de "Novo Lead") ──────────────────────────
+const SLA_MS = 60 * 60 * 1000;
+const DIAS_30_MS = 30 * 24 * 60 * 60 * 1000;
+
+function slaInfo(lead: Lead, now: number) {
+  const created = new Date(lead.created_at).getTime();
+  const restanteMs = created + SLA_MS - now;
+  return { estourado: restanteMs <= 0, restanteMin: Math.max(0, Math.ceil(restanteMs / 60000)) };
+}
+
+function slaCumprido(lead: Lead) {
+  if (lead.etapa === "novo_lead" || !lead.etapa_changed_at) return false;
+  return new Date(lead.etapa_changed_at).getTime() - new Date(lead.created_at).getTime() <= SLA_MS;
+}
+
+function isArquivadoView(lead: Lead) {
+  if (lead.arquivado_em) return true;
+  if (lead.etapa !== "convertido" && lead.etapa !== "perdido") return false;
+  const ref = new Date(lead.updated_at || lead.created_at).getTime();
+  return Date.now() - ref > DIAS_30_MS;
+}
+
 // ── Droppable Column ───────────────────────────────────────────
 function KanbanColumn({
   etapa,
