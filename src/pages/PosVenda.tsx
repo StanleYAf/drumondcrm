@@ -140,10 +140,8 @@ export default function PosVendaPage() {
 
   const filtered = useMemo(() => {
     let list = data.pos_venda;
-    if (showArquivados) {
-      list = list.filter(p => arquivados.has(p.id));
-    } else {
-      list = list.filter(p => !arquivados.has(p.id));
+    if (!showArquivados) {
+      list = list.filter(p => !isArquivadoView(p, arquivados));
     }
     if (filterStatus !== "Todos") list = list.filter(p => p.status === filterStatus);
     if (filterVendedor) list = list.filter(p => p.vendedor === filterVendedor);
