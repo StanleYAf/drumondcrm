@@ -4,7 +4,7 @@ import { NavLink } from "@/components/NavLink";
 import {
   LayoutDashboard, BookOpen, BarChart2, ShoppingCart, Headphones, FileText, Settings,
   Boxes, LogOut, Briefcase, Building2, ClipboardList, DollarSign, RefreshCw, KanbanSquare,
-  Stethoscope, Plus, Landmark, FileSignature, FileBadge, CalendarClock, Menu, Package, 
+  Stethoscope, Plus, Landmark, FileSignature, FileBadge, CalendarClock, Menu, Package, ShieldAlert,
 } from "lucide-react";
 import { useAuth } from "@/lib/authContext";
 import type { PermCode } from "@/lib/permissions";
@@ -54,6 +54,7 @@ const groups: ModuleDef[] = [
     subs: [
       { title: "ART", url: "/administrativo/art", icon: FileBadge, perm: "adm_art" },
       { title: "Boletim", url: "/manutencao/boletim", icon: FileText, perm: "eng_boletim" },
+      { title: "Checagem TSE/Certificado", url: "/manutencao/checagem-tse", icon: ShieldAlert, perm: "eng_cronograma" },
       { title: "Clientes", url: "/manutencao/clientes", icon: Building2, perm: "eng_clientes" },
       { title: "Cronograma", url: "/manutencao/cronograma", icon: CalendarClock, perm: "eng_cronograma" },
       { title: "Dash Engenharia", url: "/manutencao", icon: LayoutDashboard, perm: "eng_dashboard" },
@@ -95,6 +96,7 @@ const ROUTE_TITLES: Record<string, { title: string; module: string }> = {
   "/manutencao/clientes": { title: "Clientes", module: "Engenharia" },
   "/manutencao/os": { title: "Ordens de Serviço", module: "Engenharia" },
   "/manutencao/boletim": { title: "Boletim", module: "Engenharia" },
+  "/manutencao/checagem-tse": { title: "Checagem de TSE e Certificados", module: "Engenharia" },
   "/manutencao/sync-logs": { title: "Logs de Sincronização", module: "Engenharia" },
   "/demandas/engenharia": { title: "Demandas", module: "Engenharia" },
   "/estoque": { title: "Estoque", module: "Estoque" },
