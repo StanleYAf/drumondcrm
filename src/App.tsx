@@ -28,6 +28,7 @@ import ManutencaoClientes from "./pages/ManutencaoClientes";
 import ManutencaoOS from "./pages/ManutencaoOS";
 import ManutencaoBoletim from "./pages/ManutencaoBoletim";
 import ManutencaoCronograma from "./pages/ManutencaoCronograma";
+import ManutencaoChecagemTSE from "./pages/ManutencaoChecagemTSE";
 import SyncLogs from "./pages/SyncLogs";
 import Financeiro from "./pages/Financeiro";
 import Demandas from "./pages/Demandas";
@@ -199,6 +200,22 @@ const App = () => (
                                   />
                                   <Route
                                     path="/manutencao/sync-logs"
+                                    element={
+                                      <RoleGuard perm="eng_synclogs">
+                                        <SyncLogs />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/manutencao/checagem-tse"
+                                    element={
+                                      <RoleGuard allowed={["manutencao", "admin"]}>
+                                        <ManutencaoChecagemTSE />
+                                      </RoleGuard>
+                                    }
+                                  />
+                                  <Route
+                                    path="/__unused_synclogs"
                                     element={
                                       <RoleGuard perm="eng_synclogs">
                                         <SyncLogs />
