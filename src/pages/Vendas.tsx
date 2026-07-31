@@ -236,7 +236,8 @@ function LeadCard({
   onToggleArquivar?: () => void;
   dragListeners?: any;
 }) {
-  const isArquivado = !!lead.arquivado_em;
+  const isArquivado = isArquivadoView(lead);
+  const sla = lead.etapa === "novo_lead" ? slaInfo(lead, Date.now()) : null;
   return (
     <Card
       className={`p-3 cursor-pointer hover:border-primary/40 transition-colors bg-background/60 backdrop-blur-sm border-border/60 ${isArquivado ? "opacity-60" : ""}`}
@@ -284,6 +285,22 @@ function LeadCard({
         </DropdownMenu>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {isArquivado && (
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-zinc-500/20 text-zinc-300 border-zinc-500/30">
+            Arquivado
+          </Badge>
+        )}
+        {sla && (
+          sla.estourado ? (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-red-500/20 text-red-300 border-red-500/40 animate-pulse">
+              ⏰ SLA estourado
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-yellow-500/10 text-yellow-300/90 border-yellow-500/30">
+              {sla.restanteMin}min restantes
+            </Badge>
+          )
+        )}
         <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${ORIGEM_COLORS[lead.origem]}`}>
           {lead.origem}
         </Badge>
