@@ -215,14 +215,6 @@ const App = () => (
                                     }
                                   />
                                   <Route
-                                    path="/__unused_synclogs"
-                                    element={
-                                      <RoleGuard perm="eng_synclogs">
-                                        <SyncLogs />
-                                      </RoleGuard>
-                                    }
-                                  />
-                                  <Route
                                     path="/manutencao/cliente/:clienteId"
                                     element={
                                       <RoleGuard perm="eng_dashboard">
