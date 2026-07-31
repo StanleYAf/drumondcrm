@@ -32,6 +32,15 @@ function lastContactDate(p: PosVenda): string {
   return p.data;
 }
 
+const DIAS_30_MS = 30 * 24 * 60 * 60 * 1000;
+
+function isArquivadoView(p: PosVenda, arquivados: Set<string>): boolean {
+  if (arquivados.has(p.id)) return true;
+  if (p.status !== "Convertido") return false;
+  const ref = new Date(p.status_changed_at || p.data).getTime();
+  return Date.now() - ref > DIAS_30_MS;
+}
+
 export default function PosVendaPage() {
   const { data, setData, loading, error, undoDelete } = useAppData();
   const [showAdd, setShowAdd] = useState(false);
