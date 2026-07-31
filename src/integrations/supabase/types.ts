@@ -1321,6 +1321,54 @@ export type Database = {
           },
         ]
       }
+      patrimonio_administrativo: {
+        Row: {
+          colaborador_responsavel: string | null
+          created_at: string
+          equipamento: string
+          id: string
+          local: string | null
+          marca_modelo: string | null
+          numero_patrimonio: string | null
+          numero_serie: string | null
+          observacao: string | null
+          setor: string | null
+          status: string
+          updated_at: string
+          valor: number | null
+        }
+        Insert: {
+          colaborador_responsavel?: string | null
+          created_at?: string
+          equipamento: string
+          id?: string
+          local?: string | null
+          marca_modelo?: string | null
+          numero_patrimonio?: string | null
+          numero_serie?: string | null
+          observacao?: string | null
+          setor?: string | null
+          status?: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Update: {
+          colaborador_responsavel?: string | null
+          created_at?: string
+          equipamento?: string
+          id?: string
+          local?: string | null
+          marca_modelo?: string | null
+          numero_patrimonio?: string | null
+          numero_serie?: string | null
+          observacao?: string | null
+          setor?: string | null
+          status?: string
+          updated_at?: string
+          valor?: number | null
+        }
+        Relationships: []
+      }
       pendentes_estoque: {
         Row: {
           created_at: string

@@ -106,6 +106,28 @@ const phoneMask = (v: string) => {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 };
 
+// ── SLA (1h para sair de "Novo Lead") ──────────────────────────
+const SLA_MS = 60 * 60 * 1000;
+const DIAS_30_MS = 30 * 24 * 60 * 60 * 1000;
+
+function slaInfo(lead: Lead, now: number) {
+  const created = new Date(lead.created_at).getTime();
+  const restanteMs = created + SLA_MS - now;
+  return { estourado: restanteMs <= 0, restanteMin: Math.max(0, Math.ceil(restanteMs / 60000)) };
+}
+
+function slaCumprido(lead: Lead) {
+  if (lead.etapa === "novo_lead" || !lead.etapa_changed_at) return false;
+  return new Date(lead.etapa_changed_at).getTime() - new Date(lead.created_at).getTime() <= SLA_MS;
+}
+
+function isArquivadoView(lead: Lead) {
+  if (lead.arquivado_em) return true;
+  if (lead.etapa !== "convertido" && lead.etapa !== "perdido") return false;
+  const ref = new Date(lead.updated_at || lead.created_at).getTime();
+  return Date.now() - ref > DIAS_30_MS;
+}
+
 // ── Droppable Column ───────────────────────────────────────────
 function KanbanColumn({
   etapa,
@@ -214,7 +236,8 @@ function LeadCard({
   onToggleArquivar?: () => void;
   dragListeners?: any;
 }) {
-  const isArquivado = !!lead.arquivado_em;
+  const isArquivado = isArquivadoView(lead);
+  const sla = lead.etapa === "novo_lead" ? slaInfo(lead, Date.now()) : null;
   return (
     <Card
       className={`p-3 cursor-pointer hover:border-primary/40 transition-colors bg-background/60 backdrop-blur-sm border-border/60 ${isArquivado ? "opacity-60" : ""}`}
@@ -262,6 +285,22 @@ function LeadCard({
         </DropdownMenu>
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        {isArquivado && (
+          <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-zinc-500/20 text-zinc-300 border-zinc-500/30">
+            Arquivado
+          </Badge>
+        )}
+        {sla && (
+          sla.estourado ? (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-red-500/20 text-red-300 border-red-500/40 animate-pulse">
+              ⏰ SLA estourado
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-yellow-500/10 text-yellow-300/90 border-yellow-500/30">
+              {sla.restanteMin}min restantes
+            </Badge>
+          )
+        )}
         <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${ORIGEM_COLORS[lead.origem]}`}>
           {lead.origem}
         </Badge>
@@ -327,6 +366,24 @@ export default function Vendas() {
 
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
 
+  // Tick para atualizar contadores de SLA nos cards
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((v) => v + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Proteção contra bug do Radix Select/Dialog travando o pointer-events do body
+  useEffect(() => {
+    const fix = () => {
+      if (document.body.style.pointerEvents === "none") {
+        document.body.style.pointerEvents = "";
+      }
+    };
+    const timer = setInterval(fix, 300);
+    return () => clearInterval(timer);
+  }, []);
+
   // Fetch vendedores ativos
   useEffect(() => {
     supabase.from("vendedores").select("id, nome").eq("ativo", true).order("nome").then(({ data }) => {
@@ -352,8 +409,7 @@ export default function Vendas() {
   // ── Filtered leads ──
   const filtered = useMemo(() => {
     return leads.filter((l) => {
-      if (!showArquivados && l.arquivado_em) return false;
-      if (showArquivados && !l.arquivado_em) return false;
+      if (!showArquivados && isArquivadoView(l)) return false;
       if (search) {
         const s = search.toLowerCase();
         if (!l.nome_cliente.toLowerCase().includes(s) && !(l.empresa || "").toLowerCase().includes(s)) return false;
@@ -367,7 +423,21 @@ export default function Vendas() {
     });
   }, [leads, search, filterResp, filterOrigem, filterTipo, filterDateStart, filterDateEnd, showArquivados]);
 
-  const arquivadosCount = useMemo(() => leads.filter((l) => l.arquivado_em).length, [leads]);
+  const arquivadosCount = useMemo(() => leads.filter((l) => isArquivadoView(l)).length, [leads]);
+
+  // ── SLA de atendimento (mês atual) ──
+  const slaMes = useMemo(() => {
+    const now = new Date();
+    const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    const doMes = leads.filter((l) => new Date(l.created_at).getTime() >= inicioMes);
+    const qualificados = doMes.filter((l) => l.etapa !== "novo_lead");
+    const noPrazo = qualificados.filter((l) => slaCumprido(l));
+    const perdidos = qualificados.filter((l) => !slaCumprido(l));
+    const pct = qualificados.length ? (noPrazo.length / qualificados.length) * 100 : 0;
+    return { pct, total: qualificados.length, noPrazo: noPrazo.length, perdidos };
+  }, [leads]);
+
+  const slaColor = slaMes.pct >= 90 ? "text-emerald-400" : slaMes.pct >= 70 ? "text-yellow-400" : "text-red-400";
 
   const responsaveis = useMemo(() => [...new Set(leads.map((l) => l.responsavel).filter(Boolean))], [leads]);
 
@@ -531,7 +601,7 @@ export default function Vendas() {
               className="h-9"
             >
               <Archive className="h-4 w-4 mr-2" />
-              {showArquivados ? "Ver ativos" : `Arquivados${arquivadosCount ? ` (${arquivadosCount})` : ""}`}
+              {showArquivados ? "Ocultar arquivados" : `Mostrar arquivados (30+ dias)${arquivadosCount ? ` (${arquivadosCount})` : ""}`}
             </Button>
             <Button onClick={() => { setEditLead(null); setForm(emptyForm); setShowModal(true); }}>
               <Plus className="h-4 w-4 mr-2" /> Novo Lead
@@ -576,6 +646,34 @@ export default function Vendas() {
               </button>
             )}
           </div>
+        </div>
+
+        {/* KPIs de SLA */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Card className="p-3">
+            <p className="text-xs text-muted-foreground">SLA de Atendimento (mês)</p>
+            <p className={`text-2xl font-bold ${slaColor}`}>{slaMes.pct.toFixed(0)}%</p>
+            <p className="text-[11px] text-muted-foreground">
+              {slaMes.noPrazo} de {slaMes.total} leads atendidos em até 1h
+            </p>
+          </Card>
+          <Card className="p-3">
+            <p className="text-xs text-muted-foreground">Leads com SLA Perdido (mês)</p>
+            <p className="text-2xl font-bold text-red-400">{slaMes.perdidos.length}</p>
+            {slaMes.perdidos.length > 0 && (
+              <div className="mt-1 max-h-24 overflow-y-auto space-y-0.5">
+                {slaMes.perdidos.map((l) => (
+                  <button
+                    key={l.id}
+                    onClick={() => setDetailLead(l)}
+                    className="block w-full text-left text-[11px] text-muted-foreground hover:text-foreground truncate"
+                  >
+                    {l.nome_cliente} · {l.responsavel || "—"}
+                  </button>
+                ))}
+              </div>
+            )}
+          </Card>
         </div>
       </div>
 
