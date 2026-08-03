@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      anvisa_alertas: {
+        Row: {
+          data_encontrado: string
+          equipamento_id: string
+          id: string
+          numero_alerta: string
+          registro_anvisa: string
+          status: string
+          titulo: string
+          url: string
+        }
+        Insert: {
+          data_encontrado?: string
+          equipamento_id: string
+          id?: string
+          numero_alerta: string
+          registro_anvisa: string
+          status?: string
+          titulo: string
+          url: string
+        }
+        Update: {
+          data_encontrado?: string
+          equipamento_id?: string
+          id?: string
+          numero_alerta?: string
+          registro_anvisa?: string
+          status?: string
+          titulo?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anvisa_alertas_equipamento_id_fkey"
+            columns: ["equipamento_id"]
+            isOneToOne: false
+            referencedRelation: "cronograma_equipamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       avaliacoes_chamados: {
         Row: {
           arquivado_em: string | null
