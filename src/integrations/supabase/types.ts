@@ -55,6 +55,57 @@ export type Database = {
           },
         ]
       }
+      arkmeds_documentos: {
+        Row: {
+          base: string
+          cliente_solicitante: string | null
+          conteudo_tabelas: Json | null
+          conteudo_texto: string | null
+          data_extracao: string
+          data_validade: string | null
+          equipamento_nome: string | null
+          id: string
+          motivo_problema: string | null
+          numero_documento: string
+          numero_serie: string | null
+          status: string
+          tipo_documento: string
+          url_pdf: string
+        }
+        Insert: {
+          base: string
+          cliente_solicitante?: string | null
+          conteudo_tabelas?: Json | null
+          conteudo_texto?: string | null
+          data_extracao?: string
+          data_validade?: string | null
+          equipamento_nome?: string | null
+          id?: string
+          motivo_problema?: string | null
+          numero_documento: string
+          numero_serie?: string | null
+          status?: string
+          tipo_documento: string
+          url_pdf: string
+        }
+        Update: {
+          base?: string
+          cliente_solicitante?: string | null
+          conteudo_tabelas?: Json | null
+          conteudo_texto?: string | null
+          data_extracao?: string
+          data_validade?: string | null
+          equipamento_nome?: string | null
+          id?: string
+          motivo_problema?: string | null
+          numero_documento?: string
+          numero_serie?: string | null
+          status?: string
+          tipo_documento?: string
+          url_pdf?: string
+        }
+        Relationships: []
+      }
       avaliacoes_chamados: {
         Row: {
           arquivado_em: string | null
